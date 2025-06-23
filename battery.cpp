@@ -48,13 +48,16 @@ void batteryBegin(void *params) {
 void batteryLoop() {
     /*
      * 2625 ~ 16.6V
-     * 2072 ~ 12.8V
+     * 2065 ~ 12.7V
+     * (16.6 - 12.7) / (2625 - 2065)
+     * (16.6 - 12.7) / (2625 - 2065) * 2625 - 16.6 = 0.00696
+     * (16.6 - 12.7) / (2625 - 2065) * 2065 - 12.7 = 1.68
      */
     uint16_t value = analogRead(batteryPin);
     if (batteryDebug) {
         debug("V: battery: value: %d\n", value);
     }
-    float voltage = 0.00687f * value - 1.43f;
+    float voltage = 0.00696f * value - 1.68f;
     if (batteryDebug && voltage > 10.0f) {
         debug("V: battery: voltage: %f\n", voltage);
     }

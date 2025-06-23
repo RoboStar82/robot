@@ -25,7 +25,7 @@ void bmxBegin(void *params) {
 
 void bmxCalibrate() {
     Serial.println("V: compass: calibrate");
-    uint32_t i = millis();
+    unsigned long i = millis();
     while ((millis() - i) < 30000) {
         sensor.setFastOffset();
     }

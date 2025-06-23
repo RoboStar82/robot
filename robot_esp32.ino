@@ -36,56 +36,56 @@ iarduino_I2C_Motor motorRB(MOTOR_RB_PORT);
 
 bool debugCtrl = true;
 bool debugMotor = true;
-bool debugPosition = true;
+bool debugPosition = false;
 bool debugPositionTx = false;
 
 // Кнопки
 
 // Start
-int8_t ctrlStart = 0;
+bool ctrlStart = false;
 // Back
-int8_t ctrlBack = 0;
+bool ctrlBack = false;
 
 // A
-int8_t ctrlA = 0;
+bool ctrlA = false;
 // B
-int8_t ctrlB = 0;
+bool ctrlB = false;
 // X
-int8_t ctrlX = 0;
+bool ctrlX = false;
 // Y
-int8_t ctrlY = 0;
+bool ctrlY = false;
 
 // D-pad X (right-left)
-int8_t ctrlDX = 0;
+int ctrlDX = 0;
 // D-pad Y (up-down)
-int8_t ctrlDY = 0;
+int ctrlDY = 0;
 
 // D-pad average
-int8_t ctrlDA = round(((MOTOR_AVG_SPEED - MOTOR_MIN_SPEED) / (MOTOR_MAX_SPEED - MOTOR_MIN_SPEED)) * 7.0f);
+int ctrlDA = round(((MOTOR_AVG_SPEED - MOTOR_MIN_SPEED) / (MOTOR_MAX_SPEED - MOTOR_MIN_SPEED)) * 7.0f);
 
 // Left X (right-left)
-int8_t ctrlLX = 0;
+int ctrlLX = 0;
 // Left Y (up-down)
-int8_t ctrlLY = 0;
+int ctrlLY = 0;
 // Right X (right-left)
-int8_t ctrlRX = 0;
+int ctrlRX = 0;
 // Right Y (up-down)
-int8_t ctrlRY = 0;
+int ctrlRY = 0;
 // Left Z (up-down)
-int8_t ctrlLZ = 0;
+int ctrlLZ = 0;
 // Right Z (up-down)
-int8_t ctrlRZ = 0;
+int ctrlRZ = 0;
 
 // Скорости моторов
 
 // Left front
-int8_t speedLF = 0;
+int speedLF = 0;
 // Right front
-int8_t speedRF = 0;
+int speedRF = 0;
 // Left back
-int8_t speedLB = 0;
+int speedLB = 0;
 // Right back
-int8_t speedRB = 0;
+int speedRB = 0;
 
 // Состояние робота
 
@@ -155,7 +155,7 @@ void changeY() {
 
 // Обработка изменения скоростей моторов
 
-void setMotorSpeed(iarduino_I2C_Motor &motor, int8_t speed) {
+void setMotorSpeed(iarduino_I2C_Motor &motor, int speed) {
     if (speed == 0) {
         motor.setSpeed(0, MOT_RPM);
     } else if (speed > 0) {
@@ -168,12 +168,12 @@ void setMotorSpeed(iarduino_I2C_Motor &motor, int8_t speed) {
 }
 
 void updateSpeed() {
-    int8_t newSpeedLF = 0;
-    int8_t newSpeedRF = 0;
-    int8_t newSpeedLB = 0;
-    int8_t newSpeedRB = 0;
-    int8_t absX;
-    int8_t absY;
+    int newSpeedLF = 0;
+    int newSpeedRF = 0;
+    int newSpeedLB = 0;
+    int newSpeedRB = 0;
+    int absX;
+    int absY;
     absX = abs(ctrlLX);
     absY = abs(ctrlLY);
     if (absX == 0 && absY == 0) {
@@ -307,25 +307,25 @@ void CharacteristicCallbacks::onRobotControl(String value) {
         uint8_t padValue = value[1];
         uint8_t leftValue = value[2];
         uint8_t rightValue = value[3];
-        int8_t newStart = (btnValue >> 0) & 1;
-        int8_t newBack = (btnValue >> 1) & 1;
-        int8_t newA = (btnValue >> 2) & 1;
-        int8_t newB = (btnValue >> 3) & 1;
-        int8_t newX = (btnValue >> 4) & 1;
-        int8_t newY = (btnValue >> 5) & 1;
-        int8_t newDX = ((padValue >> 0) & 1) ? 1 : (((padValue >> 1) & 1) ? -1 : 0);
-        int8_t newDY = ((padValue >> 2) & 1) ? 1 : (((padValue >> 3) & 1) ? -1 : 0);
-        int8_t newLZ = ((padValue >> 4) & 1) ? 1 : (((padValue >> 5) & 1) ? -1 : 0);
-        int8_t newRZ = ((padValue >> 6) & 1) ? 1 : (((padValue >> 7) & 1) ? -1 : 0);
+        bool newStart = (btnValue >> 0) & 1;
+        bool newBack = (btnValue >> 1) & 1;
+        bool newA = (btnValue >> 2) & 1;
+        bool newB = (btnValue >> 3) & 1;
+        bool newX = (btnValue >> 4) & 1;
+        bool newY = (btnValue >> 5) & 1;
+        int newDX = ((padValue >> 0) & 1) ? 1 : (((padValue >> 1) & 1) ? -1 : 0);
+        int newDY = ((padValue >> 2) & 1) ? 1 : (((padValue >> 3) & 1) ? -1 : 0);
+        int newLZ = ((padValue >> 4) & 1) ? 1 : (((padValue >> 5) & 1) ? -1 : 0);
+        int newRZ = ((padValue >> 6) & 1) ? 1 : (((padValue >> 7) & 1) ? -1 : 0);
         uint8_t tmpValue;
         tmpValue = (leftValue >> 0) & 0xf;
-        int8_t newLX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
+        int newLX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
         tmpValue = (leftValue >> 4) & 0xf;
-        int8_t newLY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
+        int newLY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
         tmpValue = (rightValue >> 0) & 0xf;
-        int8_t newRX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
+        int newRX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
         tmpValue = (rightValue >> 4) & 0xf;
-        int8_t newRY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
+        int newRY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
         if (ctrlStart != newStart) {
             ctrlStart = newStart;
             changeStart();
@@ -394,11 +394,11 @@ void setup() {
 void loop() {
 
     Lidar *lidar = getLidar();
-    uint16_t length = 0;
+    int length = 0;
     lidar->copyLoop(robotPosition + 2, length);
 
     iarduino_Position_BMX055 *sensor = getBMX();
-    uint16_t angle = (360 + (int16_t)sensor->axisZ) % 360;
+    int angle = (360 + (int)sensor->axisZ) % 360;
     robotPosition[0] = angle & 0xff;
     length ++;
     robotPosition[1] = angle >> 8;
@@ -411,7 +411,7 @@ void loop() {
 
     if (debugPositionTx) {
         Serial.printf("V: BLE: position: %d:", length);
-        for (uint16_t n = 0; n < length; n ++) {
+        for (int n = 0; n < length; n ++) {
             Serial.printf(" %02x", robotPosition[n]);
         }
         Serial.println();

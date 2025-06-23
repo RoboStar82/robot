@@ -13,20 +13,20 @@
 
 // Точка
 typedef struct lidar_point_t {
-    // Номер точки: 0..359
-    uint16_t n = 0;
+    // Номер точки: 0..255
+    uint8_t n = 0;
+    // Является ли точка вершиной выпуклой оболочки
+    bool isEdge = false;
     // X
     int16_t x = 0;
     // Y
     int16_t y = 0;
-    // Является ли точка вершиной выпуклой оболочки
-    bool isEdge = false;
 } __attribute__((packed)) lidar_point_t;
 
 // Сторона выпуклой оболочки
 typedef struct lidar_edge_t {
     uint16_t angle4 = 0;
-    uint32_t length = 0;
+    uint16_t length = 0;
     int16_t lengthX = 0;
     int16_t lengthY = 0;
 } __attribute__((packed)) lidar_edge_t;
@@ -38,17 +38,20 @@ public:
     // Идёт ли сканирование
     bool isScan = false;
 
+    // Количество ошибок
+    int errorCount = 0;
+
     // Точки
-    lidar_point_t points[360];
-    // 0..360
-    uint16_t pointCount = 0;
-    // 0..360
-    uint16_t edgeCount = 0;
+    lidar_point_t points[256];
+    // 0..256
+    int pointCount = 0;
+    // 0..256
+    int edgeCount = 0;
 
     // Угол поворота стен 0..89
-    uint8_t angle = 0;
+    int angle = 0;
     // Точки на стенах
-    uint16_t walls[4] = { 0, 0, 0, 0 };
+    int walls[4] = { 0, 0, 0, 0 };
 
     // Блокировка
     std::mutex lockData;
@@ -59,11 +62,8 @@ public:
     // Косинусы углов от 0 до 90: 0..4096
     uint16_t cosines[91] = { 4096, 4095, 4094, 4090, 4086, 4080, 4074, 4065, 4056, 4046, 4034, 4021, 4006, 3991, 3974, 3956, 3937, 3917, 3896, 3873, 3849, 3824, 3798, 3770, 3742, 3712, 3681, 3650, 3617, 3582, 3547, 3511, 3474, 3435, 3396, 3355, 3314, 3271, 3228, 3183, 3138, 3091, 3044, 2996, 2946, 2896, 2845, 2793, 2741, 2687, 2633, 2578, 2522, 2465, 2408, 2349, 2290, 2231, 2171, 2110, 2048, 1986, 1923, 1860, 1796, 1731, 1666, 1600, 1534, 1468, 1401, 1334, 1266, 1198, 1129, 1060, 991, 921, 852, 782, 711, 641, 570, 499, 428, 357, 286, 214, 143, 71, 0 };
 
-    void begin() {
-        return;
-    }
-
-    bool reset() {
+    virtual bool reset() {
+        errorCount = 0;
         pointCount = 0;
         edgeCount = 0;
         angle = 0;
@@ -74,12 +74,12 @@ public:
         return true;
     }
 
-    bool start() {
+    virtual bool start() {
         isScan = true;
         return true;
     }
 
-    bool stop() {
+    virtual bool stop() {
         isScan = false;
         return true;
     }
@@ -88,7 +88,7 @@ public:
         if (!isScan) {
             return false;
         }
-        angle = pointCount < 360 ? pointCount : 0;
+        angle = 0;
         distance = 0;
         strength = 0;
         return true;
@@ -101,6 +101,14 @@ public:
         lockData.lock();
         if (!scanLoop()) {
             lockData.unlock();
+            errorCount ++;
+            if (errorCount > 99) {
+                stop();
+                delay(100);
+                reset();
+                delay(100);
+                start();
+            }
             return false;
         }
         if (!edgeLoop()) {
@@ -122,9 +130,9 @@ public:
     void addPoint(uint16_t angle, uint16_t distance) {
         lidar_point_t point;
         // -4096..4096
-        int16_t angleSin = 0;
+        int angleSin = 0;
         // -4096..4096
-        int16_t angleCos = 0;
+        int angleCos = 0;
         if (angle <= 90) {
             angleSin = sinuses[angle];
             angleCos = cosines[angle];
@@ -139,28 +147,42 @@ public:
             angleCos = sinuses[angle - 270];
         }
         point.n = pointCount;
-        point.x = ((int32_t)distance * angleCos) >> 12;
-        point.y = ((int32_t)distance * angleSin) >> 12;
+        point.x = ((int)distance * angleCos) >> 12;
+        point.y = ((int)distance * angleSin) >> 12;
         points[pointCount] = point;
         pointCount ++;
     }
 
     bool scanLoop() {
-        // 0..360
+        // 0..256
         pointCount = 0;
-        // 0..360
+        // 0..256
         edgeCount = 0;
         // 0..359
         uint16_t prevAngle = 0;
-        for (uint16_t n = 0; n < 512; n ++) {
+        for (int n = 0; n < 256; n ++) {
             // 0..359
             uint16_t angle = 0;
+            uint16_t angle1 = 0;
+            uint16_t angle2 = 0;
             // 0..
             uint16_t distance = 0;
+            uint16_t distance1 = 0;
+            uint16_t distance2 = 0;
             // 0..
             uint8_t strength = 0;
-            if (!scan(angle, distance, strength)) {
+            if (!scan(angle1, distance1, strength)) {
                 return false;
+            }
+            if (!scan(angle2, distance2, strength)) {
+                return false;
+            }
+            if (distance1 > distance2) {
+                angle = angle1;
+                distance = distance1;
+            } else {
+                angle = angle2;
+                distance = distance2;
             }
             /*
              * Углы должны идти последовательно, чтобы вершины выпуклой оболочки тоже были последовательными
@@ -171,11 +193,11 @@ public:
                 if (angle == prevAngle) {
                     continue;
                 } else if (angle > prevAngle) {
-                    if (angle - prevAngle > 1) {
+                    if (angle - prevAngle > 3) {
                         return false;
                     }
                 } else {
-                    if (360 + angle - prevAngle > 1) {
+                    if (360 + angle - prevAngle > 3) {
                         return false;
                     }
                 }
@@ -185,7 +207,7 @@ public:
                 continue;
             }
             addPoint(angle, distance);
-            if (pointCount >= 360) {
+            if (pointCount >= 256) {
                 break;
             }
         }
@@ -196,11 +218,11 @@ public:
     }
 
     bool edgeLoop() {
-        // 0..359
-        uint16_t minN = 0;
-        // 0..359
-        uint16_t maxN = 0;
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        // 0..255
+        int minN = 0;
+        // 0..255
+        int maxN = 0;
+        for (int n = 0; n < pointCount; n ++) {
             if (points[n].x < points[minN].x) {
                 minN = n;
             }
@@ -210,7 +232,7 @@ public:
         }
         quickHull(points, pointCount, points[minN], points[maxN], 1);
         quickHull(points, pointCount, points[minN], points[maxN], -1);
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        for (int n = 0; n < pointCount; n ++) {
             if (points[n].isEdge) {
                 edgeCount ++;
             }
@@ -222,28 +244,28 @@ public:
     }
 
     bool angleLoop() {
-        // 0..359
-        uint16_t prevN = 0;
-        for (uint16_t n = pointCount - 1; n > 0; n --) {
+        // 0..255
+        int prevN = 0;
+        for (int n = pointCount - 1; n >= 0; n --) {
             if (points[n].isEdge) {
                 prevN = n;
                 break;
             }
         }
-        int32_t sumLengthX = 0;
-        int32_t sumLengthY = 0;
-        uint32_t sumLength = 0;
+        int sumLengthX = 0;
+        int sumLengthY = 0;
+        int sumLength = 0;
         lidar_edge_t edges[360];
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        for (int n = 0; n < pointCount; n ++) {
             if (points[n].isEdge) {
-                int16_t dx = points[n].x - points[prevN].x;
-                int16_t dy = points[n].y - points[prevN].y;
+                int dx = points[n].x - points[prevN].x;
+                int dy = points[n].y - points[prevN].y;
                 // 0..359
-                uint16_t angle4 = ((uint16_t)(360 + atan2(dy, dx) * 180 / PI) << 2) % 360;
+                int angle4 = ((int)(360 + atan2(dy, dx) * 180 / PI) << 2) % 360;
                 // -4096..4096
-                int16_t angleSin = 0;
+                int angleSin = 0;
                 // -4096..4096
-                int16_t angleCos = 0;
+                int angleCos = 0;
                 if (angle4 <= 90) {
                     angleSin = sinuses[angle4];
                     angleCos = cosines[angle4];
@@ -260,8 +282,8 @@ public:
                 lidar_edge_t edge;
                 edge.angle4 = angle4;
                 edge.length = sqrt(dy * dy + dx * dx);
-                edge.lengthX = ((int32_t)edge.length * angleCos) >> 12;
-                edge.lengthY = ((int32_t)edge.length * angleSin) >> 12;
+                edge.lengthX = ((int)edge.length * angleCos) >> 12;
+                edge.lengthY = ((int)edge.length * angleSin) >> 12;
                 sumLengthX += edge.lengthX;
                 sumLengthY += edge.lengthY;
                 sumLength += edge.length;
@@ -273,10 +295,10 @@ public:
             angle = 0;
             return false;
         }
-        uint32_t perimeter = sumLength;
-        uint32_t interval = 360;
-        uint8_t divider = 4;
-        uint16_t angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+        int perimeter = sumLength;
+        int interval = 360;
+        int divider = 4;
+        int angle4 = (int)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
         angle = angle4 >> 2;
         while (true) {
             if (interval < 2) {
@@ -286,7 +308,7 @@ public:
             sumLengthX = 0;
             sumLengthY = 0;
             sumLength = 0;
-            for (uint16_t n = 0; n < pointCount; n ++) {
+            for (int n = 0; n < pointCount; n ++) {
                 if (points[n].isEdge) {
                     lidar_edge_t edge = edges[n];
                     if ((360 + edge.angle4 - angle4) % 360 < interval) {
@@ -297,12 +319,12 @@ public:
                 }
             }
             if (divider * sumLength >= perimeter) {
-                angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+                angle4 = (int)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
                 angle = angle4 >> 2;
             } else if (interval >= 45 && divider <= 4) {
                 divider = 8;
                 if (divider * sumLength >= perimeter) {
-                    angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+                    angle4 = (int)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
                     angle = angle4 >> 2;
                 } else {
                     break;
@@ -315,20 +337,20 @@ public:
     }
 
     bool wallLoop() {
-        int16_t angleSin = sinuses[angle];
-        int16_t angleCos = cosines[angle];
-        int16_t maxDX = 0;
-        int16_t maxDY = 0;
-        int16_t minDX = 0;
-        int16_t minDY = 0;
-        uint16_t maxNX = 0;
-        uint16_t maxNY = 0;
-        uint16_t minNX = 0;
-        uint16_t minNY = 0;
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        int angleSin = sinuses[angle];
+        int angleCos = cosines[angle];
+        int maxDX = 0;
+        int maxDY = 0;
+        int minDX = 0;
+        int minDY = 0;
+        int maxNX = 0;
+        int maxNY = 0;
+        int minNX = 0;
+        int minNY = 0;
+        for (int n = 0; n < pointCount; n ++) {
             if (points[n].isEdge) {
-                int16_t dy = (points[n].y * angleCos - points[n].x * angleSin) >> 12;
-                int16_t dx = (points[n].x * angleCos + points[n].y * angleSin) >> 12;
+                int dy = (points[n].y * angleCos - points[n].x * angleSin) >> 12;
+                int dx = (points[n].x * angleCos + points[n].y * angleSin) >> 12;
                 if (minDX > dx) {
                     minDX = dx;
                     minNX = n;
@@ -354,17 +376,17 @@ public:
         return true;
     }
 
-    void copyLoop(uint8_t *data, uint16_t &length) {
+    void copyLoop(uint8_t *data, int &length) {
         lockData.lock();
-        uint16_t index = 0;
+        int index = 0;
         data[index] = angle;
         index ++;
-        uint16_t resultWallIndex = index;
-        uint8_t resultWallCount = 0;
+        int resultWallIndex = index;
+        int resultWallCount = 0;
         data[index] = resultWallCount;
         index ++;
-        for (uint8_t i = 0; i < 4; i ++) {
-            uint16_t n = walls[i];
+        for (int i = 0; i < 4; i ++) {
+            int n = walls[i];
             if (n < pointCount) {
                 resultWallCount ++;
                 data[index] = points[n].x & 0xff;
@@ -378,15 +400,15 @@ public:
             }
         }
         data[resultWallIndex] = resultWallCount;
-        uint16_t resultEdgeIndex = index;
-        uint8_t resultEdgeCount = edgeCount < 64 ? edgeCount : 64;
+        int resultEdgeIndex = index;
+        int resultEdgeCount = edgeCount < 64 ? edgeCount : 64;
         data[index] = resultEdgeCount;
         index ++;
         if (resultEdgeCount > 0) {
-            uint16_t edgeN = 0;
-            uint8_t nth = edgeCount > resultEdgeCount ? 1 + (edgeCount - 1) / resultEdgeCount : 0;
+            int edgeN = 0;
+            int nth = edgeCount > resultEdgeCount ? 1 + (edgeCount - 1) / resultEdgeCount : 0;
             resultEdgeCount = 0;
-            for (uint16_t n = 0; n < pointCount; n ++) {
+            for (int n = 0; n < pointCount; n ++) {
                 if (points[n].isEdge) {
                     if (!nth || !(edgeN % nth)) {
                         resultEdgeCount ++;
@@ -404,15 +426,15 @@ public:
             }
             data[resultEdgeIndex] = resultEdgeCount;
         }
-        uint16_t resultPointIndex = index;
-        uint8_t resultPointCount = (pointCount - edgeCount < 64 - resultEdgeCount) ? pointCount - edgeCount : 64 - resultEdgeCount;
+        int resultPointIndex = index;
+        int resultPointCount = (pointCount - edgeCount < 64 - resultEdgeCount) ? pointCount - edgeCount : 64 - resultEdgeCount;
         data[index] = resultPointCount;
         index ++;
         if (resultPointCount > 0) {
-            uint16_t pointN = 0;
-            uint8_t nth = pointCount - edgeCount > resultPointCount ? 1 + (pointCount - edgeCount - 1) / resultPointCount : 0;
+            int pointN = 0;
+            int nth = pointCount - edgeCount > resultPointCount ? 1 + (pointCount - edgeCount - 1) / resultPointCount : 0;
             resultPointCount = 0;
-            for (uint16_t n = 0; n < pointCount; n ++) {
+            for (int n = 0; n < pointCount; n ++) {
                 if (!points[n].isEdge) {
                     if (!nth || !(pointN % nth)) {
                         resultPointCount ++;
@@ -436,22 +458,22 @@ public:
 
     void printPoints() {
         lockData.lock();
-        uint8_t angle = this->angle;
-        uint16_t pointCount = this->pointCount;
-        uint16_t edgeCount = this->edgeCount;
-        uint8_t wallCount = 0;
-        lidar_point_t points[360];
-        uint16_t walls[4];
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        int angle = this->angle;
+        int pointCount = this->pointCount;
+        int edgeCount = this->edgeCount;
+        int wallCount = 0;
+        lidar_point_t points[256];
+        int walls[4];
+        for (int n = 0; n < pointCount; n ++) {
             points[n] = this->points[n];
         }
-        for (uint8_t i = 0; i < 4; i ++) {
+        for (int i = 0; i < 4; i ++) {
             walls[i] = this->walls[i];
         }
         lockData.unlock();
 
-        for (uint8_t i = 0; i < 4; i ++) {
-            uint16_t n = walls[i];
+        for (int i = 0; i < 4; i ++) {
+            int n = walls[i];
             if (n < pointCount) {
                 wallCount ++;
             }
@@ -460,20 +482,20 @@ public:
         Serial.printf("V: lidar: point count: %d\n", pointCount);
         Serial.printf("V: lidar: edge count: %d\n", edgeCount);
         Serial.printf("V: lidar: wall count: %d\n", wallCount);
-        for (uint8_t i = 0; i < 4; i ++) {
-            uint16_t n = walls[i];
+        for (int i = 0; i < 4; i ++) {
+            int n = walls[i];
             if (n < pointCount) {
                 lidar_point_t point = points[n];
                 Serial.printf("V: lidar: wall: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
             }
         }
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        for (int n = 0; n < pointCount; n ++) {
             lidar_point_t point = points[n];
             if (point.isEdge) {
                 Serial.printf("V: lidar: edge: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
             }
         }
-        for (uint16_t n = 0; n < pointCount; n ++) {
+        for (int n = 0; n < pointCount; n ++) {
             lidar_point_t point = points[n];
             if (!point.isEdge) {
                 Serial.printf("V: lidar: point: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
@@ -483,8 +505,8 @@ public:
 
 protected:
 
-    int8_t lineSide(lidar_point_t a, lidar_point_t b, lidar_point_t p) {
-        int32_t value = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y);
+    int lineSide(lidar_point_t a, lidar_point_t b, lidar_point_t p) {
+        int value = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y);
         if (value == 0) {
             return 0;
         } else if (value > 0) {
@@ -496,24 +518,22 @@ protected:
         }
     }
 
-    uint32_t lineDistance(lidar_point_t a, lidar_point_t b, lidar_point_t p) {
+    int lineDistance(lidar_point_t a, lidar_point_t b, lidar_point_t p) {
         return abs((p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y));
     }
 
-    void quickHull(lidar_point_t points[], uint16_t pointCount, lidar_point_t a, lidar_point_t b, int8_t side) {
-        bool hasMaxDistance = false;
-        uint16_t maxDistanceN = 0;
-        uint32_t maxDistance = 0;
-        for (uint16_t n = 0; n < pointCount; n ++) {
-            int8_t currentSide = lineSide(a, b, points[n]);
-            uint32_t distance = lineDistance(a, b, points[n]);
+    void quickHull(lidar_point_t points[], int pointCount, lidar_point_t a, lidar_point_t b, int side) {
+        int maxDistanceN = -1;
+        int maxDistance = -1;
+        for (int n = 0; n < pointCount; n ++) {
+            int currentSide = lineSide(a, b, points[n]);
+            int distance = lineDistance(a, b, points[n]);
             if (currentSide == side && distance > maxDistance) {
-                hasMaxDistance = true;
                 maxDistanceN = n;
                 maxDistance = distance;
             }
         }
-        if (!hasMaxDistance) {
+        if (maxDistanceN < 0) {
             points[a.n].isEdge = true;
             points[b.n].isEdge = true;
             return;
@@ -533,7 +553,6 @@ public:
     bool debugTx = false;
 
     void begin() {
-        AnyLidar::begin();
         pinMode(lidarRxPin, INPUT);
         pinMode(lidarTxPin, OUTPUT);
         lidarSerial.setTimeout(100);
@@ -558,7 +577,7 @@ public:
                 return false;
             }
             checksum ^= size;
-            for (uint8_t i = 0; i < size; i++) {
+            for (int i = 0; i < size; i++) {
                 if (lidarSerial.write(payload[i]) < 1) {
                     Serial.printf("E: lidar: send byte (%d) 0x%02x\n", i + 4, payload[i]);
                     return false;
@@ -589,7 +608,7 @@ public:
         }
         subtype = c >> 6;
         length = c & 0x3f;
-        for (uint8_t i = 1; i < 4; i ++) {
+        for (int i = 1; i < 4; i ++) {
             if (lidarSerial.readBytes(&c, 1) < 1) {
                 Serial.printf("E: lidar: read byte (%d)\n", i + 3);
                 return false;
@@ -719,7 +738,7 @@ public:
         return true;
     }
 
-    bool reset() {
+    bool reset() override {
         if (!sendCommand(0x40)) {
             return false;
         }
@@ -729,7 +748,7 @@ public:
         return true;
     }
 
-    bool start() {
+    bool start() override {
         if (!sendCommand(0x20)) {
             return false;
         }
@@ -742,23 +761,19 @@ public:
         if (length != 5) {
             return false;
         }
-        if (!AnyLidar::start()) {
-            return false;
-        }
+        isScan = true;
         return true;
     }
 
-    bool stop() {
+    bool stop() override {
+        isScan = false;
         if (!sendCommand(0x25)) {
             return false;
         }
-        if (!AnyLidar::stop()) {
-            return false;
-        }
         return true;
     }
 
-    virtual bool scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) override {
+    bool scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) override {
         if (!isScan) {
             return false;
         }

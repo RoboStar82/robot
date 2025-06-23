@@ -193,11 +193,11 @@ public:
                 if (angle == prevAngle) {
                     continue;
                 } else if (angle > prevAngle) {
-                    if (angle - prevAngle > 3) {
+                    if (angle - prevAngle > 2) {
                         return false;
                     }
                 } else {
-                    if (360 + angle - prevAngle > 3) {
+                    if (360 + angle - prevAngle > 2) {
                         return false;
                     }
                 }

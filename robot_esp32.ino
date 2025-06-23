@@ -61,7 +61,7 @@ int8_t ctrlDX = 0;
 int8_t ctrlDY = 0;
 
 // D-pad average
-int8_t ctrlDA = (int8_t)round(((MOTOR_AVG_SPEED - MOTOR_MIN_SPEED) / (MOTOR_MAX_SPEED - MOTOR_MIN_SPEED)) * 7.0f);
+int8_t ctrlDA = round(((MOTOR_AVG_SPEED - MOTOR_MIN_SPEED) / (MOTOR_MAX_SPEED - MOTOR_MIN_SPEED)) * 7.0f);
 
 // Left X (right-left)
 int8_t ctrlLX = 0;

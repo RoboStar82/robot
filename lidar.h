@@ -23,6 +23,14 @@ typedef struct lidar_point_t {
     bool isEdge = false;
 } __attribute__((packed)) lidar_point_t;
 
+// Сторона выпуклой оболочки
+typedef struct lidar_edge_t {
+    uint16_t angle4 = 0;
+    uint32_t length = 0;
+    int16_t lengthX = 0;
+    int16_t lengthY = 0;
+} __attribute__((packed)) lidar_edge_t;
+
 class AnyLidar {
 
 public:
@@ -131,8 +139,8 @@ public:
             angleCos = sinuses[angle - 270];
         }
         point.n = pointCount;
-        point.x = (distance * angleCos) >> 12;
-        point.y = (distance * angleSin) >> 12;
+        point.x = ((int32_t)distance * angleCos) >> 12;
+        point.y = ((int32_t)distance * angleSin) >> 12;
         points[pointCount] = point;
         pointCount ++;
     }
@@ -222,42 +230,87 @@ public:
                 break;
             }
         }
-        int32_t sumX = 0;
-        int32_t sumY = 0;
+        int32_t sumLengthX = 0;
+        int32_t sumLengthY = 0;
+        uint32_t sumLength = 0;
+        lidar_edge_t edges[360];
         for (uint16_t n = 0; n < pointCount; n ++) {
             if (points[n].isEdge) {
                 int16_t dx = points[n].x - points[prevN].x;
                 int16_t dy = points[n].y - points[prevN].y;
                 // 0..359
-                uint16_t angle = ((uint16_t)(360 + atan2(dy, dx) * 180 / PI) << 2) % 360;
+                uint16_t angle4 = ((uint16_t)(360 + atan2(dy, dx) * 180 / PI) << 2) % 360;
                 // -4096..4096
                 int16_t angleSin = 0;
                 // -4096..4096
                 int16_t angleCos = 0;
-                if (angle <= 90) {
-                    angleSin = sinuses[angle];
-                    angleCos = cosines[angle];
-                } else if (angle <= 180) {
-                    angleSin = cosines[angle - 90];
-                    angleCos = -sinuses[angle - 90];
-                } else if (angle <= 270) {
-                    angleSin = -sinuses[angle - 180];
-                    angleCos = -cosines[angle - 180];
+                if (angle4 <= 90) {
+                    angleSin = sinuses[angle4];
+                    angleCos = cosines[angle4];
+                } else if (angle4 <= 180) {
+                    angleSin = cosines[angle4 - 90];
+                    angleCos = -sinuses[angle4 - 90];
+                } else if (angle4 <= 270) {
+                    angleSin = -sinuses[angle4 - 180];
+                    angleCos = -cosines[angle4 - 180];
                 } else {
-                    angleSin = -cosines[angle - 270];
-                    angleCos = sinuses[angle - 270];
+                    angleSin = -cosines[angle4 - 270];
+                    angleCos = sinuses[angle4 - 270];
                 }
-                uint32_t length = sqrt(dy * dy + dx * dx);
-                sumX += (length * angleCos) >> 12;
-                sumY += (length * angleSin) >> 12;
+                lidar_edge_t edge;
+                edge.angle4 = angle4;
+                edge.length = sqrt(dy * dy + dx * dx);
+                edge.lengthX = ((int32_t)edge.length * angleCos) >> 12;
+                edge.lengthY = ((int32_t)edge.length * angleSin) >> 12;
+                sumLengthX += edge.lengthX;
+                sumLengthY += edge.lengthY;
+                sumLength += edge.length;
+                edges[n] = edge;
                 prevN = n;
             }
         }
-        if (sumX == 0 && sumY == 0) {
+        if (sumLengthX == 0 && sumLengthY == 0) {
             angle = 0;
             return false;
         }
-        angle = ((uint16_t)(360 + atan2(sumY, sumX) * 180 / PI) % 360) >> 2;
+        uint32_t perimeter = sumLength;
+        uint32_t interval = 360;
+        uint8_t divider = 4;
+        uint16_t angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+        angle = angle4 >> 2;
+        while (true) {
+            if (interval < 2) {
+                break;
+            }
+            interval /= 2;
+            sumLengthX = 0;
+            sumLengthY = 0;
+            sumLength = 0;
+            for (uint16_t n = 0; n < pointCount; n ++) {
+                if (points[n].isEdge) {
+                    lidar_edge_t edge = edges[n];
+                    if ((360 + edge.angle4 - angle4) % 360 < interval) {
+                        sumLengthX += edge.lengthX;
+                        sumLengthY += edge.lengthY;
+                        sumLength += edge.length;
+                    }
+                }
+            }
+            if (divider * sumLength >= perimeter) {
+                angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+                angle = angle4 >> 2;
+            } else if (interval >= 45 && divider <= 4) {
+                divider = 8;
+                if (divider * sumLength >= perimeter) {
+                    angle4 = (uint16_t)(360 + atan2(sumLengthY, sumLengthX) * 180 / PI) % 360;
+                    angle = angle4 >> 2;
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
         return true;
     }
 

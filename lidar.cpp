@@ -8,17 +8,14 @@ Lidar *getLidar() {
 }
 
 void lidarSetup() {
-    lidar.getDeviceInfo();
-    lidar.getDeviceHealth();
     xTaskCreatePinnedToCore(lidarBegin, "rplidar", 65536, NULL, 1, NULL, 0);
 }
 
 void lidarBegin(void *params) {
     delay(1000);
     lidar.begin();
-    lidar.start();
     while (true) {
-        if (lidar.isScan) {
+        if (lidar.started) {
             lidar.loop();
         } else {
             delay(1000);

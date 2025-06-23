@@ -5,6 +5,8 @@
 #include <BLEServer.h>
 #include <BLE2902.h>
 
+#include "print.h"
+
 #define batteryPin 4
 
 BLEService *getBatteryService();

@@ -5,6 +5,8 @@
 #include <freertos/task.h>
 #include <mutex>
 
+#include "print.h"
+
 #define lidarSerial Serial1
 #define lidarRxPin 15
 #define lidarTxPin 16
@@ -36,7 +38,7 @@ class AnyLidar {
 public:
 
     // Идёт ли сканирование
-    bool isScan = false;
+    unsigned long started = 0;
 
     // Количество ошибок
     int errorCount = 0;
@@ -75,17 +77,17 @@ public:
     }
 
     virtual bool start() {
-        isScan = true;
+        started = millis();
         return true;
     }
 
     virtual bool stop() {
-        isScan = false;
+        started = 0;
         return true;
     }
 
     virtual bool scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) {
-        if (!isScan) {
+        if (!started) {
             return false;
         }
         angle = 0;
@@ -95,21 +97,24 @@ public:
     }
 
     bool loop() {
-        if (!isScan) {
+        if (!started) {
             return false;
         }
         lockData.lock();
         if (!scanLoop()) {
             lockData.unlock();
-            errorCount ++;
-            if (errorCount > 99) {
-                stop();
-                delay(100);
-                reset();
-                delay(100);
-                start();
+            if (!pointCount && millis() - started > 3000) {
+                errorCount ++;
+                if (errorCount > 1000) {
+                    debug("E: lidar: %d errors\n", errorCount);
+                    stop();
+                    delay(100);
+                    start();
+                }
             }
             return false;
+        } else {
+            errorCount = 0;
         }
         if (!edgeLoop()) {
             lockData.unlock();
@@ -193,11 +198,13 @@ public:
                 if (angle == prevAngle) {
                     continue;
                 } else if (angle > prevAngle) {
-                    if (angle - prevAngle > 2) {
+                    if (angle - prevAngle > 3) {
+                        debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
                         return false;
                     }
                 } else {
-                    if (360 + angle - prevAngle > 2) {
+                    if (360 + angle - prevAngle > 3) {
+                        debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
                         return false;
                     }
                 }
@@ -212,6 +219,7 @@ public:
             }
         }
         if (pointCount < 4) {
+            debug("E: lidar: unexpected point count %d\n", pointCount);
             return false;
         }
         return true;
@@ -478,27 +486,27 @@ public:
                 wallCount ++;
             }
         }
-        Serial.printf("V: lidar: angle: %d\n", angle);
-        Serial.printf("V: lidar: point count: %d\n", pointCount);
-        Serial.printf("V: lidar: edge count: %d\n", edgeCount);
-        Serial.printf("V: lidar: wall count: %d\n", wallCount);
+        debug("V: lidar: angle: %d\n", angle);
+        debug("V: lidar: point count: %d\n", pointCount);
+        debug("V: lidar: edge count: %d\n", edgeCount);
+        debug("V: lidar: wall count: %d\n", wallCount);
         for (int i = 0; i < 4; i ++) {
             int n = walls[i];
             if (n < pointCount) {
                 lidar_point_t point = points[n];
-                Serial.printf("V: lidar: wall: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
+                debug("V: lidar: wall: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
             }
         }
         for (int n = 0; n < pointCount; n ++) {
             lidar_point_t point = points[n];
             if (point.isEdge) {
-                Serial.printf("V: lidar: edge: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
+                debug("V: lidar: edge: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
             }
         }
         for (int n = 0; n < pointCount; n ++) {
             lidar_point_t point = points[n];
             if (!point.isEdge) {
-                Serial.printf("V: lidar: point: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
+                debug("V: lidar: point: n=%d; x=%d; y=%d; isEdge=%d\n", point.n, point.x, point.y, point.isEdge);
             }
         }
     }
@@ -560,32 +568,39 @@ public:
     }
 
     bool sendCommand(uint8_t command, uint8_t *payload = nullptr, uint8_t size = 0) {
+        if (debugTx) {
+            if (payload != nullptr && size > 0) {
+                debug("V: lidar: tx: command=0x%02x, payload size=%d\n", command, size);
+            } else {
+                debug("V: lidar: tx: command=0x%02x\n", command);
+            }
+        }
         uint8_t checksum = 0;
         if (lidarSerial.write(0xa5) < 1) {
-            Serial.println("E: lidar: send byte (1) 0xa5");
+            println("E: lidar: send byte (1) 0xa5");
             return false;
         }
         checksum ^= 0xa5;
         if (lidarSerial.write(command) < 1) {
-            Serial.printf("E: lidar: send byte (2) 0x%02x\n", command);
+            debug("E: lidar: send byte (2) 0x%02x\n", command);
             return false;
         }
         checksum ^= command;
         if ((command & 0x80) || (payload != nullptr && size > 0)) {
             if (lidarSerial.write(size) < 1) {
-                Serial.printf("E: lidar: send byte (3) 0x%02x\n", size);
+                debug("E: lidar: send byte (3) 0x%02x\n", size);
                 return false;
             }
             checksum ^= size;
             for (int i = 0; i < size; i++) {
                 if (lidarSerial.write(payload[i]) < 1) {
-                    Serial.printf("E: lidar: send byte (%d) 0x%02x\n", i + 4, payload[i]);
+                    debug("E: lidar: send byte (%d) 0x%02x\n", i + 4, payload[i]);
                     return false;
                 }
                 checksum ^= payload[i];
             }
             if (lidarSerial.write(checksum) < 1) {
-                Serial.printf("E: lidar: send byte (%d) 0x%02x\n", size + 4, checksum);
+                debug("E: lidar: send byte (%d) 0x%02x\n", size + 4, checksum);
                 return false;
             }
         }
@@ -595,32 +610,40 @@ public:
     bool readHeader(uint8_t &type, uint8_t &subtype, uint32_t &length) {
         uint8_t c;
         if (lidarSerial.readBytes(&c, 1) < 1 || c != '\xa5') {
-            Serial.println("E: lidar: read byte (1)");
+            println("E: lidar: read byte (1)");
             return false;
         }
         if (lidarSerial.readBytes(&c, 1) < 1 || c != '\x5a') {
-            Serial.println("E: lidar: read byte (2)");
+            println("E: lidar: read byte (2)");
             return false;
         }
         if (lidarSerial.readBytes(&c, 1) < 1) {
-            Serial.println("E: lidar: read byte (3)");
+            println("E: lidar: read byte (3)");
             return false;
         }
         subtype = c >> 6;
         length = c & 0x3f;
         for (int i = 1; i < 4; i ++) {
             if (lidarSerial.readBytes(&c, 1) < 1) {
-                Serial.printf("E: lidar: read byte (%d)\n", i + 3);
+                debug("E: lidar: read byte (%d)\n", i + 3);
                 return false;
             }
             subtype |= c << i;
         }
         if (lidarSerial.readBytes(&type, 1) < 1) {
-            Serial.println("E: lidar: read byte (7)");
+            println("E: lidar: read byte (7)");
             return false;
         }
         if (debugRx) {
-            Serial.printf("V: lidar: rx: type=0x%02x, subtype=0x%02x, length=%d\n", type, subtype, length);
+            debug("V: lidar: rx: type=0x%02x, subtype=0x%02x, length=%d\n", type, subtype, length);
+        }
+        return true;
+    }
+
+    bool skipAll() {
+        uint8_t c;
+        while (lidarSerial.available()) {
+            lidarSerial.readBytes(&c, 1);
         }
         return true;
     }
@@ -629,17 +652,20 @@ public:
         uint8_t c;
         for (size_t i = 0; i < length; i ++) {
             if (lidarSerial.readBytes(&c, 1) < 1) {
-                Serial.printf("E: lidar: read byte (%d)\n", i);
+                debug("E: lidar: read byte (%d)\n", i);
                 return false;
             }
             if (debugRx) {
-                Serial.printf("V: lidar: skip byte (%d) 0x%02x\n", i, c);
+                debug("V: lidar: skip byte (%d) 0x%02x\n", i, c);
             }
         }
         return true;
     }
 
     bool getDeviceInfo() {
+        if (started) {
+            return false;
+        }
         if (!sendCommand(0x50)) {
             return false;
         }
@@ -682,11 +708,14 @@ public:
                 return false;
             }
         }
-        Serial.printf("V: lidar: device info: model=0x%02x, firmware version=%d.%d, hardware version=0x%02x\n", model, firmwareVersion1, firmwareVersion2, hardwareVersion);
+        debug("V: lidar: device info: model=0x%02x, firmware version=%d.%d, hardware version=0x%02x\n", model, firmwareVersion1, firmwareVersion2, hardwareVersion);
         return true;
     }
 
     bool getDeviceHealth() {
+        if (started) {
+            return false;
+        }
         if (!sendCommand(0x52)) {
             return false;
         }
@@ -717,11 +746,14 @@ public:
                 return false;
             }
         }
-        Serial.printf("V: lidar: device health: status=0x%02x, error=0x%04x\n", status, (error1 << 0) | (error2 << 8));
+        debug("V: lidar: device health: status=0x%02x, error=0x%04x\n", status, (error1 << 0) | (error2 << 8));
         return true;
     }
 
     bool getLidarConf(uint32_t conf) {
+        if (started) {
+            return false;
+        }
         if (!sendCommand(0x84, (uint8_t *)(&conf), 4)) {
             return false;
         }
@@ -739,6 +771,9 @@ public:
     }
 
     bool reset() override {
+        if (started) {
+            return false;
+        }
         if (!sendCommand(0x40)) {
             return false;
         }
@@ -749,6 +784,10 @@ public:
     }
 
     bool start() override {
+        if (started) {
+            return false;
+        }
+        skipAll();
         if (!sendCommand(0x20)) {
             return false;
         }
@@ -761,42 +800,46 @@ public:
         if (length != 5) {
             return false;
         }
-        isScan = true;
+        errorCount = 0;
+        started = millis();
         return true;
     }
 
     bool stop() override {
-        isScan = false;
+        started = 0;
         if (!sendCommand(0x25)) {
+            skipAll();
             return false;
+        } else {
+            skipAll();
+            return true;
         }
-        return true;
     }
 
     bool scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) override {
-        if (!isScan) {
+        if (!started) {
             return false;
         }
         int count = 0;
         while (lidarSerial.available() < 5) {
             count ++;
             if (count > 1000) {
-                Serial.println("E: lidar: read bytes (5)");
+                println("E: lidar: read bytes (5)");
                 return false;
             }
             delay(1);
         }
         uint8_t data[5];
         if (lidarSerial.readBytes(data, 5) < 5) {
-            Serial.println("E: lidar: read bytes (5)");
+            println("E: lidar: read bytes (5)");
             return false;
         }
         if ((data[0] >> 0) & 0x01 == (data[0] >> 1) & 0x01) {
-            Serial.println("E: lidar: scan 2 byte");
+            println("E: lidar: scan 2 byte");
             return false;
         }
         if (data[1] & 0x01 != 0x01) {
-            Serial.println("E: lidar: check bit");
+            println("E: lidar: check bit");
             return false;
         }
         angle = ((data[1] | (data[2] << 8)) >> 7) % 360;

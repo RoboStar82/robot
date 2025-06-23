@@ -3,6 +3,8 @@
 
 uint8_t batteryLevel = 0;
 
+bool batteryDebug = true;
+
 BLEUUID batteryServiceUuid((uint16_t)0x180f);
 BLEService *batteryService;
 
@@ -48,7 +50,14 @@ void batteryLoop() {
      * 2625 ~ 16.6V
      * 2072 ~ 12.8V
      */
-    float voltage = 0.00687f * analogRead(batteryPin) - 1.43f;
+    uint16_t value = analogRead(batteryPin);
+    if (batteryDebug) {
+        debug("V: battery: value: %d\n", value);
+    }
+    float voltage = 0.00687f * value - 1.43f;
+    if (batteryDebug && voltage > 10.0f) {
+        debug("V: battery: voltage: %f\n", voltage);
+    }
     int newBatteryLevel = (100.0f * (voltage - 12.0f) / (16.6f - 12.0f));
     if (newBatteryLevel < 0) {
         newBatteryLevel = 0;
@@ -57,7 +66,7 @@ void batteryLoop() {
     }
     if ((uint8_t)batteryLevel != (uint8_t)newBatteryLevel) {
         batteryLevel = newBatteryLevel;
-        Serial.printf("V: battery: %d\n", batteryLevel);
+        debug("V: battery: %d%%\n", batteryLevel);
         batteryLevelCharacteristic->setValue(&batteryLevel, 1);
         batteryLevelCharacteristic->notify();
     }

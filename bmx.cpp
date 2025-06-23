@@ -24,16 +24,19 @@ void bmxBegin(void *params) {
 }
 
 void bmxCalibrate() {
-    Serial.println("V: compass: calibrate");
+    println("V: compass: calibrate");
     unsigned long i = millis();
     while ((millis() - i) < 30000) {
         sensor.setFastOffset();
     }
     sensor.getFastOffset(bmxCoefficients);
-    Serial.print("V: compass: float bmxCoefficients[3] = { ");
-    Serial.print(bmxCoefficients[0]); Serial.print(", ");
-    Serial.print(bmxCoefficients[1]); Serial.print(", ");
-    Serial.print(bmxCoefficients[2]); Serial.println(" }");
+    print("V: compass: float bmxCoefficients[3] = { ");
+    print(bmxCoefficients[0]);
+    print(", ");
+    print(bmxCoefficients[1]);
+    print(", ");
+    print(bmxCoefficients[2]);
+    println(" }");
 }
 
 void bmxLoop() {

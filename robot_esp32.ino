@@ -1,7 +1,9 @@
 
+#include <Arduino.h>
 #include <Wire.h>
 #include <iarduino_I2C_Motor.h>
 
+#include "print.h"
 #include "lidar.h"
 #include "bmx.h"
 #include "ble.h"
@@ -99,57 +101,69 @@ uint8_t robotPosition[512] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 void changeStart() {
     if (debugCtrl) {
-        Serial.print("V: control: start: ");
-        Serial.println(ctrlStart);
+        debug("V: control: start: %d\n", ctrlStart);
+    }
+    if (ctrlStart) {
+        return;
+    }
+    Lidar *lidar = getLidar();
+    if (!lidar->started) {
+        lidar->getDeviceInfo();
+        lidar->getDeviceHealth();
+        lidar->start();
     }
 }
 
 void changeBack() {
     if (debugCtrl) {
-        Serial.print("V: control: back: ");
-        Serial.println(ctrlBack);
+        debug("V: control: back: %d\n", ctrlBack);
     }
     if (ctrlBack) {
-        ctrlLX = 0;
-        ctrlLY = 0;
-        ctrlRX = 0;
-        ctrlRY = 0;
-        speedLF = 0;
-        speedRF = 0;
-        speedLB = 0;
-        speedRB = 0;
-        setMotorSpeed(motorLF, 0);
-        setMotorSpeed(motorRF, 0);
-        setMotorSpeed(motorLB, 0);
-        setMotorSpeed(motorRB, 0);
+        return;
     }
+    Lidar *lidar = getLidar();
+    if (lidar->started) {
+        lidar->stop();
+    }
+    ctrlDX = 0;
+    ctrlDY = 0;
+    ctrlLX = 0;
+    ctrlLY = 0;
+    ctrlRX = 0;
+    ctrlRY = 0;
+    ctrlLZ = 0;
+    ctrlRZ = 0;
+    speedLF = 0;
+    speedRF = 0;
+    speedLB = 0;
+    speedRB = 0;
+    setMotorSpeed(motorLF, 0);
+    setMotorSpeed(motorRF, 0);
+    setMotorSpeed(motorLB, 0);
+    setMotorSpeed(motorRB, 0);
 }
 
 void changeA() {
     if (debugCtrl) {
-        Serial.print("V: control: A: ");
-        Serial.println(ctrlA);
+        debug("V: control: A: %d\n", ctrlA);
     }
 }
 
 void changeB() {
     if (debugCtrl) {
-        Serial.print("V: control: B: ");
-        Serial.println(ctrlB);
+        debug("V: control: B: %d\n", ctrlB);
     }
 }
 
 void changeX() {
     if (debugCtrl) {
-        Serial.print("V: control: X: ");
-        Serial.println(ctrlX);
+        debug("V: control: X: %d\n", ctrlX);
     }
 }
 
 void changeY() {
     if (debugCtrl) {
-        Serial.print("V: control: Y: ");
-        Serial.println(ctrlY);
+        debug("V: control: Y: %d\n", ctrlY);
     }
 }
 
@@ -247,32 +261,28 @@ void updateSpeed() {
     if (speedLF != newSpeedLF) {
         speedLF = newSpeedLF;
         if (debugMotor) {
-            Serial.print("V: motor: LF: ");
-            Serial.println(speedLF);
+            debug("V: motor: LF: %d\n", speedLF);
         }
         setMotorSpeed(motorLF, speedLF);
     }
     if (speedRF != newSpeedRF) {
         speedRF = newSpeedRF;
         if (debugMotor) {
-            Serial.print("V: motor: RF: ");
-            Serial.println(speedRF);
+            debug("V: motor: RF: %d\n", speedRF);
         }
         setMotorSpeed(motorRF, speedRF);
     }
     if (speedLB != newSpeedLB) {
         speedLB = newSpeedLB;
         if (debugMotor) {
-            Serial.print("V: motor: LB: ");
-            Serial.println(speedLB);
+            debug("V: motor: LB: %d\n", speedLB);
         }
         setMotorSpeed(motorLB, speedLB);
     }
     if (speedRB != newSpeedRB) {
         speedRB = newSpeedRB;
         if (debugMotor) {
-            Serial.print("V: motor: RB: ");
-            Serial.println(speedRB);
+            debug("V: motor: RB: %d\n", speedRB);
         }
         setMotorSpeed(motorRB, speedRB);
     }
@@ -292,11 +302,11 @@ bool motorSetup(iarduino_I2C_Motor &motor, bool clockwise) {
 }
 
 void ServerCallbacks::onConnect(BLEServer* bleServer) {
-    Serial.println("V: BLE: Connected");
+    println("V: BLE: Connected");
 }
 
 void ServerCallbacks::onDisconnect(BLEServer* bleServer) {
-    Serial.println("V: BLE: Disconnected");
+    println("V: BLE: Disconnected");
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->start();
 }
@@ -394,6 +404,12 @@ void setup() {
 void loop() {
 
     Lidar *lidar = getLidar();
+
+    if (!lidar->started) {
+        delay(1000);
+        return;
+    }
+
     int length = 0;
     lidar->copyLoop(robotPosition + 2, length);
 
@@ -405,16 +421,16 @@ void loop() {
     length ++;
 
     if (debugPosition) {
-        Serial.printf("V: BMX: angle: %d\n", angle);
-        Serial.printf("V: lidar: angle: %d\n", robotPosition[2]);
+        debug("V: BMX: angle: %d\n", angle);
+        debug("V: lidar: angle: %d\n", robotPosition[2]);
     }
 
     if (debugPositionTx) {
-        Serial.printf("V: BLE: position: %d:", length);
+        debug("V: BLE: position: %d:", length);
         for (int n = 0; n < length; n ++) {
-            Serial.printf(" %02x", robotPosition[n]);
+            debug(" %02x", robotPosition[n]);
         }
-        Serial.println();
+        println();
     }
 
     BLECharacteristic *robotPositionCharacteristic = getRobotPositionCharacteristic();

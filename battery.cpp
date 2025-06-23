@@ -44,7 +44,12 @@ void batteryBegin(void *params) {
 }
 
 void batteryLoop() {
-    int newBatteryLevel = (int)(100.0f * (0.006324f * analogRead(batteryPin) - 12.0f) / (16.6f - 12.0f));
+    /*
+     * 2625 ~ 16.6V
+     * 2072 ~ 12.8V
+     */
+    float voltage = 0.00687f * analogRead(batteryPin) - 1.43f;
+    int newBatteryLevel = (100.0f * (voltage - 12.0f) / (16.6f - 12.0f));
     if (newBatteryLevel < 0) {
         newBatteryLevel = 0;
     } else if (newBatteryLevel > 100) {

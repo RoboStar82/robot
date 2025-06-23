@@ -3,7 +3,7 @@
 
 uint8_t batteryLevel = 0;
 
-bool batteryDebug = true;
+bool batteryDebug = false;
 
 BLEUUID batteryServiceUuid((uint16_t)0x180f);
 BLEService *batteryService;

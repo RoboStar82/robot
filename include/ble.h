@@ -16,7 +16,7 @@ class ServerCallbacks: public BLEServerCallbacks {
 
 class CharacteristicCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *bleCharacteristic);
-    void onRobotControl(String value);
+    void onRobotControl(std::string value);
 };
 
 BLEServer *getBLEServer();

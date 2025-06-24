@@ -1,7 +1,3 @@
 *~
-
-build
-
+.pio
 .vscode
-
-/include/freertos

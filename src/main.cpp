@@ -97,76 +97,6 @@ uint8_t robotHealth[1] = { 0 };
 
 uint8_t robotPosition[512] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-// Обработка изменения состояний кнопок
-
-void changeStart() {
-    if (debugCtrl) {
-        debug("V: control: start: %d\n", ctrlStart);
-    }
-    if (ctrlStart) {
-        return;
-    }
-    Lidar *lidar = getLidar();
-    if (!lidar->started) {
-        lidar->getDeviceInfo();
-        lidar->getDeviceHealth();
-        lidar->start();
-    }
-}
-
-void changeBack() {
-    if (debugCtrl) {
-        debug("V: control: back: %d\n", ctrlBack);
-    }
-    if (ctrlBack) {
-        return;
-    }
-    Lidar *lidar = getLidar();
-    if (lidar->started) {
-        lidar->stop();
-    }
-    ctrlDX = 0;
-    ctrlDY = 0;
-    ctrlLX = 0;
-    ctrlLY = 0;
-    ctrlRX = 0;
-    ctrlRY = 0;
-    ctrlLZ = 0;
-    ctrlRZ = 0;
-    speedLF = 0;
-    speedRF = 0;
-    speedLB = 0;
-    speedRB = 0;
-    setMotorSpeed(motorLF, 0);
-    setMotorSpeed(motorRF, 0);
-    setMotorSpeed(motorLB, 0);
-    setMotorSpeed(motorRB, 0);
-}
-
-void changeA() {
-    if (debugCtrl) {
-        debug("V: control: A: %d\n", ctrlA);
-    }
-}
-
-void changeB() {
-    if (debugCtrl) {
-        debug("V: control: B: %d\n", ctrlB);
-    }
-}
-
-void changeX() {
-    if (debugCtrl) {
-        debug("V: control: X: %d\n", ctrlX);
-    }
-}
-
-void changeY() {
-    if (debugCtrl) {
-        debug("V: control: Y: %d\n", ctrlY);
-    }
-}
-
 // Обработка изменения скоростей моторов
 
 void setMotorSpeed(iarduino_I2C_Motor &motor, int speed) {
@@ -301,6 +231,76 @@ bool motorSetup(iarduino_I2C_Motor &motor, bool clockwise) {
     return r;
 }
 
+// Обработка изменения состояний кнопок
+
+void changeStart() {
+    if (debugCtrl) {
+        debug("V: control: start: %d\n", ctrlStart);
+    }
+    if (ctrlStart) {
+        return;
+    }
+    Lidar *lidar = getLidar();
+    if (!lidar->started) {
+        lidar->getDeviceInfo();
+        lidar->getDeviceHealth();
+        lidar->start();
+    }
+}
+
+void changeBack() {
+    if (debugCtrl) {
+        debug("V: control: back: %d\n", ctrlBack);
+    }
+    if (ctrlBack) {
+        return;
+    }
+    Lidar *lidar = getLidar();
+    if (lidar->started) {
+        lidar->stop();
+    }
+    ctrlDX = 0;
+    ctrlDY = 0;
+    ctrlLX = 0;
+    ctrlLY = 0;
+    ctrlRX = 0;
+    ctrlRY = 0;
+    ctrlLZ = 0;
+    ctrlRZ = 0;
+    speedLF = 0;
+    speedRF = 0;
+    speedLB = 0;
+    speedRB = 0;
+    setMotorSpeed(motorLF, 0);
+    setMotorSpeed(motorRF, 0);
+    setMotorSpeed(motorLB, 0);
+    setMotorSpeed(motorRB, 0);
+}
+
+void changeA() {
+    if (debugCtrl) {
+        debug("V: control: A: %d\n", ctrlA);
+    }
+}
+
+void changeB() {
+    if (debugCtrl) {
+        debug("V: control: B: %d\n", ctrlB);
+    }
+}
+
+void changeX() {
+    if (debugCtrl) {
+        debug("V: control: X: %d\n", ctrlX);
+    }
+}
+
+void changeY() {
+    if (debugCtrl) {
+        debug("V: control: Y: %d\n", ctrlY);
+    }
+}
+
 void ServerCallbacks::onConnect(BLEServer* bleServer) {
     println("V: BLE: Connected");
 }
@@ -311,7 +311,7 @@ void ServerCallbacks::onDisconnect(BLEServer* bleServer) {
     bleAdvertising->start();
 }
 
-void CharacteristicCallbacks::onRobotControl(String value) {
+void CharacteristicCallbacks::onRobotControl(std::string value) {
     if (value.length() >= 4) {
         uint8_t btnValue = value[0];
         uint8_t padValue = value[1];

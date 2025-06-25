@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <iarduino_I2C_Motor.h>

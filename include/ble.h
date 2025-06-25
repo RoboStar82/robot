@@ -1,38 +1,32 @@
 
 #pragma once
 
-#include <BLEServer.h>
-#include <BLEDevice.h>
 #include <BLE2902.h>
+#include <BLEDevice.h>
+#include <BLEServer.h>
 
 #include "battery.h"
+#include "control.h"
+#include "health.h"
+#include "position.h"
+#include "uart.h"
+#include "print.h"
 
-#define BLE_DEVICE_NAME "RoboStar82"
+class ServerCallbacks : public BLEServerCallbacks {
+   public:
+    void onConnect(BLEServer *bleServer) {
+        println("V: BLE: connected");
+    }
 
-class ServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* bleServer);
-    void onDisconnect(BLEServer* bleServer);
-};
-
-class CharacteristicCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *bleCharacteristic);
-    void onRobotControl(std::string value);
+    void onDisconnect(BLEServer *bleServer) {
+        println("V: BLE: disconnected");
+        BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
+        bleAdvertising->start();
+    }
 };
 
 BLEServer *getBLEServer();
 
 BLEService *getRobotService();
-
-BLEService *getUARTService();
-
-BLECharacteristic *getRobotControlCharacteristic();
-
-BLECharacteristic *getRobotPositionCharacteristic();
-
-BLECharacteristic *getRobotHealthCharacteristic();
-
-BLECharacteristic *getUARTRxCharacteristic();
-
-BLECharacteristic *getUARTTxCharacteristic();
 
 void bleSetup();

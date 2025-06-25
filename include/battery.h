@@ -7,7 +7,7 @@
 
 #include "print.h"
 
-#define batteryPin 4
+uint8_t getBatteryLevel();
 
 BLEService *getBatteryService();
 

@@ -13,6 +13,6 @@ void bmxSetup();
 
 void bmxBegin(void *params);
 
-void bmxCalibrate();
+void bmxCalibrate(int time = 30000);
 
 void bmxLoop();

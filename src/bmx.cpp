@@ -1,12 +1,12 @@
 
 #include "bmx.h"
 
-iarduino_Position_BMX055 sensor(BMX);
+iarduino_Position_BMX055 *bmx = new iarduino_Position_BMX055(BMX);
 
 float bmxCoefficients[3] = {135.00, 105.00, 0.00};
 
 iarduino_Position_BMX055 *getBMX() {
-    return &sensor;
+    return bmx;
 }
 
 void bmxSetup() {
@@ -14,23 +14,23 @@ void bmxSetup() {
 }
 
 void bmxBegin(void *params) {
-    sensor.begin(&Wire, true);
-    sensor.setFastOffset();
-    sensor.setFastOffset(bmxCoefficients);
+    bmx->begin(&Wire, true);
+    bmx->setFastOffset();
+    bmx->setFastOffset(bmxCoefficients);
     delay(1000);
     while (true) {
         bmxLoop();
     }
 }
 
-void bmxCalibrate() {
-    println("V: compass: calibrate");
+void bmxCalibrate(int time) {
+    println("V: BMX: calibrate");
     unsigned long i = millis();
-    while ((millis() - i) < 30000) {
-        sensor.setFastOffset();
+    while ((millis() - i) < time) {
+        bmx->setFastOffset();
     }
-    sensor.getFastOffset(bmxCoefficients);
-    print("V: compass: float bmxCoefficients[3] = { ");
+    bmx->getFastOffset(bmxCoefficients);
+    print("V: BMX: float bmxCoefficients[3] = { ");
     print(bmxCoefficients[0]);
     print(", ");
     print(bmxCoefficients[1]);
@@ -40,5 +40,5 @@ void bmxCalibrate() {
 }
 
 void bmxLoop() {
-    sensor.read();
+    bmx->read();
 }

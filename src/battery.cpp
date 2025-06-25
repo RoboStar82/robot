@@ -1,17 +1,22 @@
 
+#define batteryPin 4
+#define batteryDebug 0
+
 #include "battery.h"
 
 uint8_t batteryLevel = 0;
 
-bool batteryDebug = false;
-
 BLEUUID batteryServiceUuid((uint16_t)0x180f);
-BLEService *batteryService;
 
-BLE2902 *batteryLevel2902;
-BLEDescriptor *batteryLevel2901;
+BLEService *batteryService = nullptr;
+
 BLEUUID batteryLevelCharacteristicUuid((uint16_t)0x2a19);
-BLECharacteristic *batteryLevelCharacteristic;
+
+BLECharacteristic *batteryLevelCharacteristic = nullptr;
+
+uint8_t getBatteryLevel() {
+    return batteryLevel;
+}
 
 BLEService *getBatteryService() {
     return batteryService;
@@ -23,12 +28,12 @@ BLECharacteristic *getBatteryLevelCharacteristic() {
 
 void batterySetup(BLEServer *bleServer) {
     pinMode(batteryPin, INPUT);
-    batteryService = bleServer->createService(batteryServiceUuid);
-    batteryLevel2902 = new BLE2902();
+    BLE2902 *batteryLevel2902 = new BLE2902();
     batteryLevel2902->setIndications(true);
     batteryLevel2902->setNotifications(true);
-    batteryLevel2901 = new BLEDescriptor((uint16_t)0x2901);
+    BLEDescriptor *batteryLevel2901 = new BLEDescriptor((uint16_t)0x2901);
     batteryLevel2901->setValue("Battery Level");
+    batteryService = bleServer->createService(batteryServiceUuid);
     batteryLevelCharacteristic = batteryService->createCharacteristic(batteryLevelCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
     batteryLevelCharacteristic->addDescriptor(batteryLevel2902);
     batteryLevelCharacteristic->addDescriptor(batteryLevel2901);
@@ -54,14 +59,14 @@ void batteryLoop() {
      * (16.6 - 12.7) / (2625 - 2065) * 2065 - 12.7 = 1.68
      */
     uint16_t value = analogRead(batteryPin);
-    if (batteryDebug) {
-        debug("V: battery: value: %d\n", value);
-    }
     float voltage = 0.00696f * value - 1.68f;
-    if (batteryDebug && voltage > 10.0f) {
-        debug("V: battery: voltage: %f\n", voltage);
+#if batteryDebug
+    debug("V: battery: value=%d\n", value);
+    if (voltage > 10.0f) {
+        debug("V: battery: voltage=%f\n", voltage);
     }
-    int newBatteryLevel = (100.0f * (voltage - 12.0f) / (16.6f - 12.0f));
+#endif
+    int newBatteryLevel = (100.0f * (voltage - 12.8f) / (16.6f - 12.8f));
     if (newBatteryLevel < 0) {
         newBatteryLevel = 0;
     } else if (newBatteryLevel > 100) {

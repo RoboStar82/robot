@@ -30,3 +30,57 @@ void robotBegin(void *params) {
 void robotLoop() {
     robot->loop();
 }
+
+// Обработка изменения состояний кнопок
+
+void RobotControl::onChangeStart() {
+#if debugControl
+    println("V: robot: start");
+#endif
+    lidarStart();
+}
+
+void RobotControl::onChangeBack() {
+#if debugControl
+    println("V: robot: back");
+#endif
+    lidarStop();
+}
+
+void RobotControl::onChangeA() {
+#if debugControl
+    println("V: robot: A");
+#endif
+    robot->autoMode = 'A';
+}
+
+void RobotControl::onChangeB() {
+#if debugControl
+    println("V: robot: B");
+#endif
+    robot->autoMode = 'B';
+}
+
+void RobotControl::onChangeX() {
+#if debugControl
+    println("V: robot: X");
+#endif
+    robot->autoMode = 'X';
+}
+
+void RobotControl::onChangeY() {
+#if debugControl
+    println("V: robot: Y");
+#endif
+    robot->autoMode = 'Y';
+}
+
+void RobotControl::onChangeZ() {
+#if debugControl
+    debug("V: robot: Z: %d %d\n", robot->control->LZ, robot->control->RZ);
+#endif
+}
+
+void RobotControl::onChangeXY() {
+    robot->updateSpeed();
+}

@@ -8,6 +8,10 @@
 
 #include "print.h"
 
+#define lidarStatusStart 1
+#define lidarStatusStop -1
+#define lidarStatusIdle 0
+
 // Точка
 typedef struct LidarPoint {
     // Номер точки: 0..255
@@ -32,11 +36,7 @@ class AnyLidar {
    public:
     // Идёт ли сканирование
     unsigned long started = 0;
-
-    // Запрошен ли старт
-    bool isStarted = false;
-    // Запрошен ли стоп
-    bool isStopped = false;
+    int status = lidarStatusIdle;
 
     // Количество ошибок
     int errorCount = 0;
@@ -96,20 +96,15 @@ class AnyLidar {
 
     bool loop() {
         if (started) {
-            if (isStopped) {
-                isStarted = false;
-                isStopped = false;
+            if (status == lidarStatusStop) {
                 stop();
+                vTaskDelete(NULL);
+                status = lidarStatusIdle;
                 return false;
             }
         } else {
-            if (isStarted) {
-                isStopped = false;
-                isStarted = false;
+            if (status == lidarStatusStart) {
                 start();
-            } else {
-                delay(1000);
-                return false;
             }
         }
         lockData.lock();
@@ -568,7 +563,7 @@ class RPLidar : public AnyLidar {
     bool debugRx = false;
     bool debugTx = false;
 
-    void begin();
+    void setup();
 
     bool sendCommand(uint8_t command, uint8_t *payload = nullptr, uint8_t size = 0);
 
@@ -594,16 +589,7 @@ class RPLidar : public AnyLidar {
 };
 
 class Lidar : public RPLidar {
-   public:
-    void changeStart() {
-        isStopped = false;
-        isStarted = true;
-    }
 
-    void changeStop() {
-        isStarted = false;
-        isStopped = true;
-    }
 };
 
 Lidar *getLidar();
@@ -611,5 +597,9 @@ Lidar *getLidar();
 void lidarSetup();
 
 void lidarBegin(void *params);
+
+void lidarStart();
+
+void lidarStop();
 
 void lidarLoop();

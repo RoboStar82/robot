@@ -14,6 +14,8 @@ class Robot {
    public:
     RobotControl *control = nullptr;
 
+    char autoMode = 0;
+
     bool motorStopNeutral = true;
     uint16_t motorNominalRPM = 170;
     float motorVoltage = 12.0f;
@@ -198,56 +200,7 @@ class Robot {
     }
 
     void loop() {
-        // Обработка изменения состояний кнопок
-        if (control->changeStart) {
-#if debugControl
-            println("V: control: start");
-#endif
-            control->changeStart = false;
-            Lidar *lidar = getLidar();
-            lidar->changeStart();
-        }
-        if (control->changeBack) {
-#if debugControl
-            println("V: control: start");
-#endif
-            control->changeBack = false;
-            Lidar *lidar = getLidar();
-            lidar->changeStart();
-        }
-        if (control->changeA) {
-#if debugControl
-            println("V: control: A");
-#endif
-            control->changeA = false;
-        }
-        if (control->changeB) {
-#if debugControl
-            println("V: control: B");
-#endif
-            control->changeB = false;
-        }
-        if (control->changeX) {
-#if debugControl
-            println("V: control: X");
-#endif
-            control->changeX = false;
-        }
-        if (control->changeY) {
-#if debugControl
-            println("V: control: Y");
-#endif
-            control->changeY = false;
-        }
-        if (control->changeZ) {
-#if debugControl
-            println("V: control: Z");
-#endif
-            control->changeZ = false;
-        }
-        if (control->changeXY) {
-            updateSpeed();
-        }
+        delay(1000);
     }
 };
 

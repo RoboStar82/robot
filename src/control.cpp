@@ -54,68 +54,78 @@ void RobotControlCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacte
         if (robotControl->start != newStart) {
             robotControl->start = newStart;
             if (!newStart) {
-                robotControl->changeStart = true;
-            }
-        }
-        if (robotControl->start != newStart) {
-            robotControl->start = newStart;
-            if (!newStart) {
-                robotControl->changeStart = true;
+                robotControl->onChangeStart();
             }
         }
         if (robotControl->back != newBack) {
             robotControl->back = newBack;
             if (!newBack) {
-                robotControl->changeBack = true;
+                robotControl->onChangeBack();
             }
         }
         if (robotControl->A != newA) {
             robotControl->A = newA;
             if (!newA) {
-                robotControl->changeA = true;
+                robotControl->onChangeA();
             }
         }
         if (robotControl->B != newB) {
             robotControl->B = newB;
             if (!newB) {
-                robotControl->changeB = true;
+                robotControl->onChangeB();
             }
         }
         if (robotControl->X != newX) {
             robotControl->X = newX;
             if (!newX) {
-                robotControl->changeX = true;
+                robotControl->onChangeX();
             }
         }
         if (robotControl->Y != newY) {
             robotControl->Y = newY;
             if (!newY) {
-                robotControl->changeY = true;
+                robotControl->onChangeY();
             }
         }
+        bool changeXY = false;
         if (robotControl->LX != newLX) {
             robotControl->LX = newLX;
-            robotControl->changeXY = true;
+            changeXY = true;
         }
         if (robotControl->LY != newLY) {
             robotControl->LY = newLY;
-            robotControl->changeXY = true;
+            changeXY = true;
         }
         if (robotControl->RX != newRX) {
             robotControl->RX = newRX;
-            robotControl->changeXY = true;
+            changeXY = true;
         }
         if (robotControl->RY != newRY) {
             robotControl->RY = newRY;
-            robotControl->changeXY = true;
+            changeXY = true;
         }
+        if (robotControl->DX != newDX) {
+            robotControl->newDX = newDX;
+            changeXY = true;
+        }
+        if (robotControl->DY != newDY) {
+            robotControl->newDY = newDY;
+            changeXY = true;
+        }
+        if (changeXY) {
+            robotControl->onChangeXY();
+        }
+        bool changeZ = false;
         if (robotControl->LZ != newLZ) {
             robotControl->LZ = newLZ;
-            robotControl->changeZ = true;
+            changeZ = true;
         }
         if (robotControl->RZ != newRZ) {
             robotControl->RZ = newRZ;
-            robotControl->changeZ = true;
+            changeZ = true;
+        }
+        if (changeZ) {
+            robotControl->onChangeZ();
         }
     }
 }

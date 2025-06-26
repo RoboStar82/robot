@@ -12,21 +12,29 @@ Lidar *getLidar() {
 }
 
 void lidarSetup() {
-    xTaskCreatePinnedToCore(lidarBegin, "lidar", 65536, NULL, 1, NULL, 0);
+    lidar->setup();
 }
 
 void lidarBegin(void *params) {
-    lidar->begin();
     while (true) {
         lidar->loop();
     }
+}
+
+void lidarStart() {
+    lidar->status = lidarStatusStart;
+    xTaskCreatePinnedToCore(lidarBegin, "lidar", 65536, NULL, 1, NULL, 0);
+}
+
+void lidarStop() {
+    lidar->status = lidarStatusStop;
 }
 
 void lidarLoop() {
     lidar->loop();
 }
 
-void RPLidar::begin() {
+void RPLidar::setup() {
     pinMode(lidarRxPin, INPUT);
     pinMode(lidarTxPin, OUTPUT);
     lidarSerial.setTimeout(100);

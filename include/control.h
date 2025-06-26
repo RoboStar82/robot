@@ -12,23 +12,17 @@ class RobotControl {
 
     // Start
     bool start = false;
-    bool changeStart = false;
     // Back
     bool back = false;
-    bool changeBack = false;
 
     // A
     bool A = false;
-    bool changeA = false;
     // B
     bool B = false;
-    bool changeB = false;
     // X
     bool X = false;
-    bool changeX = false;
     // Y
     bool Y = false;
-    bool changeY = false;
 
     // D-pad X (right-left)
     int DX = 0;
@@ -44,14 +38,29 @@ class RobotControl {
     // Right Y (up-down)
     int RY = 0;
 
-    bool changeXY = false;
-
     // Left Z (up-down)
     int LZ = 0;
     // Right Z (up-down)
     int RZ = 0;
 
-    bool changeZ = false;
+    void onChangeStart();
+
+    void onChangeBack();
+
+    void onChangeA();
+
+    void onChangeB();
+
+    void onChangeX();
+
+    void onChangeY();
+
+    void onChangeZ();
+
+    void onChangeD();
+
+    void onChangeXY();
+
 };
 
 RobotControl *getRobotControl();

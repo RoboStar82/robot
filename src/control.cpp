@@ -105,11 +105,11 @@ void RobotControlCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacte
             changeXY = true;
         }
         if (robotControl->DX != newDX) {
-            robotControl->newDX = newDX;
+            robotControl->DX = newDX;
             changeXY = true;
         }
         if (robotControl->DY != newDY) {
-            robotControl->newDY = newDY;
+            robotControl->DY = newDY;
             changeXY = true;
         }
         if (changeXY) {

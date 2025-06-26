@@ -1,8 +1,8 @@
 
+#include "battery.h"
+
 #define batteryPin 4
 #define batteryDebug 0
-
-#include "battery.h"
 
 uint8_t batteryLevel = 0;
 

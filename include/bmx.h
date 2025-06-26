@@ -5,6 +5,7 @@
 #include <freertos/task.h>
 #include <iarduino_Position_BMX055.h>
 
+#include "health.h"
 #include "print.h"
 
 iarduino_Position_BMX055 *getBMX();

@@ -1,7 +1,7 @@
 
-#define bleDeviceName "RoboStar82"
-
 #include "ble.h"
+
+#define bleDeviceName "RoboStar82"
 
 BLEServer *bleServer = nullptr;
 

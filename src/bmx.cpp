@@ -10,13 +10,15 @@ iarduino_Position_BMX055 *getBMX() {
 }
 
 void bmxSetup() {
+    bool bmxHealth = bmx->begin(&Wire, true);
+    bmx->setFastOffset();
+    bmx->setFastOffset(bmxCoefficients);
+    uint8_t *robotHealth = getRobotHealth();
+    robotHealth[0] |= (bmxHealth ? 1 : 0) << 4;
     xTaskCreatePinnedToCore(bmxBegin, "bmx055", 8192, NULL, 1, NULL, 0);
 }
 
 void bmxBegin(void *params) {
-    bmx->begin(&Wire, true);
-    bmx->setFastOffset();
-    bmx->setFastOffset(bmxCoefficients);
     delay(1000);
     while (true) {
         bmxLoop();

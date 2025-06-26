@@ -51,7 +51,9 @@ class AnyLidar {
     // Угол поворота стен 0..89
     int angle = 0;
     // Точки на стенах
-    int walls[4] = {0, 0, 0, 0};
+    int walls[4] = {-1, -1, -1, -1};
+    // Расстояния до стен
+    int wallDs[4] = {0, 0, 0, 0};
 
     // Блокировка
     std::mutex lockData;
@@ -67,10 +69,14 @@ class AnyLidar {
         pointCount = 0;
         edgeCount = 0;
         angle = 0;
-        walls[0] = 0;
-        walls[1] = 0;
-        walls[2] = 0;
-        walls[3] = 0;
+        walls[0] = -1;
+        walls[1] = -1;
+        walls[2] = -1;
+        walls[3] = -1;
+        wallDs[0] = 0;
+        wallDs[1] = 0;
+        wallDs[2] = 0;
+        wallDs[3] = 0;
         return true;
     }
 
@@ -358,36 +364,40 @@ class AnyLidar {
         int maxDY = 0;
         int minDX = 0;
         int minDY = 0;
-        int maxNX = 0;
-        int maxNY = 0;
-        int minNX = 0;
-        int minNY = 0;
+        int maxNX = -1;
+        int maxNY = -1;
+        int minNX = -1;
+        int minNY = -1;
         for (int n = 0; n < pointCount; n++) {
             if (points[n].isEdge) {
                 int dy = (points[n].y * angleCos - points[n].x * angleSin) >> 12;
                 int dx = (points[n].x * angleCos + points[n].y * angleSin) >> 12;
-                if (minDX > dx) {
+                if (minDX > dx || minNX < 0) {
                     minDX = dx;
                     minNX = n;
                 }
-                if (maxDX < dx) {
+                if (maxDX < dx || maxNX < 0) {
                     maxDX = dx;
                     maxNX = n;
                 }
-                if (minDY > dy) {
+                if (minDY > dy || minNY < 0) {
                     minDY = dy;
                     minNY = n;
                 }
-                if (maxDY < dy) {
+                if (maxDY < dy || maxNY < 0) {
                     maxDY = dy;
                     maxNY = n;
                 }
             }
         }
+        wallDs[0] = maxDY;
+        wallDs[1] = maxDX;
+        wallDs[2] = minDY;
+        wallDs[3] = minDX;
         walls[0] = maxNY;
-        walls[1] = minNX;
+        walls[1] = maxNX;
         walls[2] = minNY;
-        walls[3] = maxNX;
+        walls[3] = minNX;
         return true;
     }
 
@@ -402,7 +412,7 @@ class AnyLidar {
         index++;
         for (int i = 0; i < 4; i++) {
             int n = walls[i];
-            if (n < pointCount) {
+            if (0 <= n && n < pointCount) {
                 resultWallCount++;
                 data[index] = points[n].x & 0xff;
                 index++;
@@ -589,7 +599,6 @@ class RPLidar : public AnyLidar {
 };
 
 class Lidar : public RPLidar {
-
 };
 
 Lidar *getLidar();

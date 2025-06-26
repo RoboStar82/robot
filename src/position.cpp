@@ -1,8 +1,8 @@
 
+#include "position.h"
+
 #define debugPosition 0
 #define debugPositionTx 0
-
-#include "position.h"
 
 BLEUUID robotPositionCharacteristicUuid("b0b0c7ab-0002-4000-8000-000000000000");
 

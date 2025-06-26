@@ -21,7 +21,7 @@ void robotSetup() {
     BLECharacteristic *robotHealthCharacteristic = getRobotHealthCharacteristic();
     robotHealthCharacteristic->setValue(robotHealth, 1);
     robotHealthCharacteristic->notify();
-    xTaskCreatePinnedToCore(robotBegin, "robot", 8192, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(robotBegin, "robot", 4096, NULL, 1, NULL, 1);
 }
 
 void robotBegin(void *params) {

@@ -13,3 +13,7 @@ uint8_t *getRobotPosition();
 BLECharacteristic *getRobotPositionCharacteristic();
 
 void robotPositionSetup(BLEService *robotService);
+
+void robotPositionBegin(void *params);
+
+void robotPositionLoop();

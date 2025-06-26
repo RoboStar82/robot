@@ -8,9 +8,8 @@
 
 #include "print.h"
 
-#define lidarStatusStart 1
-#define lidarStatusStop -1
-#define lidarStatusIdle 0
+#define lidarControlStart 1
+#define lidarControlStop 0
 
 // Точка
 typedef struct LidarPoint {
@@ -34,9 +33,10 @@ typedef struct LidarEdge {
 
 class AnyLidar {
    public:
-    // Идёт ли сканирование
+    // Когда начато сканирование
     unsigned long started = 0;
-    int status = lidarStatusIdle;
+    // Что необходимо сделать в цикле сканирования
+    int control = lidarControlStop;
 
     // Количество ошибок
     int errorCount = 0;
@@ -101,27 +101,26 @@ class AnyLidar {
     }
 
     bool loop() {
-        if (started) {
-            if (status == lidarStatusStop) {
-                stop();
-                vTaskDelete(NULL);
-                status = lidarStatusIdle;
+        if (control == lidarControlStop) {
+            // Сканирование начато, необходимо остановить
+            stop();
+            vTaskDelete(NULL);
+            return false;
+        } else if (!started) {
+            // Сканирование не начато. Необходимо начать
+            if (!start()) {
                 return false;
             }
-        } else {
-            if (status == lidarStatusStart) {
-                start();
-            }
         }
-        lockData.lock();
-        if (!scanLoop()) {
-            lockData.unlock();
+        LidarPoint points[256];
+        int pointCount = 0;
+        if (!scanLoop(points, pointCount)) {
             if (!pointCount && millis() - started > 3000) {
                 errorCount++;
                 if (errorCount > 1000) {
                     debug("E: lidar: %d errors\n", errorCount);
                     stop();
-                    delay(100);
+                    delay(1000);
                     start();
                 }
             }
@@ -129,53 +128,31 @@ class AnyLidar {
         } else {
             errorCount = 0;
         }
-        if (!edgeLoop()) {
-            lockData.unlock();
+        int edgeCount = 0;
+        if (!edgeLoop(points, pointCount, edgeCount)) {
             return false;
         }
-        if (!angleLoop()) {
-            lockData.unlock();
+        int angle = 0;
+        if (!angleLoop(points, pointCount, angle)) {
             return false;
         }
-        if (!wallLoop()) {
-            lockData.unlock();
+        int walls[4] = {-1, -1, -1, -1};
+        int wallDs[4] = {0, 0, 0, 0};
+        if (!wallLoop(points, pointCount, angle, walls, wallDs)) {
             return false;
         }
+        lockData.lock();
+        memcpy(this->points, points, sizeof(points));
+        this->pointCount = pointCount;
+        this->edgeCount = edgeCount;
+        this->angle = angle;
+        memcpy(this->walls, walls, sizeof(walls));
+        memcpy(this->wallDs, wallDs, sizeof(wallDs));
         lockData.unlock();
         return true;
     }
 
-    void addPoint(uint16_t angle, uint16_t distance) {
-        LidarPoint point;
-        // -4096..4096
-        int angleSin = 0;
-        // -4096..4096
-        int angleCos = 0;
-        if (angle <= 90) {
-            angleSin = sinuses[angle];
-            angleCos = cosines[angle];
-        } else if (angle <= 180) {
-            angleSin = cosines[angle - 90];
-            angleCos = -sinuses[angle - 90];
-        } else if (angle <= 270) {
-            angleSin = -sinuses[angle - 180];
-            angleCos = -cosines[angle - 180];
-        } else {
-            angleSin = -cosines[angle - 270];
-            angleCos = sinuses[angle - 270];
-        }
-        point.n = pointCount;
-        point.x = ((int)distance * angleCos) >> 12;
-        point.y = ((int)distance * angleSin) >> 12;
-        points[pointCount] = point;
-        pointCount++;
-    }
-
-    bool scanLoop() {
-        // 0..256
-        pointCount = 0;
-        // 0..256
-        edgeCount = 0;
+    bool scanLoop(LidarPoint points[], int &pointCount) {
         // 0..359
         uint16_t prevAngle = 0;
         for (int n = 0; n < 256; n++) {
@@ -226,7 +203,29 @@ class AnyLidar {
             if (!distance) {
                 continue;
             }
-            addPoint(angle, distance);
+            LidarPoint point;
+            // -4096..4096
+            int angleSin = 0;
+            // -4096..4096
+            int angleCos = 0;
+            if (angle <= 90) {
+                angleSin = sinuses[angle];
+                angleCos = cosines[angle];
+            } else if (angle <= 180) {
+                angleSin = cosines[angle - 90];
+                angleCos = -sinuses[angle - 90];
+            } else if (angle <= 270) {
+                angleSin = -sinuses[angle - 180];
+                angleCos = -cosines[angle - 180];
+            } else {
+                angleSin = -cosines[angle - 270];
+                angleCos = sinuses[angle - 270];
+            }
+            point.n = pointCount;
+            point.x = ((int)distance * angleCos) >> 12;
+            point.y = ((int)distance * angleSin) >> 12;
+            points[pointCount] = point;
+            pointCount++;
             if (pointCount >= 256) {
                 break;
             }
@@ -238,7 +237,7 @@ class AnyLidar {
         return true;
     }
 
-    bool edgeLoop() {
+    bool edgeLoop(LidarPoint points[], int &pointCount, int &edgeCount) {
         // 0..255
         int minN = 0;
         // 0..255
@@ -264,7 +263,7 @@ class AnyLidar {
         return true;
     }
 
-    bool angleLoop() {
+    bool angleLoop(LidarPoint points[], int &pointCount, int &angle) {
         // 0..255
         int prevN = 0;
         for (int n = pointCount - 1; n >= 0; n--) {
@@ -276,7 +275,7 @@ class AnyLidar {
         int sumLengthX = 0;
         int sumLengthY = 0;
         int sumLength = 0;
-        LidarEdge edges[360];
+        LidarEdge edges[256];
         for (int n = 0; n < pointCount; n++) {
             if (points[n].isEdge) {
                 int dx = points[n].x - points[prevN].x;
@@ -357,52 +356,47 @@ class AnyLidar {
         return true;
     }
 
-    bool wallLoop() {
+    bool wallLoop(LidarPoint points[], int &pointCount, int &angle, int walls[], int wallDs[]) {
         int angleSin = sinuses[angle];
         int angleCos = cosines[angle];
-        int maxDX = 0;
-        int maxDY = 0;
-        int minDX = 0;
-        int minDY = 0;
-        int maxNX = -1;
-        int maxNY = -1;
-        int minNX = -1;
-        int minNY = -1;
         for (int n = 0; n < pointCount; n++) {
             if (points[n].isEdge) {
                 int dy = (points[n].y * angleCos - points[n].x * angleSin) >> 12;
                 int dx = (points[n].x * angleCos + points[n].y * angleSin) >> 12;
-                if (minDX > dx || minNX < 0) {
-                    minDX = dx;
-                    minNX = n;
+                if (wallDs[0] < dy || walls[0] < 0) {
+                    wallDs[0] = dy;
+                    walls[0] = n;
                 }
-                if (maxDX < dx || maxNX < 0) {
-                    maxDX = dx;
-                    maxNX = n;
+                if (wallDs[1] < dx || walls[1] < 0) {
+                    wallDs[1] = dx;
+                    walls[1] = n;
                 }
-                if (minDY > dy || minNY < 0) {
-                    minDY = dy;
-                    minNY = n;
+                if (wallDs[2] > dy || walls[2] < 0) {
+                    wallDs[2] = dy;
+                    walls[2] = n;
                 }
-                if (maxDY < dy || maxNY < 0) {
-                    maxDY = dy;
-                    maxNY = n;
+                if (wallDs[3] > dx || walls[3] < 0) {
+                    wallDs[3] = dx;
+                    walls[3] = n;
                 }
             }
         }
-        wallDs[0] = maxDY;
-        wallDs[1] = maxDX;
-        wallDs[2] = minDY;
-        wallDs[3] = minDX;
-        walls[0] = maxNY;
-        walls[1] = maxNX;
-        walls[2] = minNY;
-        walls[3] = minNX;
         return true;
     }
 
     void copyLoop(uint8_t *data, int &length) {
+        LidarPoint points[256];
+        int pointCount;
+        int edgeCount;
+        int angle;
+        int walls[4];
         lockData.lock();
+        memcpy(points, this->points, sizeof(points));
+        pointCount = this->pointCount;
+        edgeCount = this->edgeCount;
+        angle = this->angle;
+        memcpy(walls, this->walls, sizeof(walls));
+        lockData.unlock();
         int index = 0;
         data[index] = angle;
         index++;
@@ -478,28 +472,25 @@ class AnyLidar {
             data[resultPointIndex] = resultPointCount;
         }
         length = index;
-        lockData.unlock();
     }
 
     void printPoints() {
-        lockData.lock();
-        int angle = this->angle;
-        int pointCount = this->pointCount;
-        int edgeCount = this->edgeCount;
-        int wallCount = 0;
         LidarPoint points[256];
+        int pointCount;
+        int edgeCount;
+        int angle;
         int walls[4];
-        for (int n = 0; n < pointCount; n++) {
-            points[n] = this->points[n];
-        }
-        for (int i = 0; i < 4; i++) {
-            walls[i] = this->walls[i];
-        }
+        lockData.lock();
+        memcpy(points, this->points, sizeof(points));
+        pointCount = this->pointCount;
+        edgeCount = this->edgeCount;
+        angle = this->angle;
+        memcpy(walls, this->walls, sizeof(walls));
         lockData.unlock();
-
+        int wallCount = 0;
         for (int i = 0; i < 4; i++) {
             int n = walls[i];
-            if (n < pointCount) {
+            if (0 <= n && n < pointCount) {
                 wallCount++;
             }
         }
@@ -569,10 +560,6 @@ class AnyLidar {
 
 class RPLidar : public AnyLidar {
    public:
-    // Включена ли отладка
-    bool debugRx = false;
-    bool debugTx = false;
-
     void setup();
 
     bool sendCommand(uint8_t command, uint8_t *payload = nullptr, uint8_t size = 0);

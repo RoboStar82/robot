@@ -1,9 +1,12 @@
 
+#include "lidar.h"
+
 #define lidarSerial Serial1
 #define lidarRxPin 15
 #define lidarTxPin 16
 
-#include "lidar.h"
+#define lidarDebugTx 0
+#define lidarDebugRx 0
 
 Lidar *lidar = new Lidar;
 
@@ -22,12 +25,12 @@ void lidarBegin(void *params) {
 }
 
 void lidarStart() {
-    lidar->status = lidarStatusStart;
-    xTaskCreatePinnedToCore(lidarBegin, "lidar", 65536, NULL, 1, NULL, 0);
+    lidar->control = lidarControlStart;
+    xTaskCreatePinnedToCore(lidarBegin, "lidar", 4096, NULL, 1, NULL, 0);
 }
 
 void lidarStop() {
-    lidar->status = lidarStatusStop;
+    lidar->control = lidarControlStop;
 }
 
 void lidarLoop() {
@@ -41,14 +44,60 @@ void RPLidar::setup() {
     lidarSerial.begin(460800);
 }
 
-bool RPLidar::sendCommand(uint8_t command, uint8_t *payload, uint8_t size) {
-    if (debugTx) {
-        if (payload != nullptr && size > 0) {
-            debug("V: lidar: tx: command=0x%02x, payload size=%d\n", command, size);
-        } else {
-            debug("V: lidar: tx: command=0x%02x\n", command);
-        }
+bool RPLidar::reset() {
+    if (started) {
+        return false;
     }
+    if (!sendCommand(0x40)) {
+        return false;
+    }
+    if (!AnyLidar::reset()) {
+        return false;
+    }
+    return true;
+}
+
+bool RPLidar::start() {
+    if (started) {
+        return false;
+    }
+    skipAll();
+    if (!sendCommand(0x20)) {
+        return false;
+    }
+    uint8_t type;
+    uint8_t subtype;
+    uint32_t length;
+    if (!readHeader(type, subtype, length)) {
+        return false;
+    }
+    if (length != 5) {
+        return false;
+    }
+    errorCount = 0;
+    started = millis();
+    return true;
+}
+
+bool RPLidar::stop() {
+    started = 0;
+    if (!sendCommand(0x25)) {
+        skipAll();
+        return false;
+    } else {
+        skipAll();
+        return true;
+    }
+}
+
+bool RPLidar::sendCommand(uint8_t command, uint8_t *payload, uint8_t size) {
+#if lidarDebugTx
+    if (payload != nullptr && size > 0) {
+        debug("V: lidar: tx: command=0x%02x, payload size=%d\n", command, size);
+    } else {
+        debug("V: lidar: tx: command=0x%02x\n", command);
+    }
+#endif
     uint8_t checksum = 0;
     if (lidarSerial.write(0xa5) < 1) {
         println("E: lidar: send byte (1) 0xa5");
@@ -108,9 +157,9 @@ bool RPLidar::readHeader(uint8_t &type, uint8_t &subtype, uint32_t &length) {
         println("E: lidar: read byte (7)");
         return false;
     }
-    if (debugRx) {
-        debug("V: lidar: rx: type=0x%02x, subtype=0x%02x, length=%d\n", type, subtype, length);
-    }
+#if lidarDebugRx
+    debug("V: lidar: rx: type=0x%02x, subtype=0x%02x, length=%d\n", type, subtype, length);
+#endif
     return true;
 }
 
@@ -129,9 +178,9 @@ bool RPLidar::skipBytes(size_t length) {
             debug("E: lidar: read byte (%d)\n", i);
             return false;
         }
-        if (debugRx) {
-            debug("V: lidar: skip byte (%d) 0x%02x\n", i, c);
-        }
+#if lidarDebugRx
+        debug("V: lidar: skip byte (%d) 0x%02x\n", i, c);
+#endif
     }
     return true;
 }
@@ -242,52 +291,6 @@ bool RPLidar::getLidarConf(uint32_t conf) {
     }
     skipBytes(length);
     return true;
-}
-
-bool RPLidar::reset() {
-    if (started) {
-        return false;
-    }
-    if (!sendCommand(0x40)) {
-        return false;
-    }
-    if (!AnyLidar::reset()) {
-        return false;
-    }
-    return true;
-}
-
-bool RPLidar::start() {
-    if (started) {
-        return false;
-    }
-    skipAll();
-    if (!sendCommand(0x20)) {
-        return false;
-    }
-    uint8_t type;
-    uint8_t subtype;
-    uint32_t length;
-    if (!readHeader(type, subtype, length)) {
-        return false;
-    }
-    if (length != 5) {
-        return false;
-    }
-    errorCount = 0;
-    started = millis();
-    return true;
-}
-
-bool RPLidar::stop() {
-    started = 0;
-    if (!sendCommand(0x25)) {
-        skipAll();
-        return false;
-    } else {
-        skipAll();
-        return true;
-    }
 }
 
 bool RPLidar::scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) {

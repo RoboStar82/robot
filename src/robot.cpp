@@ -78,156 +78,110 @@ void Robot::setMotorSpeed(iarduino_I2C_Motor *motor, int speed) {
 }
 
 void Robot::updateSpeed() {
+    int newSpeed = 0;
     int newSpeedLF = 0;
     int newSpeedRF = 0;
     int newSpeedLB = 0;
     int newSpeedRB = 0;
-    int absX;
-    int absY;
+    int signX = 0;
+    int signY = 0;
+    int absX = 0;
+    int absY = 0;
 
     // Левые моторы
-    absX = abs(control->LX);
-    absY = abs(control->LY);
-    if (absX == 0 && absY == 0) {
+    if (control->LX == 0 && control->LY == 0) {
         // D-Pad
         if (control->DX == 0 && control->DY == 0) {
             // Остановка
             newSpeedLF = 0;
             newSpeedLB = 0;
-        } else if (control->DX != 0 && control->DY != 0) {
-            // Движение наискосок
-            if (control->DX > 0) {
-                // При повороте вправо левые колёса едут быстрее
-                newSpeedLF = control->DY < 0 ? -speedD : speedD;
-                newSpeedLB = control->DY < 0 ? -speedD : speedD;
-            } else {
-                // При повороте влево левые колёса едут медленнее
-                newSpeedLF = control->DY < 0 ? -speedD2 : speedD2;
-                newSpeedLB = control->DY < 0 ? -speedD2 : speedD2;
-            }
-        } else if (control->DY != 0) {
-            // Движение вперед-назад
-            newSpeedLF = control->DY < 0 ? -speedD : speedD;
-            newSpeedLB = control->DY < 0 ? -speedD : speedD;
-        } else if (control->DX != 0) {
-            // Движение вправо-влево
-            newSpeedLF = control->DX < 0 ? speedD : -speedD;
-            newSpeedLB = control->DX < 0 ? -speedD : speedD;
         } else {
-            // Остановка
-            newSpeedLF = 0;
-            newSpeedLB = 0;
-        }
-    } else if (absX <= absY) {
-        // Движение вперед-назад
-        if (control->LX < 0) {
-            // При повороте влево левые колёса едут медленнее
-            if (control->LY > 0) {
-                newSpeedLF = control->LY + control->LX;
-                newSpeedLB = control->LY + control->LX;
+            signX = control->DX;
+            signY = control->DY;
+            if (signY != 0) {
+                // Движение вперед-назад
+                // Поворот влево: левые колёса едут медленнее
+                // Поворот вправо: левые колёса без корректировки
+                newSpeed = signY * (signX >= 0 ? speedD : speedD2);
+                newSpeedLF = newSpeed;
+                newSpeedLB = newSpeed;
             } else {
-                newSpeedLF = control->LY - control->LX;
-                newSpeedLB = control->LY - control->LX;
+                // Движение вправо-влево
+                newSpeed = signX * speedD;
+                newSpeedLF = -newSpeed;
+                newSpeedLB = newSpeed;
             }
-        } else {
-            newSpeedLF = control->LY;
-            newSpeedLB = control->LY;
         }
     } else {
-        // Движение вправо-влево
-        if (control->LY > 0) {
-            // При повороте вверх верхнее колесо едет медленнее
-            if (control->LX > 0) {
-                newSpeedLF = -control->LX - control->LY;
-            } else {
-                newSpeedLF = -control->LX + control->LY;
-            }
+        signX = control->LX > 0 ? 1 : (control->LX < 0 ? -1 : 0);
+        signY = control->LY > 0 ? 1 : (control->LY < 0 ? -1 : 0);
+        absX = abs(control->LX);
+        absY = abs(control->LY);
+        if (absX <= absY) {
+            // Движение вперед-назад
+            // Поворот влево: левые колёса едут медленнее
+            // Поворот вправо: левые колёса без корректировки
+            newSpeed = control->LY + (signX >= 0 ? 0 : signY) * control->LX;
+            newSpeedLF = newSpeed;
+            newSpeedLB = newSpeed;
         } else {
-            newSpeedLF = -control->LX;
-        }
-        if (control->LY < 0) {
-            // При повороте вниз нижнее колесо едет медленнее
-            if (control->LX > 0) {
-                newSpeedLB = control->LX + control->LY;
-            } else {
-                newSpeedLB = control->LX - control->LY;
-            }
-        } else {
-            newSpeedLB = control->LX;
+            // Движение вправо-влево
+            // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
+            // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
+            newSpeed = control->LX - (signY > 0 ? signX : 0) * control->LY;
+            newSpeedLF = -newSpeed;
+            newSpeed = control->LX - (signY < 0 ? signX : 0) * control->LY;
+            newSpeedLB = newSpeed;
         }
     }
 
     // Правые моторы
-    absX = abs(control->RX);
-    absY = abs(control->RY);
-    if (absX == 0 && absY == 0) {
+    if (control->RX == 0 && control->RY == 0) {
         // D-Pad
         if (control->DX == 0 && control->DY == 0) {
             // Остановка
             newSpeedRF = 0;
             newSpeedRB = 0;
-        } else if (control->DX != 0 && control->DY != 0) {
-            // Движение наискосок
-            if (control->DX < 0) {
-                // При повороте влево правые колёса едут быстрее
-                newSpeedRF = control->DY < 0 ? -speedD : speedD;
-                newSpeedRB = control->DY < 0 ? -speedD : speedD;
-            } else {
-                // При повороте вправо правые колёса едут медленнее
-                newSpeedRF = control->DY < 0 ? -speedD2 : speedD2;
-                newSpeedRB = control->DY < 0 ? -speedD2 : speedD2;
-            }
-        } else if (control->DY != 0) {
-            // Движение вперед-назад
-            newSpeedRF = control->DY < 0 ? -speedD : speedD;
-            newSpeedRB = control->DY < 0 ? -speedD : speedD;
-        } else if (control->DX != 0) {
-            // Движение вправо-влево
-            newSpeedRF = control->DX < 0 ? -speedD : speedD;
-            newSpeedRB = control->DX < 0 ? speedD : -speedD;
         } else {
-            // Остановка
-            newSpeedRF = 0;
-            newSpeedRB = 0;
-        }
-    } else if (absX <= absY) {
-        // Движение вперед-назад
-        if (control->RX > 0) {
-            // При повороте вправо правые колёса едут медленнее
-            if (control->RY > 0) {
-                newSpeedRF = control->RY - control->RX;
-                newSpeedRB = control->RY - control->RX;
+            signX = control->DX;
+            signY = control->DY;
+            if (signY != 0) {
+                // Движение вперед-назад
+                // Поворот вправо: правые колёса едут медленнее
+                // Поворот влево: правые колёса без корректировки
+                newSpeed = signY * (signX <= 0 ? speedD : speedD2);
+                newSpeedRF = -newSpeed;
+                newSpeedRB = -newSpeed;
             } else {
-                newSpeedRF = control->RY + control->RX;
-                newSpeedRB = control->RY + control->RX;
+                // Движение вправо-влево
+                newSpeed = signX * speedD;
+                newSpeedRF = newSpeed;
+                newSpeedRB = -newSpeed;
             }
-        } else {
-            newSpeedRF = control->RY;
-            newSpeedRB = control->RY;
         }
     } else {
-        // Движение вправо-влево
-        if (control->RY > 0) {
-            // При повороте вверх верхнее колесо едет медленнее
-            if (control->RX > 0) {
-                newSpeedRF = control->RX - control->RY;
-            } else {
-                newSpeedRF = control->RX + control->RY;
-            }
+        signX = control->RX > 0 ? 1 : (control->RX < 0 ? -1 : 0);
+        signY = control->RY > 0 ? 1 : (control->RY < 0 ? -1 : 0);
+        absX = abs(control->RX);
+        absY = abs(control->RY);
+        if (absX <= absY) {
+            // Движение вперед-назад
+            // Поворот вправо: правые колёса едут медленнее
+            // Поворот влево: правые колёса без корректировки
+            newSpeed = control->RY + (signX <= 0 ? 0 : signY) * control->RX;
+            newSpeedRF = -newSpeed;
+            newSpeedRB = -newSpeed;
         } else {
-            newSpeedRF = control->RX;
-        }
-        if (control->RY < 0) {
-            // При повороте вниз нижнее колесо едет медленнее
-            if (control->RX > 0) {
-                newSpeedRB = -control->RX - control->RY;
-            } else {
-                newSpeedRB = -control->RX + control->RY;
-            }
-        } else {
-            newSpeedRB = -control->RX;
+            // Движение вправо-влево
+            // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
+            // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
+            newSpeed = control->RX - (signY > 0 ? signX : 0) * control->RY;
+            newSpeedRF = newSpeed;
+            newSpeed = control->RX - (signY < 0 ? signX : 0) * control->RY;
+            newSpeedRB = -newSpeed;
         }
     }
+
     if (speedLF != newSpeedLF) {
         speedLF = newSpeedLF;
 #if debugMotor

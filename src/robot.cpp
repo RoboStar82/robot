@@ -229,7 +229,11 @@ void RobotControl::onChangeBack() {
 #if debugControl
     println("V: robot: back");
 #endif
-    lidarStop();
+    if (robot->autoMode) {
+        robot->autoMode = 0;
+    } else {
+        lidarStop();
+    }
 }
 
 void RobotControl::onChangeA() {

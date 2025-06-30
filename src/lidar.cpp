@@ -26,7 +26,7 @@ void lidarBegin(void *params) {
 
 void lidarStart() {
     lidar->control = lidarControlStart;
-    xTaskCreatePinnedToCore(lidarBegin, "lidar", 4096, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(lidarBegin, "lidar", 8192, NULL, 1, NULL, 0);
 }
 
 void lidarStop() {

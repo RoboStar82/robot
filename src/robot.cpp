@@ -130,7 +130,7 @@ void Robot::updateSpeed() {
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
             newSpeed = control->LX - (signY > 0 ? signX : 0) * control->LY;
             newSpeedLF = -newSpeed;
-            newSpeed = control->LX - (signY < 0 ? signX : 0) * control->LY;
+            newSpeed = control->LX + (signY < 0 ? signX : 0) * control->LY;
             newSpeedLB = newSpeed;
         }
     }
@@ -168,7 +168,7 @@ void Robot::updateSpeed() {
             // Движение вперед-назад
             // Поворот вправо: правые колёса едут медленнее
             // Поворот влево: правые колёса без корректировки
-            newSpeed = control->RY + (signX <= 0 ? 0 : signY) * control->RX;
+            newSpeed = control->RY - (signX <= 0 ? 0 : signY) * control->RX;
             newSpeedRF = -newSpeed;
             newSpeedRB = -newSpeed;
         } else {
@@ -177,7 +177,7 @@ void Robot::updateSpeed() {
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
             newSpeed = control->RX - (signY > 0 ? signX : 0) * control->RY;
             newSpeedRF = newSpeed;
-            newSpeed = control->RX - (signY < 0 ? signX : 0) * control->RY;
+            newSpeed = control->RX + (signY < 0 ? signX : 0) * control->RY;
             newSpeedRB = -newSpeed;
         }
     }

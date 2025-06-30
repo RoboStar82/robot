@@ -117,7 +117,7 @@ class AnyLidar {
         if (!scanLoop(points, pointCount)) {
             if (!pointCount && millis() - started > 3000) {
                 errorCount++;
-                if (errorCount > 1000) {
+                if (errorCount > 9) {
                     debug("E: lidar: %d errors\n", errorCount);
                     stop();
                     delay(1000);
@@ -189,12 +189,12 @@ class AnyLidar {
                     continue;
                 } else if (angle > prevAngle) {
                     if (angle - prevAngle > 3) {
-                        debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
+                        // debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
                         return false;
                     }
                 } else {
                     if (360 + angle - prevAngle > 3) {
-                        debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
+                        // debug("E: lidar: unexpected angle %d after %d\n", angle, prevAngle);
                         return false;
                     }
                 }
@@ -231,7 +231,7 @@ class AnyLidar {
             }
         }
         if (pointCount < 4) {
-            debug("E: lidar: unexpected point count %d\n", pointCount);
+            // debug("E: lidar: unexpected point count %d\n", pointCount);
             return false;
         }
         return true;

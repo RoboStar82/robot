@@ -4,10 +4,10 @@
 void setup() {
     Serial.begin(115200);
     bleSetup();
-#if 0
+#if ROBOT_HAS_BMX055
     bmxSetup();
 #endif
-#if 0
+#if ROBOT_HAS_LIDAR
     lidarSetup();
 #endif
     robotSetup();

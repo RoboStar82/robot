@@ -12,7 +12,7 @@ Robot *getRobot() {
 
 void robotSetup() {
     robot->setController(getController());
-    robot->setMotors(new iarduino_I2C_Motor(0x41), new iarduino_I2C_Motor(0x42), new iarduino_I2C_Motor(0x43), new iarduino_I2C_Motor(0x44));
+    robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
     uint8_t *robotHealth = getRobotHealth();
     robotHealth[0] |= (robot->healthLF ? 1 : 0) << 0;
     robotHealth[0] |= (robot->healthRF ? 1 : 0) << 1;
@@ -40,7 +40,7 @@ void Robot::setController(Controller *controller) {
     this->controller = controller;
 };
 
-void Robot::setMotors(iarduino_I2C_Motor *motorLF, iarduino_I2C_Motor *motorRF, iarduino_I2C_Motor *motorLB, iarduino_I2C_Motor *motorRB) {
+void Robot::setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *motorRB) {
     this->motorLF = motorLF;
     this->motorRF = motorRF;
     this->motorLB = motorLB;
@@ -49,32 +49,6 @@ void Robot::setMotors(iarduino_I2C_Motor *motorLF, iarduino_I2C_Motor *motorRF, 
     motors[1] = motorRF;
     motors[2] = motorLB;
     motors[3] = motorRB;
-    // Подготовка моторов
-    healthLF = motorLF->begin();
-    healthRF = motorRF->begin();
-    healthLB = motorLB->begin();
-    healthRB = motorRB->begin();
-    for (int i = 0; i < 4; i++) {
-        iarduino_I2C_Motor *motor = motors[i];
-        motor->setMagnet(motorMagnet);
-        motor->setDirection(i % 2 == 0);
-        motor->setStopNeutral(motorStopNeutral);
-        motor->setNominalRPM(motorNominalRPM);
-        motor->setReducer(motorReducer);
-        motor->setVoltage(motorVoltage);
-    }
-}
-
-void Robot::setMotorSpeed(iarduino_I2C_Motor *motor, int speed) {
-    if (speed == 0) {
-        motor->setSpeed(0, MOT_RPM);
-    } else if (speed > 0) {
-        motor->setSpeed((float)(motorMaxSpeed - motorMinSpeed) * speed / 7 + motorMinSpeed, MOT_RPM);
-    } else if (speed < 0) {
-        motor->setSpeed((float)(motorMaxSpeed - motorMinSpeed) * speed / 7 - motorMinSpeed, MOT_RPM);
-    } else {
-        motor->setSpeed(0, MOT_RPM);
-    }
 }
 
 void Robot::updateSpeed() {
@@ -187,28 +161,28 @@ void Robot::updateSpeed() {
 #if debugMotor
         debug("V: motor: LF: %d\n", speedLF);
 #endif
-        setMotorSpeed(motorLF, speedLF);
+        motorLF->setSpeed(speedLF);
     }
     if (speedRF != newSpeedRF) {
         speedRF = newSpeedRF;
 #if debugMotor
         debug("V: motor: RF: %d\n", speedRF);
 #endif
-        setMotorSpeed(motorRF, speedRF);
+        motorRF->setSpeed(speedRF);
     }
     if (speedLB != newSpeedLB) {
         speedLB = newSpeedLB;
 #if debugMotor
         debug("V: motor: LB: %d\n", speedLB);
 #endif
-        setMotorSpeed(motorLB, speedLB);
+        motorLB->setSpeed(speedLB);
     }
     if (speedRB != newSpeedRB) {
         speedRB = newSpeedRB;
 #if debugMotor
         debug("V: motor: RB: %d\n", speedRB);
 #endif
-        setMotorSpeed(motorRB, speedRB);
+        motorRB->setSpeed(speedRB);
     }
 }
 

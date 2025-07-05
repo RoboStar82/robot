@@ -3,30 +3,24 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <iarduino_I2C_Motor.h>
 
 #include "ble.h"
 #include "bmx.h"
 #include "lidar.h"
+#include "motor.h"
 #include "print.h"
 
 class Robot {
    public:
     Controller *controller = nullptr;
 
+    Motor *motorLF = nullptr;
+    Motor *motorRF = nullptr;
+    Motor *motorLB = nullptr;
+    Motor *motorRB = nullptr;
+    Motor *motors[4] = {nullptr, nullptr, nullptr, nullptr};
+
     char autoMode = 0;
-
-    bool motorStopNeutral = true;
-    uint16_t motorNominalRPM = 170;
-    float motorVoltage = 12.0f;
-    float motorReducer = 53.0f;
-    uint8_t motorMagnet = 7;
-
-    iarduino_I2C_Motor *motorLF = nullptr;
-    iarduino_I2C_Motor *motorRF = nullptr;
-    iarduino_I2C_Motor *motorLB = nullptr;
-    iarduino_I2C_Motor *motorRB = nullptr;
-    iarduino_I2C_Motor *motors[4] = {nullptr, nullptr, nullptr, nullptr};
 
     // Состояние моторов
 
@@ -52,11 +46,9 @@ class Robot {
     int speedD = 5;
     int speedD2 = 2;
 
-    void setMotors(iarduino_I2C_Motor *motorLF, iarduino_I2C_Motor *motorRF, iarduino_I2C_Motor *motorLB, iarduino_I2C_Motor *motorRB);
+    void setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *motorRB);
 
     void setController(Controller *controller);
-
-    void setMotorSpeed(iarduino_I2C_Motor *motor, int speed);
 
     void updateSpeed();
 

@@ -6,7 +6,7 @@
 
 #include "print.h"
 
-class RobotControl {
+class Controller {
    public:
     // Кнопки
 
@@ -63,13 +63,13 @@ class RobotControl {
 
 };
 
-RobotControl *getRobotControl();
+Controller *getController();
 
-BLECharacteristic *getRobotControlCharacteristic();
+BLECharacteristic *getControllerCharacteristic();
 
-class RobotControlCharacteristicCallbacks : public BLECharacteristicCallbacks {
+class ControllerCharacteristicCallbacks : public BLECharacteristicCallbacks {
    public:
     void onWrite(BLECharacteristic *bleCharacteristic);
 };
 
-void robotControlSetup(BLEService *robotService);
+void controllerSetup(BLEService *robotService);

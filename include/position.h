@@ -8,12 +8,12 @@
 #include "lidar.h"
 #include "print.h"
 
-uint8_t *getRobotPosition();
+uint8_t *getPosition();
 
-BLECharacteristic *getRobotPositionCharacteristic();
+BLECharacteristic *getPositionCharacteristic();
 
-void robotPositionSetup(BLEService *robotService);
+void positionSetup(BLEService *robotService);
 
-void robotPositionBegin(void *params);
+void positionBegin(void *params);
 
-void robotPositionLoop();
+void positionLoop();

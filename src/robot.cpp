@@ -11,7 +11,7 @@ Robot *getRobot() {
 }
 
 void robotSetup() {
-    robot->setControl(getRobotControl());
+    robot->setController(getController());
     robot->setMotors(new iarduino_I2C_Motor(0x41), new iarduino_I2C_Motor(0x42), new iarduino_I2C_Motor(0x43), new iarduino_I2C_Motor(0x44));
     uint8_t *robotHealth = getRobotHealth();
     robotHealth[0] |= (robot->healthLF ? 1 : 0) << 0;
@@ -36,8 +36,8 @@ void robotLoop() {
 
 // Робот
 
-void Robot::setControl(RobotControl *control) {
-    this->control = control;
+void Robot::setController(Controller *controller) {
+    this->controller = controller;
 };
 
 void Robot::setMotors(iarduino_I2C_Motor *motorLF, iarduino_I2C_Motor *motorRF, iarduino_I2C_Motor *motorLB, iarduino_I2C_Motor *motorRB) {
@@ -89,15 +89,15 @@ void Robot::updateSpeed() {
     int absY = 0;
 
     // Левые моторы
-    if (control->LX == 0 && control->LY == 0) {
+    if (controller->LX == 0 && controller->LY == 0) {
         // D-Pad
-        if (control->DX == 0 && control->DY == 0) {
+        if (controller->DX == 0 && controller->DY == 0) {
             // Остановка
             newSpeedLF = 0;
             newSpeedLB = 0;
         } else {
-            signX = control->DX;
-            signY = control->DY;
+            signX = controller->DX;
+            signY = controller->DY;
             if (signY != 0) {
                 // Движение вперед-назад
                 // Поворот влево: левые колёса едут медленнее
@@ -113,38 +113,38 @@ void Robot::updateSpeed() {
             }
         }
     } else {
-        signX = control->LX > 0 ? 1 : (control->LX < 0 ? -1 : 0);
-        signY = control->LY > 0 ? 1 : (control->LY < 0 ? -1 : 0);
-        absX = abs(control->LX);
-        absY = abs(control->LY);
+        signX = controller->LX > 0 ? 1 : (controller->LX < 0 ? -1 : 0);
+        signY = controller->LY > 0 ? 1 : (controller->LY < 0 ? -1 : 0);
+        absX = abs(controller->LX);
+        absY = abs(controller->LY);
         if (absX <= absY) {
             // Движение вперед-назад
             // Поворот влево: левые колёса едут медленнее
             // Поворот вправо: левые колёса без корректировки
-            newSpeed = control->LY + (signX >= 0 ? 0 : signY) * control->LX;
+            newSpeed = controller->LY + (signX >= 0 ? 0 : signY) * controller->LX;
             newSpeedLF = newSpeed;
             newSpeedLB = newSpeed;
         } else {
             // Движение вправо-влево
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
-            newSpeed = control->LX - (signY > 0 ? signX : 0) * control->LY;
+            newSpeed = controller->LX - (signY > 0 ? signX : 0) * controller->LY;
             newSpeedLF = -newSpeed;
-            newSpeed = control->LX + (signY < 0 ? signX : 0) * control->LY;
+            newSpeed = controller->LX + (signY < 0 ? signX : 0) * controller->LY;
             newSpeedLB = newSpeed;
         }
     }
 
     // Правые моторы
-    if (control->RX == 0 && control->RY == 0) {
+    if (controller->RX == 0 && controller->RY == 0) {
         // D-Pad
-        if (control->DX == 0 && control->DY == 0) {
+        if (controller->DX == 0 && controller->DY == 0) {
             // Остановка
             newSpeedRF = 0;
             newSpeedRB = 0;
         } else {
-            signX = control->DX;
-            signY = control->DY;
+            signX = controller->DX;
+            signY = controller->DY;
             if (signY != 0) {
                 // Движение вперед-назад
                 // Поворот вправо: правые колёса едут медленнее
@@ -160,24 +160,24 @@ void Robot::updateSpeed() {
             }
         }
     } else {
-        signX = control->RX > 0 ? 1 : (control->RX < 0 ? -1 : 0);
-        signY = control->RY > 0 ? 1 : (control->RY < 0 ? -1 : 0);
-        absX = abs(control->RX);
-        absY = abs(control->RY);
+        signX = controller->RX > 0 ? 1 : (controller->RX < 0 ? -1 : 0);
+        signY = controller->RY > 0 ? 1 : (controller->RY < 0 ? -1 : 0);
+        absX = abs(controller->RX);
+        absY = abs(controller->RY);
         if (absX <= absY) {
             // Движение вперед-назад
             // Поворот вправо: правые колёса едут медленнее
             // Поворот влево: правые колёса без корректировки
-            newSpeed = control->RY - (signX <= 0 ? 0 : signY) * control->RX;
+            newSpeed = controller->RY - (signX <= 0 ? 0 : signY) * controller->RX;
             newSpeedRF = newSpeed;
             newSpeedRB = newSpeed;
         } else {
             // Движение вправо-влево
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
-            newSpeed = control->RX - (signY > 0 ? signX : 0) * control->RY;
+            newSpeed = controller->RX - (signY > 0 ? signX : 0) * controller->RY;
             newSpeedRF = newSpeed;
-            newSpeed = control->RX + (signY < 0 ? signX : 0) * control->RY;
+            newSpeed = controller->RX + (signY < 0 ? signX : 0) * controller->RY;
             newSpeedRB = -newSpeed;
         }
     }
@@ -218,14 +218,14 @@ void Robot::loop() {
 
 // Обработка изменения состояний кнопок
 
-void RobotControl::onChangeStart() {
+void Controller::onChangeStart() {
 #if debugControl
     println("V: robot: start");
 #endif
     lidarStart();
 }
 
-void RobotControl::onChangeBack() {
+void Controller::onChangeBack() {
 #if debugControl
     println("V: robot: back");
 #endif
@@ -236,41 +236,41 @@ void RobotControl::onChangeBack() {
     }
 }
 
-void RobotControl::onChangeA() {
+void Controller::onChangeA() {
 #if debugControl
     println("V: robot: A");
 #endif
     robot->autoMode = 'A';
 }
 
-void RobotControl::onChangeB() {
+void Controller::onChangeB() {
 #if debugControl
     println("V: robot: B");
 #endif
     robot->autoMode = 'B';
 }
 
-void RobotControl::onChangeX() {
+void Controller::onChangeX() {
 #if debugControl
     println("V: robot: X");
 #endif
     robot->autoMode = 'X';
 }
 
-void RobotControl::onChangeY() {
+void Controller::onChangeY() {
 #if debugControl
     println("V: robot: Y");
 #endif
     robot->autoMode = 'Y';
 }
 
-void RobotControl::onChangeZ() {
+void Controller::onChangeZ() {
 #if debugControl
-    debug("V: robot: Z: %d %d\n", robot->control->LZ, robot->control->RZ);
+    debug("V: robot: Z: %d %d\n", robot->controller->LZ, robot->controller->RZ);
 #endif
 }
 
-void RobotControl::onChangeXY() {
+void Controller::onChangeXY() {
     robot->autoMode = 0;
     robot->updateSpeed();
 }

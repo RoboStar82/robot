@@ -23,8 +23,8 @@ void bleSetup() {
     bleServer->setCallbacks(new ServerCallbacks);
     batterySetup(bleServer);
     robotService = bleServer->createService(robotServiceUuid);
-    robotControlSetup(robotService);
-    robotPositionSetup(robotService);
+    controllerSetup(robotService);
+    positionSetup(robotService);
     robotHealthSetup(robotService);
     robotService->start();
     uartSetup(bleServer);

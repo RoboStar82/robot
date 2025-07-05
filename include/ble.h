@@ -6,7 +6,7 @@
 #include <BLEServer.h>
 
 #include "battery.h"
-#include "control.h"
+#include "controller.h"
 #include "health.h"
 #include "position.h"
 #include "uart.h"

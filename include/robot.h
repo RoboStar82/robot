@@ -12,7 +12,7 @@
 
 class Robot {
    public:
-    RobotControl *control = nullptr;
+    Controller *controller = nullptr;
 
     char autoMode = 0;
 
@@ -54,7 +54,7 @@ class Robot {
 
     void setMotors(iarduino_I2C_Motor *motorLF, iarduino_I2C_Motor *motorRF, iarduino_I2C_Motor *motorLB, iarduino_I2C_Motor *motorRB);
 
-    void setControl(RobotControl *control);
+    void setController(Controller *controller);
 
     void setMotorSpeed(iarduino_I2C_Motor *motor, int speed);
 

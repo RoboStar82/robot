@@ -1,6 +1,8 @@
 
 #include "lidar.h"
 
+#if ROBOT_HAS_LIDAR
+
 #define lidarSerial Serial1
 #define lidarRxPin 15
 #define lidarTxPin 16
@@ -324,3 +326,5 @@ bool RPLidar::scan(uint16_t &angle, uint16_t &distance, uint8_t &strength) {
     strength = data[0] >> 2;
     return true;
 }
+
+#endif

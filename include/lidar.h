@@ -1,6 +1,8 @@
 
 #pragma once
 
+#if ROBOT_HAS_LIDAR
+
 #include <Arduino.h>
 #include <freertos/task.h>
 
@@ -599,3 +601,5 @@ void lidarStart();
 void lidarStop();
 
 void lidarLoop();
+
+#endif

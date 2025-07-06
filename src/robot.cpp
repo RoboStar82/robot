@@ -13,14 +13,15 @@ Robot *getRobot() {
 void robotSetup() {
     robot->setController(getController());
     robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
-    uint8_t *robotHealth = getRobotHealth();
-    robotHealth[0] |= (robot->healthLF ? 1 : 0) << 0;
-    robotHealth[0] |= (robot->healthRF ? 1 : 0) << 1;
-    robotHealth[0] |= (robot->healthLB ? 1 : 0) << 2;
-    robotHealth[0] |= (robot->healthRB ? 1 : 0) << 3;
-    BLECharacteristic *robotHealthCharacteristic = getRobotHealthCharacteristic();
-    robotHealthCharacteristic->setValue(robotHealth, 1);
-    robotHealthCharacteristic->notify();
+    robot->setSticks(new Stick, new Stick, new Stick);
+    uint8_t *health = getHealth();
+    health[0] |= (robot->motorLF->health ? 1 : 0) << 0;
+    health[0] |= (robot->motorRF->health ? 1 : 0) << 1;
+    health[0] |= (robot->motorLB->health ? 1 : 0) << 2;
+    health[0] |= (robot->motorRB->health ? 1 : 0) << 3;
+    BLECharacteristic *healthCharacteristic = getHealthCharacteristic();
+    healthCharacteristic->setValue(health, 1);
+    healthCharacteristic->notify();
     xTaskCreatePinnedToCore(robotBegin, "robot", 4096, NULL, 1, NULL, 1);
 }
 
@@ -51,6 +52,12 @@ void Robot::setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *mot
     motors[3] = motorRB;
 }
 
+void Robot::setSticks(Stick *L, Stick *R, Stick *D) {
+    this->L = L;
+    this->R = R;
+    this->D = D;
+}
+
 void Robot::updateSpeed() {
     int newSpeed = 0;
     int newSpeedLF = 0;
@@ -62,132 +69,146 @@ void Robot::updateSpeed() {
     int absX = 0;
     int absY = 0;
 
-    // Левые моторы
-    if (controller->LX == 0 && controller->LY == 0) {
-        // D-Pad
-        if (controller->DX == 0 && controller->DY == 0) {
-            // Остановка
-            newSpeedLF = 0;
-            newSpeedLB = 0;
-        } else {
-            signX = controller->DX;
-            signY = controller->DY;
-            if (signY != 0) {
-                // Движение вперед-назад
-                // Поворот влево: левые колёса едут медленнее
-                // Поворот вправо: левые колёса без корректировки
-                newSpeed = signY * (signX >= 0 ? speedD : speedD2);
-                newSpeedLF = newSpeed;
-                newSpeedLB = newSpeed;
-            } else {
-                // Движение вправо-влево
-                newSpeed = signX * speedD;
-                newSpeedLF = -newSpeed;
-                newSpeedLB = newSpeed;
-            }
-        }
+    Stick *L = nullptr;
+    Stick *R = nullptr;
+
+    if (this->L->x || this->L->y) {
+        L = this->L;
+    } else if (this->D->x || this->D->y) {
+        L = this->D;
     } else {
-        signX = controller->LX > 0 ? 1 : (controller->LX < 0 ? -1 : 0);
-        signY = controller->LY > 0 ? 1 : (controller->LY < 0 ? -1 : 0);
-        absX = abs(controller->LX);
-        absY = abs(controller->LY);
+        L = this->R;
+    }
+
+    if (this->R->x || this->R->y) {
+        R = this->R;
+    } else if (this->D->x || this->D->y) {
+        R = this->D;
+    } else {
+        R = this->L;
+    }
+
+    // Левые моторы
+    if (L->x == 0 && L->y == 0) {
+        // Остановка
+        newSpeedLF = 0;
+        newSpeedLB = 0;
+    } else {
+        signX = L->x > 0 ? 1 : (L->x < 0 ? -1 : 0);
+        signY = L->y > 0 ? 1 : (L->y < 0 ? -1 : 0);
+        absX = abs(L->x);
+        absY = abs(L->y);
         if (absX <= absY) {
             // Движение вперед-назад
             // Поворот влево: левые колёса едут медленнее
             // Поворот вправо: левые колёса без корректировки
-            newSpeed = controller->LY + (signX >= 0 ? 0 : signY) * controller->LX;
+            newSpeed = L->y + (signX >= 0 ? 0 : signY) * L->x;
             newSpeedLF = newSpeed;
             newSpeedLB = newSpeed;
         } else {
             // Движение вправо-влево
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
-            newSpeed = controller->LX - (signY > 0 ? signX : 0) * controller->LY;
+            newSpeed = L->x - (signY > 0 ? signX : 0) * L->y;
             newSpeedLF = -newSpeed;
-            newSpeed = controller->LX + (signY < 0 ? signX : 0) * controller->LY;
+            newSpeed = L->x + (signY < 0 ? signX : 0) * L->y;
             newSpeedLB = newSpeed;
         }
     }
 
     // Правые моторы
-    if (controller->RX == 0 && controller->RY == 0) {
-        // D-Pad
-        if (controller->DX == 0 && controller->DY == 0) {
-            // Остановка
-            newSpeedRF = 0;
-            newSpeedRB = 0;
-        } else {
-            signX = controller->DX;
-            signY = controller->DY;
-            if (signY != 0) {
-                // Движение вперед-назад
-                // Поворот вправо: правые колёса едут медленнее
-                // Поворот влево: правые колёса без корректировки
-                newSpeed = signY * (signX <= 0 ? speedD : speedD2);
-                newSpeedRF = newSpeed;
-                newSpeedRB = newSpeed;
-            } else {
-                // Движение вправо-влево
-                newSpeed = signX * speedD;
-                newSpeedRF = newSpeed;
-                newSpeedRB = -newSpeed;
-            }
-        }
+    if (R->x == 0 && R->y == 0) {
+        // Остановка
+        newSpeedRF = 0;
+        newSpeedRB = 0;
     } else {
-        signX = controller->RX > 0 ? 1 : (controller->RX < 0 ? -1 : 0);
-        signY = controller->RY > 0 ? 1 : (controller->RY < 0 ? -1 : 0);
-        absX = abs(controller->RX);
-        absY = abs(controller->RY);
+        signX = R->x > 0 ? 1 : (R->x < 0 ? -1 : 0);
+        signY = R->y > 0 ? 1 : (R->y < 0 ? -1 : 0);
+        absX = abs(R->x);
+        absY = abs(R->y);
         if (absX <= absY) {
             // Движение вперед-назад
             // Поворот вправо: правые колёса едут медленнее
             // Поворот влево: правые колёса без корректировки
-            newSpeed = controller->RY - (signX <= 0 ? 0 : signY) * controller->RX;
+            newSpeed = R->y - (signX <= 0 ? 0 : signY) * R->x;
             newSpeedRF = newSpeed;
             newSpeedRB = newSpeed;
         } else {
             // Движение вправо-влево
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
-            newSpeed = controller->RX - (signY > 0 ? signX : 0) * controller->RY;
+            newSpeed = R->x - (signY > 0 ? signX : 0) * R->y;
             newSpeedRF = newSpeed;
-            newSpeed = controller->RX + (signY < 0 ? signX : 0) * controller->RY;
+            newSpeed = R->x + (signY < 0 ? signX : 0) * R->y;
             newSpeedRB = -newSpeed;
         }
     }
 
-    if (speedLF != newSpeedLF) {
-        speedLF = newSpeedLF;
+    if (motorLF->speed != newSpeedLF) {
 #if debugMotor
-        debug("V: motor: LF: %d\n", speedLF);
+        debug("V: motor: LF: %d\n", newSpeedLF);
 #endif
-        motorLF->setSpeed(speedLF);
+        motorLF->setSpeed(newSpeedLF);
     }
-    if (speedRF != newSpeedRF) {
-        speedRF = newSpeedRF;
+    if (motorRF->speed != newSpeedRF) {
 #if debugMotor
-        debug("V: motor: RF: %d\n", speedRF);
+        debug("V: motor: RF: %d\n", newSpeedRF);
 #endif
-        motorRF->setSpeed(speedRF);
+        motorRF->setSpeed(newSpeedRF);
     }
-    if (speedLB != newSpeedLB) {
-        speedLB = newSpeedLB;
+    if (motorLB->speed != newSpeedLB) {
 #if debugMotor
-        debug("V: motor: LB: %d\n", speedLB);
+        debug("V: motor: LB: %d\n", newSpeedLB);
 #endif
-        motorLB->setSpeed(speedLB);
+        motorLB->setSpeed(newSpeedLB);
     }
-    if (speedRB != newSpeedRB) {
-        speedRB = newSpeedRB;
+    if (motorRB->speed != newSpeedRB) {
 #if debugMotor
-        debug("V: motor: RB: %d\n", speedRB);
+        debug("V: motor: RB: %d\n", newSpeedRB);
 #endif
-        motorRB->setSpeed(speedRB);
+        motorRB->setSpeed(newSpeedRB);
     }
 }
 
 void Robot::loop() {
-    delay(1000);
+    if (changeXY) {
+        changeXY = false;
+        if (L->getNewX() != controller->LX) {
+            L->setNewX(controller->LX);
+        }
+        if (L->getNewY() != controller->LY) {
+            L->setNewY(controller->LY);
+        }
+        if (R->getNewX() != controller->RX) {
+            R->setNewX(controller->RX);
+        }
+        if (R->getNewY() != controller->RY) {
+            R->setNewY(controller->RY);
+        }
+        if (D->getNewX() != controller->DX) {
+            D->setNewX(controller->DX);
+        }
+        if (D->getNewY() != controller->DY) {
+            D->setNewY(controller->DY);
+        }
+    }
+    bool update = false;
+    if (L->changeX || L->changeY) {
+        L->loop();
+        update = true;
+    }
+    if (R->changeX || R->changeY) {
+        R->loop();
+        update = true;
+    }
+    if (D->changeX || D->changeY) {
+        D->loop();
+        update = true;
+    }
+    if (update) {
+        updateSpeed();
+    }
+    delay(100);
 }
 
 // Обработка изменения состояний кнопок
@@ -196,7 +217,9 @@ void Controller::onChangeStart() {
 #if debugControl
     println("V: robot: start");
 #endif
+#if ROBOT_HAS_LIDAR
     lidarStart();
+#endif
 }
 
 void Controller::onChangeBack() {
@@ -206,7 +229,9 @@ void Controller::onChangeBack() {
     if (robot->autoMode) {
         robot->autoMode = 0;
     } else {
+#if ROBOT_HAS_LIDAR
         lidarStop();
+#endif
     }
 }
 
@@ -245,6 +270,6 @@ void Controller::onChangeZ() {
 }
 
 void Controller::onChangeXY() {
+    robot->changeXY = true;
     robot->autoMode = 0;
-    robot->updateSpeed();
 }

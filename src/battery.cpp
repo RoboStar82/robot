@@ -1,6 +1,8 @@
 
 #include "battery.h"
 
+#if ROBOT_HAS_BATTERY
+
 #define batteryPin 4
 #define batteryDebug 0
 
@@ -80,3 +82,5 @@ void batteryLoop() {
     }
     delay(9000);
 }
+
+#endif

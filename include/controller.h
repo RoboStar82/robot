@@ -57,8 +57,6 @@ class Controller {
 
     void onChangeZ();
 
-    void onChangeD();
-
     void onChangeXY();
 
 };

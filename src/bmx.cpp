@@ -1,6 +1,8 @@
 
 #include "bmx.h"
 
+#if ROBOT_HAS_BMX
+
 iarduino_Position_BMX055 *bmx = new iarduino_Position_BMX055(BMX);
 
 float bmxCoefficients[3] = {135.00, 105.00, 0.00};
@@ -13,8 +15,8 @@ void bmxSetup() {
     bool bmxHealth = bmx->begin(&Wire, true);
     bmx->setFastOffset();
     bmx->setFastOffset(bmxCoefficients);
-    uint8_t *robotHealth = getRobotHealth();
-    robotHealth[0] |= (bmxHealth ? 1 : 0) << 4;
+    uint8_t *health = getHealth();
+    health[0] |= (bmxHealth ? 1 : 0) << 4;
     xTaskCreatePinnedToCore(bmxBegin, "bmx055", 4096, NULL, 1, NULL, 0);
 }
 
@@ -43,3 +45,5 @@ void bmxCalibrate(int time) {
 void bmxLoop() {
     bmx->read();
 }
+
+#endif

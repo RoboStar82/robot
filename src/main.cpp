@@ -4,7 +4,7 @@
 void setup() {
     Serial.begin(115200);
     bleSetup();
-#if ROBOT_HAS_BMX055
+#if ROBOT_HAS_BMX
     bmxSetup();
 #endif
 #if ROBOT_HAS_LIDAR

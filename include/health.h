@@ -6,8 +6,8 @@
 
 #include "print.h"
 
-uint8_t *getRobotHealth();
+uint8_t *getHealth();
 
-BLECharacteristic *getRobotHealthCharacteristic();
+BLECharacteristic *getHealthCharacteristic();
 
-void robotHealthSetup(BLEService *robotService);
+void healthSetup(BLEService *robotService);

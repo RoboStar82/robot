@@ -1,6 +1,8 @@
 
 #pragma once
 
+#if ROBOT_HAS_BMX
+
 #include <Arduino.h>
 #include <freertos/task.h>
 #include <iarduino_Position_BMX055.h>
@@ -17,3 +19,5 @@ void bmxBegin(void *params);
 void bmxCalibrate(int time = 30000);
 
 void bmxLoop();
+
+#endif

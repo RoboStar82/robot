@@ -89,27 +89,27 @@ void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteri
         }
         bool changeXY = false;
         if (controller->LX != newLX) {
-            controller->LX = newLX;
+            controller->LX = newLX * 16;
             changeXY = true;
         }
         if (controller->LY != newLY) {
-            controller->LY = newLY;
+            controller->LY = newLY * 16;
             changeXY = true;
         }
         if (controller->RX != newRX) {
-            controller->RX = newRX;
+            controller->RX = newRX * 16;
             changeXY = true;
         }
         if (controller->RY != newRY) {
-            controller->RY = newRY;
+            controller->RY = newRY * 16;
             changeXY = true;
         }
         if (controller->DX != newDX) {
-            controller->DX = newDX;
+            controller->DX = newDX * 64;
             changeXY = true;
         }
         if (controller->DY != newDY) {
-            controller->DY = newDY;
+            controller->DY = newDY * 64;
             changeXY = true;
         }
         if (changeXY) {

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#if ROBOT_HAS_LIDAR
+
 #include <BLE2902.h>
 #include <BLEService.h>
 
@@ -17,3 +19,5 @@ void positionSetup(BLEService *robotService);
 void positionBegin(void *params);
 
 void positionLoop();
+
+#endif

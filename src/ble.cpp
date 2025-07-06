@@ -21,11 +21,17 @@ void bleSetup() {
     BLEDevice::init(bleDeviceName);
     bleServer = BLEDevice::createServer();
     bleServer->setCallbacks(new ServerCallbacks);
+#if !ROBOT_HAS_MOTOR_PWM
     batterySetup(bleServer);
+#endif
     robotService = bleServer->createService(robotServiceUuid);
+#if ROBOT_HAS_CONTROLLER_BLE
     controllerSetup(robotService);
+#endif
+#if ROBOT_HAS_LIDAR
     positionSetup(robotService);
-    robotHealthSetup(robotService);
+#endif
+    healthSetup(robotService);
     robotService->start();
     uartSetup(bleServer);
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();

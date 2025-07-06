@@ -48,8 +48,8 @@ class Motor {
         }
         channel1 = 1 + (n - 1) * 2;
         channel2 = 2 + (n - 1) * 2;
-        ledcSetup(channel1, 5000, 8);
-        ledcSetup(channel2, 5000, 8);
+        ledcSetup(channel1, 20000, 8);
+        ledcSetup(channel2, 20000, 8);
         ledcAttachPin(pin1, channel1);
         ledcAttachPin(pin2, channel2);
         health = true;

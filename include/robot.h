@@ -4,6 +4,10 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#if ROBOT_HAS_LED
+#include <Adafruit_NeoPixel.h>
+#endif
+
 #include "ble.h"
 #include "bmx.h"
 #include "lidar.h"
@@ -33,6 +37,10 @@ class Robot {
     void setController(Controller *controller);
 
     void setSticks(Stick *L, Stick *R, Stick *D);
+
+#if ROBOT_HAS_LED
+    Adafruit_NeoPixel led = Adafruit_NeoPixel(4, 16, NEO_GRB + NEO_KHZ800);
+#endif
 
     void updateSpeed();
 

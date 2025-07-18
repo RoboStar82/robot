@@ -149,25 +149,72 @@ void Robot::updateSpeed() {
         debug("V: motor: LF: %d\n", newSpeedLF);
 #endif
         motorLF->setSpeed(newSpeedLF);
+#if ROBOT_HAS_LED
+        uint32_t color;
+        if (newSpeedLF == 0) {
+            color = 0x000000;
+        } else if (newSpeedLF > 0) {
+            color = (newSpeedLF & 0xff) | ((newSpeedLF & 0xff) << 8) | ((newSpeedLF & 0xff) << 16);
+        } else {
+            color = ((-newSpeedLF) & 0xff) << 16;
+        }
+        led.setPixelColor(2, color);
+#endif
     }
     if (motorRF->speed != newSpeedRF) {
 #if debugMotor
         debug("V: motor: RF: %d\n", newSpeedRF);
 #endif
         motorRF->setSpeed(newSpeedRF);
+#if ROBOT_HAS_LED
+        uint32_t color;
+        if (newSpeedRF == 0) {
+            color = 0x000000;
+        } else if (newSpeedRF > 0) {
+            color = (newSpeedRF & 0xff) | ((newSpeedRF & 0xff) << 8) | ((newSpeedRF & 0xff) << 16);
+        } else {
+            color = ((-newSpeedRF) & 0xff) << 16;
+        }
+        led.setPixelColor(1, color);
+#endif
     }
     if (motorLB->speed != newSpeedLB) {
 #if debugMotor
         debug("V: motor: LB: %d\n", newSpeedLB);
 #endif
         motorLB->setSpeed(newSpeedLB);
+#if ROBOT_HAS_LED
+        uint32_t color;
+        if (newSpeedLB == 0) {
+            color = 0x000000;
+        } else if (newSpeedLB > 0) {
+            color = (newSpeedLB & 0xff) | ((newSpeedLB & 0xff) << 8) | ((newSpeedLB & 0xff) << 16);
+        } else {
+            color = ((-newSpeedLB) & 0xff) << 16;
+        }
+        led.setPixelColor(3, color);
+#endif
     }
     if (motorRB->speed != newSpeedRB) {
 #if debugMotor
         debug("V: motor: RB: %d\n", newSpeedRB);
 #endif
         motorRB->setSpeed(newSpeedRB);
+#if ROBOT_HAS_LED
+        uint32_t color;
+        if (newSpeedRB == 0) {
+            color = 0x000000;
+        } else if (newSpeedRB > 0) {
+            color = (newSpeedRB & 0xff) | ((newSpeedRB & 0xff) << 8) | ((newSpeedRB & 0xff) << 16);
+        } else {
+            color = ((-newSpeedRB) & 0xff) << 16;
+        }
+        led.setPixelColor(0, color);
+#endif
     }
+#if ROBOT_HAS_LED
+    led.show();
+#endif
 }
 
 void Robot::loop() {

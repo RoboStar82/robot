@@ -11,9 +11,7 @@
 #define BATTERY_DEBUG 0
 #endif
 
-#include <BLE2902.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
+#include <NimBLEDevice.h>
 
 #include "print.h"
 

@@ -16,9 +16,11 @@ BLEService *getRobotService() {
 }
 
 void bleSetup() {
-    BLEDevice::init(BLE_DEVICE_NAME);
+    BLEDevice::init("");
     bleServer = BLEDevice::createServer();
     bleServer->setCallbacks(new ServerCallbacks);
+    BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
+    bleAdvertising->setName(BLE_DEVICE_NAME);
 #if ROBOT_HAS_BATTERY
     batterySetup(bleServer);
 #endif
@@ -32,7 +34,6 @@ void bleSetup() {
     healthSetup(robotService);
     robotService->start();
     uartSetup(bleServer);
-    BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->addServiceUUID(robotServiceUuid);
     bleAdvertising->start();
 }

@@ -5,9 +5,7 @@
 #define BLE_DEVICE_NAME "RoboStar82"
 #endif
 
-#include <BLE2902.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
+#include <NimBLEDevice.h>
 
 #include "battery.h"
 #include "controller.h"
@@ -18,11 +16,11 @@
 
 class ServerCallbacks : public BLEServerCallbacks {
    public:
-    void onConnect(BLEServer *bleServer) {
+    void onConnect(BLEServer *bleServer, BLEConnInfo& connInfo) {
         println("V: BLE: connected");
     }
 
-    void onDisconnect(BLEServer *bleServer) {
+    void onDisconnect(BLEServer *bleServer, BLEConnInfo& connInfo, int reason) {
         println("V: BLE: disconnected");
         BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
         bleAdvertising->start();

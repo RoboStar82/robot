@@ -27,21 +27,9 @@ BLECharacteristic *getUARTTxCharacteristic() {
 
 void uartSetup(BLEServer *bleServer) {
     uartService = bleServer->createService(uartServiceUuid);
-    BLE2902 *uartRx2902 = new BLE2902();
-    BLEDescriptor *uartRx2901 = new BLEDescriptor((uint16_t)0x2901);
-    uartRx2901->setValue("UART Rx");
-    uartRxCharacteristic = uartService->createCharacteristic(uartRxCharacteristicUuid, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+    uartRxCharacteristic = uartService->createCharacteristic(uartRxCharacteristicUuid, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
     uartRxCharacteristic->setCallbacks(new UARTRxCharacteristicCallbacks);
-    uartRxCharacteristic->addDescriptor(uartRx2902);
-    uartRxCharacteristic->addDescriptor(uartRx2901);
-    BLE2902 *uartTx2902 = new BLE2902();
-    uartTx2902->setIndications(true);
-    uartTx2902->setNotifications(true);
-    BLEDescriptor *uartTx2901 = new BLEDescriptor((uint16_t)0x2901);
-    uartTx2901->setValue("UART Tx");
-    uartTxCharacteristic = uartService->createCharacteristic(uartTxCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
-    uartTxCharacteristic->addDescriptor(uartTx2902);
-    uartTxCharacteristic->addDescriptor(uartTx2901);
+    uartTxCharacteristic = uartService->createCharacteristic(uartTxCharacteristicUuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     uartService->start();
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->addServiceUUID(uartServiceUuid);

@@ -16,16 +16,11 @@ BLECharacteristic *getControllerCharacteristic() {
 }
 
 void controllerSetup(BLEService *robotService) {
-    BLE2902 *controller2902 = new BLE2902();
-    BLEDescriptor *controller2901 = new BLEDescriptor((uint16_t)0x2901);
-    controller2901->setValue("Controller");
-    controllerCharacteristic = robotService->createCharacteristic(controllerCharacteristicUuid, BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+    controllerCharacteristic = robotService->createCharacteristic(controllerCharacteristicUuid, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
     controllerCharacteristic->setCallbacks(new ControllerCharacteristicCallbacks);
-    controllerCharacteristic->addDescriptor(controller2902);
-    controllerCharacteristic->addDescriptor(controller2901);
 }
 
-void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic) {
+void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
     if (value.length() >= 4) {
         uint8_t btnValue = value[0];

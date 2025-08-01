@@ -11,8 +11,7 @@
 
 #if ROBOT_HAS_LIDAR
 
-#include <BLE2902.h>
-#include <BLEService.h>
+#include <NimBLEDevice.h>
 
 #include "bmx.h"
 #include "lidar.h"

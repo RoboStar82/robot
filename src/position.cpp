@@ -19,14 +19,7 @@ BLECharacteristic *getPositionCharacteristic() {
 }
 
 void positionSetup(BLEService *robotService) {
-    BLE2902 *position2902 = new BLE2902();
-    position2902->setIndications(true);
-    position2902->setNotifications(true);
-    BLEDescriptor *position2901 = new BLEDescriptor((uint16_t)0x2901);
-    position2901->setValue("Robot Position");
     positionCharacteristic = robotService->createCharacteristic(positionCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
-    positionCharacteristic->addDescriptor(position2902);
-    positionCharacteristic->addDescriptor(position2901);
     xTaskCreatePinnedToCore(positionBegin, "position", 4096, NULL, 1, NULL, 1);
 }
 

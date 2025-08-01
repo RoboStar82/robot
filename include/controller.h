@@ -1,8 +1,7 @@
 
 #pragma once
 
-#include <BLE2902.h>
-#include <BLEService.h>
+#include <NimBLEDevice.h>
 
 #include "print.h"
 
@@ -72,7 +71,7 @@ BLECharacteristic *getControllerCharacteristic();
 
 class ControllerCharacteristicCallbacks : public BLECharacteristicCallbacks {
    public:
-    void onWrite(BLECharacteristic *bleCharacteristic);
+    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo);
 };
 
 void controllerSetup(BLEService *robotService);

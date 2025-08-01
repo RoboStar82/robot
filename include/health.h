@@ -1,8 +1,7 @@
 
 #pragma once
 
-#include <BLE2902.h>
-#include <BLEService.h>
+#include <NimBLEDevice.h>
 
 #include "print.h"
 

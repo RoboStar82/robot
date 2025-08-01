@@ -27,15 +27,8 @@ BLECharacteristic *getBatteryLevelCharacteristic() {
 
 void batterySetup(BLEServer *bleServer) {
     pinMode(BATTERY_PIN, INPUT);
-    BLE2902 *batteryLevel2902 = new BLE2902();
-    batteryLevel2902->setIndications(true);
-    batteryLevel2902->setNotifications(true);
-    BLEDescriptor *batteryLevel2901 = new BLEDescriptor((uint16_t)0x2901);
-    batteryLevel2901->setValue("Battery Level");
     batteryService = bleServer->createService(batteryServiceUuid);
     batteryLevelCharacteristic = batteryService->createCharacteristic(batteryLevelCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
-    batteryLevelCharacteristic->addDescriptor(batteryLevel2902);
-    batteryLevelCharacteristic->addDescriptor(batteryLevel2901);
     batteryService->start();
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->addServiceUUID(batteryServiceUuid);

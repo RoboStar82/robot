@@ -1,9 +1,7 @@
 
 #pragma once
 
-#include <BLE2902.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
+#include <NimBLEDevice.h>
 
 #include "print.h"
 
@@ -15,7 +13,7 @@ BLECharacteristic *getUARTTxCharacteristic();
 
 class UARTRxCharacteristicCallbacks : public BLECharacteristicCallbacks {
    public:
-    void onWrite(BLECharacteristic *bleCharacteristic) {
+    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo) {
         debug("V: UART: Rx: %s", bleCharacteristic->getValue().c_str());
     }
 };

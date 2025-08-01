@@ -17,12 +17,5 @@ BLECharacteristic *getHealthCharacteristic() {
 }
 
 void healthSetup(BLEService *robotService) {
-    BLE2902 *health2902 = new BLE2902();
-    health2902->setIndications(true);
-    health2902->setNotifications(true);
-    BLEDescriptor *health2901 = new BLEDescriptor((uint16_t)0x2901);
-    health2901->setValue("Health");
-    healthCharacteristic = robotService->createCharacteristic(healthCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
-    healthCharacteristic->addDescriptor(health2902);
-    healthCharacteristic->addDescriptor(health2901);
+    healthCharacteristic = robotService->createCharacteristic(healthCharacteristicUuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
 }

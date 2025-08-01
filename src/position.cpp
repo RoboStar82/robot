@@ -3,9 +3,6 @@
 
 #if ROBOT_HAS_LIDAR
 
-#define debugPosition 0
-#define debugPositionTx 0
-
 BLEUUID positionCharacteristicUuid("b0b0c7ab-0002-4000-8000-000000000000");
 
 BLECharacteristic *positionCharacteristic = nullptr;
@@ -55,12 +52,12 @@ void positionLoop() {
         position[1] = angle >> 8;
         length++;
 
-#if debugPosition
+#if DEBUG_POSITION
         debug("V: BMX: angle: %d\n", angle);
         debug("V: lidar: angle: %d\n", position[2]);
 #endif
 
-#if debugPositionTx
+#if DEBUG_POSITION_TX
         debug("V: BLE: position: %d:", length);
         for (int n = 0; n < length; n++) {
             debug(" %02x", position[n]);

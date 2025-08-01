@@ -3,6 +3,14 @@
 
 #if ROBOT_HAS_BATTERY
 
+#ifndef BATTERY_PIN
+#define BATTERY_PIN 4
+#endif
+
+#ifndef BATTERY_DEBUG
+#define BATTERY_DEBUG 0
+#endif
+
 #include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>

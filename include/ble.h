@@ -1,6 +1,10 @@
 
 #pragma once
 
+#ifndef BLE_DEVICE_NAME
+#define BLE_DEVICE_NAME "RoboStar82"
+#endif
+
 #include <BLE2902.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>

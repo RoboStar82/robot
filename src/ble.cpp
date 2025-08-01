@@ -1,8 +1,6 @@
 
 #include "ble.h"
 
-#define bleDeviceName "RoboStar82"
-
 BLEServer *bleServer = nullptr;
 
 BLEUUID robotServiceUuid("b0b0c7ab-0000-4000-8000-000000000000");
@@ -18,10 +16,10 @@ BLEService *getRobotService() {
 }
 
 void bleSetup() {
-    BLEDevice::init(bleDeviceName);
+    BLEDevice::init(BLE_DEVICE_NAME);
     bleServer = BLEDevice::createServer();
     bleServer->setCallbacks(new ServerCallbacks);
-#if !ROBOT_HAS_MOTOR_PWM
+#if ROBOT_HAS_BATTERY
     batterySetup(bleServer);
 #endif
     robotService = bleServer->createService(robotServiceUuid);

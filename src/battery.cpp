@@ -3,9 +3,6 @@
 
 #if ROBOT_HAS_BATTERY
 
-#define batteryPin 4
-#define batteryDebug 0
-
 uint8_t batteryLevel = 0;
 
 BLEUUID batteryServiceUuid((uint16_t)0x180f);
@@ -29,7 +26,7 @@ BLECharacteristic *getBatteryLevelCharacteristic() {
 }
 
 void batterySetup(BLEServer *bleServer) {
-    pinMode(batteryPin, INPUT);
+    pinMode(BATTERY_PIN, INPUT);
     BLE2902 *batteryLevel2902 = new BLE2902();
     batteryLevel2902->setIndications(true);
     batteryLevel2902->setNotifications(true);
@@ -60,9 +57,9 @@ void batteryLoop() {
      * (16.6 - 12.7) / (2625 - 2065) * 2625 - 16.6 = 0.00696
      * (16.6 - 12.7) / (2625 - 2065) * 2065 - 12.7 = 1.68
      */
-    uint16_t value = analogRead(batteryPin);
+    uint16_t value = analogRead(BATTERY_PIN);
     float voltage = 0.00696f * value - 1.68f;
-#if batteryDebug
+#if BATTERY_DEBUG
     debug("V: battery: value=%d\n", value);
     if (voltage > 10.0f) {
         debug("V: battery: voltage=%f\n", voltage);

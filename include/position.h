@@ -1,6 +1,14 @@
 
 #pragma once
 
+#ifndef DEBUG_POSITION
+#define DEBUG_POSITION 0
+#endif
+
+#ifndef DEBUG_POSITION_TX
+#define DEBUG_POSITION_TX 0
+#endif
+
 #if ROBOT_HAS_LIDAR
 
 #include <BLE2902.h>

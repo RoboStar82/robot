@@ -38,6 +38,8 @@ void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteri
         bool newB = (btnValue >> 3) & 1;
         bool newX = (btnValue >> 4) & 1;
         bool newY = (btnValue >> 5) & 1;
+        bool newLT = (btnValue >> 6) & 1;
+        bool newRT = (btnValue >> 7) & 1;
         int newDX = ((padValue >> 0) & 1) ? 1 : (((padValue >> 1) & 1) ? -1 : 0);
         int newDY = ((padValue >> 2) & 1) ? 1 : (((padValue >> 3) & 1) ? -1 : 0);
         int newLZ = ((padValue >> 4) & 1) ? 1 : (((padValue >> 5) & 1) ? -1 : 0);
@@ -96,12 +98,20 @@ void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteri
             controller->LY = newLY * 16;
             changeXY = true;
         }
+        if (controller->LT != newLT) {
+            controller->LT = newLT;
+            changeXY = true;
+        }
         if (controller->RX != newRX) {
             controller->RX = newRX * 16;
             changeXY = true;
         }
         if (controller->RY != newRY) {
             controller->RY = newRY * 16;
+            changeXY = true;
+        }
+        if (controller->RT != newRT) {
+            controller->RT = newRT;
             changeXY = true;
         }
         if (controller->DX != newDX) {

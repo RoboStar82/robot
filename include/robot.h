@@ -1,6 +1,14 @@
 
 #pragma once
 
+#ifndef DEBUG_CONTROL
+#define DEBUG_CONTROL 1
+#endif
+
+#ifndef DEBUG_MOTOR
+#define DEBUG_MOTOR 1
+#endif
+
 #include <Arduino.h>
 #include <Wire.h>
 

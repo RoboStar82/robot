@@ -1,9 +1,6 @@
 
 #include "robot.h"
 
-#define debugControl 1
-#define debugMotor 1
-
 Robot *robot = new Robot;
 
 Robot *getRobot() {
@@ -145,7 +142,7 @@ void Robot::updateSpeed() {
     }
 
     if (motorLF->speed != newSpeedLF) {
-#if debugMotor
+#if DEBUG_MOTOR
         debug("V: motor: LF: %d\n", newSpeedLF);
 #endif
         motorLF->setSpeed(newSpeedLF);
@@ -162,7 +159,7 @@ void Robot::updateSpeed() {
 #endif
     }
     if (motorRF->speed != newSpeedRF) {
-#if debugMotor
+#if DEBUG_MOTOR
         debug("V: motor: RF: %d\n", newSpeedRF);
 #endif
         motorRF->setSpeed(newSpeedRF);
@@ -179,7 +176,7 @@ void Robot::updateSpeed() {
 #endif
     }
     if (motorLB->speed != newSpeedLB) {
-#if debugMotor
+#if DEBUG_MOTOR
         debug("V: motor: LB: %d\n", newSpeedLB);
 #endif
         motorLB->setSpeed(newSpeedLB);
@@ -196,7 +193,7 @@ void Robot::updateSpeed() {
 #endif
     }
     if (motorRB->speed != newSpeedRB) {
-#if debugMotor
+#if DEBUG_MOTOR
         debug("V: motor: RB: %d\n", newSpeedRB);
 #endif
         motorRB->setSpeed(newSpeedRB);
@@ -261,7 +258,7 @@ void Robot::loop() {
 // Обработка изменения состояний кнопок
 
 void Controller::onChangeStart() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: start");
 #endif
 #if ROBOT_HAS_LIDAR
@@ -270,7 +267,7 @@ void Controller::onChangeStart() {
 }
 
 void Controller::onChangeBack() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: back");
 #endif
     if (robot->autoMode) {
@@ -283,35 +280,35 @@ void Controller::onChangeBack() {
 }
 
 void Controller::onChangeA() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: A");
 #endif
     robot->autoMode = 'A';
 }
 
 void Controller::onChangeB() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: B");
 #endif
     robot->autoMode = 'B';
 }
 
 void Controller::onChangeX() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: X");
 #endif
     robot->autoMode = 'X';
 }
 
 void Controller::onChangeY() {
-#if debugControl
+#if DEBUG_CONTROL
     println("V: robot: Y");
 #endif
     robot->autoMode = 'Y';
 }
 
 void Controller::onChangeZ() {
-#if debugControl
+#if DEBUG_CONTROL
     debug("V: robot: Z: %d %d\n", robot->controller->LZ, robot->controller->RZ);
 #endif
 }

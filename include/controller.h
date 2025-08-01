@@ -43,6 +43,11 @@ class Controller {
     // Right Z (up-down)
     int RZ = 0;
 
+    // Thumb (left)
+    bool LT = false;
+    // Thumb (right)
+    bool RT = false;
+
     void onChangeStart();
 
     void onChangeBack();

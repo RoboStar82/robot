@@ -97,6 +97,8 @@ void Robot::updateSpeed() {
         L = this->L;
     } else if (this->D->x || this->D->y) {
         L = this->D;
+    } else if (this->controller->LT) {
+        L = nullptr;
     } else {
         L = this->R;
     }
@@ -105,12 +107,14 @@ void Robot::updateSpeed() {
         R = this->R;
     } else if (this->D->x || this->D->y) {
         R = this->D;
+    } else if (this->controller->RT) {
+        R = nullptr;
     } else {
         R = this->L;
     }
 
     // Левые моторы
-    if (L->x == 0 && L->y == 0) {
+    if (L == nullptr || L->x == 0 && L->y == 0) {
         // Остановка
         newSpeedLF = 0;
         newSpeedLB = 0;
@@ -138,7 +142,7 @@ void Robot::updateSpeed() {
     }
 
     // Правые моторы
-    if (R->x == 0 && R->y == 0) {
+    if (R == nullptr || R->x == 0 && R->y == 0) {
         // Остановка
         newSpeedRF = 0;
         newSpeedRB = 0;
@@ -163,6 +167,13 @@ void Robot::updateSpeed() {
             newSpeed = R->x + (signY < 0 ? signX : 0) * R->y;
             newSpeedRB = -newSpeed;
         }
+    }
+
+    if (this->controller->LT || this->controller->RT) {
+        newSpeedLF = (float)newSpeedLF / 4;
+        newSpeedRF = (float)newSpeedRF / 4;
+        newSpeedLB = (float)newSpeedLB / 4;
+        newSpeedRB = (float)newSpeedRB / 4;
     }
 
     if (motorLF->speed != newSpeedLF) {

@@ -9,13 +9,26 @@ Robot *getRobot() {
 
 void robotSetup() {
     robot->setController(getController());
-    robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
     robot->setSticks(new Stick, new Stick, new Stick);
+#if ROBOT_HAS_MOTOR_I2C || ROBOT_HAS_MOTOR_PWM
+    robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
+#endif
+#if ROBOT_HAS_SERVO_PWM
+    robot->setServos(new Servo(1), new Servo(2), new Servo(3), new Servo(4));
+#endif
     uint8_t *health = getHealth();
-    health[0] |= (robot->motorLF->health ? 1 : 0) << 0;
-    health[0] |= (robot->motorRF->health ? 1 : 0) << 1;
-    health[0] |= (robot->motorLB->health ? 1 : 0) << 2;
-    health[0] |= (robot->motorRB->health ? 1 : 0) << 3;
+    if (robot->motorLF != nullptr) {
+        health[0] |= (robot->motorLF->health ? 1 : 0) << 0;
+    }
+    if (robot->motorRF != nullptr) {
+        health[0] |= (robot->motorRF->health ? 1 : 0) << 1;
+    }
+    if (robot->motorLB != nullptr) {
+        health[0] |= (robot->motorLB->health ? 1 : 0) << 2;
+    }
+    if (robot->motorRB != nullptr) {
+        health[0] |= (robot->motorRB->health ? 1 : 0) << 3;
+    }
     BLECharacteristic *healthCharacteristic = getHealthCharacteristic();
     healthCharacteristic->setValue(health, 1);
     healthCharacteristic->notify();
@@ -38,6 +51,12 @@ void Robot::setController(Controller *controller) {
     this->controller = controller;
 };
 
+void Robot::setSticks(Stick *L, Stick *R, Stick *D) {
+    this->L = L;
+    this->R = R;
+    this->D = D;
+}
+
 void Robot::setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *motorRB) {
     this->motorLF = motorLF;
     this->motorRF = motorRF;
@@ -49,10 +68,15 @@ void Robot::setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *mot
     motors[3] = motorRB;
 }
 
-void Robot::setSticks(Stick *L, Stick *R, Stick *D) {
-    this->L = L;
-    this->R = R;
-    this->D = D;
+void Robot::setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4) {
+    this->servo1 = servo1;
+    this->servo2 = servo2;
+    this->servo3 = servo3;
+    this->servo4 = servo4;
+    servos[0] = servo1;
+    servos[1] = servo2;
+    servos[2] = servo3;
+    servos[3] = servo4;
 }
 
 void Robot::updateSpeed() {
@@ -155,7 +179,7 @@ void Robot::updateSpeed() {
         } else {
             color = ((-newSpeedLF) & 0xff) << 16;
         }
-        led.setPixelColor(2, color);
+        led->setPixelColor(2, color);
 #endif
     }
     if (motorRF->speed != newSpeedRF) {
@@ -172,7 +196,7 @@ void Robot::updateSpeed() {
         } else {
             color = ((-newSpeedRF) & 0xff) << 16;
         }
-        led.setPixelColor(1, color);
+        led->setPixelColor(1, color);
 #endif
     }
     if (motorLB->speed != newSpeedLB) {
@@ -189,7 +213,7 @@ void Robot::updateSpeed() {
         } else {
             color = ((-newSpeedLB) & 0xff) << 16;
         }
-        led.setPixelColor(3, color);
+        led->setPixelColor(3, color);
 #endif
     }
     if (motorRB->speed != newSpeedRB) {
@@ -206,11 +230,11 @@ void Robot::updateSpeed() {
         } else {
             color = ((-newSpeedRB) & 0xff) << 16;
         }
-        led.setPixelColor(0, color);
+        led->setPixelColor(0, color);
 #endif
     }
 #if ROBOT_HAS_LED
-    led.show();
+    led->show();
 #endif
 }
 
@@ -253,6 +277,61 @@ void Robot::loop() {
         updateSpeed();
     }
     delay(100);
+}
+
+// Обработка изменения настроек
+
+void SettingsCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo) {
+    std::string value = bleCharacteristic->getValue();
+    if (value.length() >= 4) {
+        int minMotorSpeed = value[0];
+        int maxMotorSpeed = value[1];
+        int stickDamper = value[2];
+        int servoSpeed = value[3];
+#if DEBUG_SETTINGS
+        debug("V: settings: minMotorSpeed = %d\n", minMotorSpeed);
+        debug("V: settings: maxMotorSpeed = %d\n", maxMotorSpeed);
+        debug("V: settings: stickDamper = %d\n", stickDamper);
+        debug("V: settings: servoSpeed = %d\n", servoSpeed);
+#endif
+        if (robot->motorLF != nullptr) {
+            robot->motorLF->setMinSpeed(minMotorSpeed);
+            robot->motorLF->setMaxSpeed(maxMotorSpeed);
+        }
+        if (robot->motorRF != nullptr) {
+            robot->motorRF->setMinSpeed(minMotorSpeed);
+            robot->motorRF->setMaxSpeed(maxMotorSpeed);
+        }
+        if (robot->motorLB != nullptr) {
+            robot->motorLB->setMinSpeed(minMotorSpeed);
+            robot->motorLB->setMaxSpeed(maxMotorSpeed);
+        }
+        if (robot->motorRB != nullptr) {
+            robot->motorRB->setMinSpeed(minMotorSpeed);
+            robot->motorRB->setMaxSpeed(maxMotorSpeed);
+        }
+        if (robot->L != nullptr) {
+            robot->L->setDamper(stickDamper);
+        }
+        if (robot->R != nullptr) {
+            robot->R->setDamper(stickDamper);
+        }
+        if (robot->D != nullptr) {
+            robot->D->setDamper(stickDamper);
+        }
+        if (robot->servo1 != nullptr) {
+            robot->servo1->setMaxSpeed(servoSpeed);
+        }
+        if (robot->servo2 != nullptr) {
+            robot->servo2->setMaxSpeed(servoSpeed);
+        }
+        if (robot->servo3 != nullptr) {
+            robot->servo3->setMaxSpeed(servoSpeed);
+        }
+        if (robot->servo4 != nullptr) {
+            robot->servo4->setMaxSpeed(servoSpeed);
+        }
+    }
 }
 
 // Обработка изменения состояний кнопок
@@ -310,6 +389,30 @@ void Controller::onChangeY() {
 void Controller::onChangeZ() {
 #if DEBUG_CONTROL
     debug("V: robot: Z: %d %d\n", robot->controller->LZ, robot->controller->RZ);
+#endif
+    robot->servo1->setSpeed(robot->controller->RZ);
+    robot->servo2->setSpeed(robot->controller->LZ);
+#if ROBOT_HAS_LED
+    uint32_t color;
+
+    if (robot->controller->RZ == 0) {
+        color = 0x000000;
+    } else if (robot->controller->RZ > 0) {
+        color = (0xff) | ((0xff) << 8) | ((0xff) << 16);
+    } else {
+        color = (0xff) << 16;
+    }
+    robot->led->setPixelColor(1, color);
+    if (robot->controller->LZ == 0) {
+        color = 0x000000;
+    } else if (robot->controller->LZ > 0) {
+        color = (0xff) | ((0xff) << 8) | ((0xff) << 16);
+    } else {
+        color = (0xff) << 16;
+    }
+    robot->led->setPixelColor(2, color);
+
+    robot->led->show();
 #endif
 }
 

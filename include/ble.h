@@ -8,6 +8,7 @@
 #include <NimBLEDevice.h>
 
 #include "battery.h"
+#include "settings.h"
 #include "controller.h"
 #include "health.h"
 #include "position.h"

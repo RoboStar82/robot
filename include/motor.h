@@ -68,7 +68,7 @@ class Motor {
             if (speed == 0) {
                 motor->setSpeed(0, MOT_RPM);
             } else {
-                float absSpeed = (float)(motorMaxSpeed - motorMinSpeed) * abs(speed) / 127 + motorMinSpeed;
+                float absSpeed = ((float)(maxSpeed - minSpeed) * abs(speed) / 127 + minSpeed) * motorNominalRPM / 100;
                 motor->setSpeed(speed > 0 ? absSpeed : -absSpeed, MOT_RPM);
             }
 #endif
@@ -77,12 +77,30 @@ class Motor {
                 ledcWrite(channel1, 0);
                 ledcWrite(channel2, 0);
             } else {
-                uint32_t absSpeed = ((float)(motorMaxSpeed - motorMinSpeed) * abs(speed) / 127 + motorMinSpeed) * 255 / motorMaxSpeed;
+                uint32_t absSpeed = ((float)(maxSpeed - minSpeed) * abs(speed) / 127 + minSpeed) * 255 / 100;
                 ledcWrite(channel1, speed > 0 ? absSpeed : 0);
                 ledcWrite(channel2, speed < 0 ? absSpeed : 0);
             }
 #endif
         }
+    }
+
+    void setMinSpeed(int minSpeed) {
+        if (minSpeed < 0) {
+            minSpeed = 0;
+        } else if (minSpeed > maxSpeed) {
+            minSpeed = maxSpeed;
+        }
+        this->minSpeed = minSpeed;
+    }
+
+    void setMaxSpeed(int maxSpeed) {
+        if (maxSpeed <= 0 || maxSpeed > 100) {
+            maxSpeed = 100;
+        } else if (maxSpeed < minSpeed) {
+            maxSpeed = minSpeed;
+        }
+        this->maxSpeed = maxSpeed;
     }
 
    protected:
@@ -98,6 +116,7 @@ class Motor {
     float motorVoltage = 12.0f;
     float motorReducer = 53.0f;
     uint8_t motorMagnet = 7;
-    int motorMinSpeed = 70;
-    int motorMaxSpeed = 170;
+    // 0..100
+    int minSpeed = 40;
+    int maxSpeed = 100;
 };

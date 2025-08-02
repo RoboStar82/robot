@@ -1,6 +1,5 @@
 
 class Stick {
-
    public:
     int x = 0;
     int y = 0;
@@ -24,7 +23,7 @@ class Stick {
             return;
         }
         if (steps <= 0) {
-            steps = value ? 10 : 1;
+            steps = value ? damper : 1;
         }
         newX = value;
         stepX = (float)(newX - x) / steps;
@@ -41,7 +40,7 @@ class Stick {
             return;
         }
         if (steps <= 0) {
-            steps = value ? 10 : 1;
+            steps = value ? damper : 1;
         }
         newY = value;
         stepY = (float)(newY - y) / steps;
@@ -49,10 +48,20 @@ class Stick {
         changeY = true;
     }
 
+    void setDamper(int damper) {
+        damper = round((float)damper / 10);
+        if (damper <= 0) {
+            damper = 1;
+        } else if (damper > 10) {
+            damper = 10;
+        }
+        this->damper = damper;
+    }
+
     void loop() {
         if (changeX) {
             if (stepsX > 0) {
-                stepsX --;
+                stepsX--;
             }
             x = newX - stepX * stepsX;
             if (stepsX <= 0) {
@@ -61,7 +70,7 @@ class Stick {
         }
         if (changeY) {
             if (stepsY > 0) {
-                stepsY --;
+                stepsY--;
             }
             y = newY - stepY * stepsY;
             if (stepsY <= 0) {
@@ -71,11 +80,11 @@ class Stick {
     }
 
    protected:
+    int damper = 10;
     int stepsX = 0;
     float stepX = 0;
     int newX = 0;
     int stepsY = 0;
     float stepY = 0;
     int newY = 0;
-
 };

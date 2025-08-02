@@ -26,6 +26,7 @@ void bleSetup() {
 #endif
     robotService = bleServer->createService(robotServiceUuid);
 #if ROBOT_HAS_CONTROLLER_BLE
+    settingsSetup(robotService);
     controllerSetup(robotService);
 #endif
 #if ROBOT_HAS_LIDAR

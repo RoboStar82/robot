@@ -20,7 +20,7 @@ void controllerSetup(BLEService *robotService) {
     controllerCharacteristic->setCallbacks(new ControllerCharacteristicCallbacks);
 }
 
-void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo) {
+void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo) {
     std::string value = bleCharacteristic->getValue();
     if (value.length() >= 4) {
         uint8_t btnValue = value[0];

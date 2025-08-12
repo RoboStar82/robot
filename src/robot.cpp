@@ -14,7 +14,7 @@ void robotSetup() {
     robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
 #endif
 #if ROBOT_HAS_SERVO_PWM
-    robot->setServos(new Servo(1), new Servo(2), new Servo(3), new Servo(4));
+    robot->setServos(new Servo(1), new Servo(2), new Servo(3), new Servo(4), new Servo(5), new Servo(6), new Servo(7), new Servo(8));
 #endif
     uint8_t *health = getHealth();
     if (robot->motorLF != nullptr) {
@@ -68,15 +68,23 @@ void Robot::setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *mot
     motors[3] = motorRB;
 }
 
-void Robot::setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4) {
+void Robot::setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4, Servo *servo5, Servo *servo6, Servo *servo7, Servo *servo8) {
     this->servo1 = servo1;
     this->servo2 = servo2;
     this->servo3 = servo3;
     this->servo4 = servo4;
+    this->servo5 = servo5;
+    this->servo6 = servo6;
+    this->servo7 = servo7;
+    this->servo8 = servo8;
     servos[0] = servo1;
     servos[1] = servo2;
     servos[2] = servo3;
     servos[3] = servo4;
+    servos[4] = servo5;
+    servos[5] = servo6;
+    servos[6] = servo7;
+    servos[7] = servo8;
 }
 
 void Robot::updateSpeed() {
@@ -287,7 +295,7 @@ void Robot::loop() {
     if (update) {
         updateSpeed();
     }
-    delay(100);
+    delay(50);
 }
 
 // Обработка изменения настроек
@@ -373,28 +381,44 @@ void Controller::onChangeA() {
 #if DEBUG_CONTROL
     println("V: robot: A");
 #endif
-    robot->autoMode = 'A';
+    if (robot->servo5 != nullptr) {
+        robot->servo5->setAngle(0);
+    } else {
+        robot->autoMode = 'A';
+    }
 }
 
 void Controller::onChangeB() {
 #if DEBUG_CONTROL
     println("V: robot: B");
 #endif
-    robot->autoMode = 'B';
+    if (robot->servo5 != nullptr) {
+        robot->servo5->setAngle(30);
+    } else {
+        robot->autoMode = 'B';
+    }
 }
 
 void Controller::onChangeX() {
 #if DEBUG_CONTROL
     println("V: robot: X");
 #endif
-    robot->autoMode = 'X';
+    if (robot->servo5 != nullptr) {
+        robot->servo5->setAngle(60);
+    } else {
+        robot->autoMode = 'X';
+    }
 }
 
 void Controller::onChangeY() {
 #if DEBUG_CONTROL
     println("V: robot: Y");
 #endif
-    robot->autoMode = 'Y';
+    if (robot->servo5 != nullptr) {
+        robot->servo5->setAngle(90);
+    } else {
+        robot->autoMode = 'Y';
+    }
 }
 
 void Controller::onChangeZ() {

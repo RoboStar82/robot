@@ -3,6 +3,7 @@
 
 #include <NimBLEDevice.h>
 
+#include "ota.h"
 #include "print.h"
 
 BLEService *getUARTService();
@@ -13,9 +14,7 @@ BLECharacteristic *getUARTTxCharacteristic();
 
 class UARTRxCharacteristicCallbacks : public BLECharacteristicCallbacks {
    public:
-    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo) {
-        debug("V: UART: Rx: %s", bleCharacteristic->getValue().c_str());
-    }
+    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo);
 };
 
 void uartSetup(BLEServer *bleServer);

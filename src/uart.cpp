@@ -34,3 +34,28 @@ void uartSetup(BLEServer *bleServer) {
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->addServiceUUID(uartServiceUuid);
 }
+
+void UARTRxCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo) {
+    std::string value = bleCharacteristic->getValue();
+    const char *packet = value.data();
+    debug("V: UART: Rx: %s\n", packet);
+    if (otaHandle(packet)) {
+        return;
+    }
+}
+
+void otaNotify(const char *message) {
+    char value[21];
+    snprintf(value, 20, "OTA:%s", message);
+    debug("V: UART: %s\n", value);
+    uartTxCharacteristic->setValue(value);
+    uartTxCharacteristic->notify();
+}
+
+void otaError(const char *error) {
+    char value[21];
+    snprintf(value, 31, "OTA:E:%s", error);
+    debug("E: UART: %s\n", value);
+    uartTxCharacteristic->setValue(value);
+    uartTxCharacteristic->notify();
+}

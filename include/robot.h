@@ -20,6 +20,7 @@
 #include "bmx.h"
 #include "lidar.h"
 #include "motor.h"
+#include "ota.h"
 #include "print.h"
 #include "servo.h"
 #include "stick.h"
@@ -38,7 +39,11 @@ class Robot {
     Servo *servo2 = nullptr;
     Servo *servo3 = nullptr;
     Servo *servo4 = nullptr;
-    Servo *servos[4] = {nullptr, nullptr, nullptr, nullptr};
+    Servo *servo5 = nullptr;
+    Servo *servo6 = nullptr;
+    Servo *servo7 = nullptr;
+    Servo *servo8 = nullptr;
+    Servo *servos[8] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
     Stick *L = nullptr;
     Stick *R = nullptr;
@@ -53,7 +58,7 @@ class Robot {
 
     void setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *motorRB);
 
-    void setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4);
+    void setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4, Servo *servo5, Servo *servo6, Servo *servo7, Servo *servo8);
 
 #if ROBOT_HAS_LED
     Adafruit_NeoPixel *led = new Adafruit_NeoPixel(4, 16, NEO_GRB + NEO_KHZ800);

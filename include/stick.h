@@ -49,11 +49,11 @@ class Stick {
     }
 
     void setDamper(int damper) {
-        damper = round((float)damper / 10);
+        damper = round((float)damper / 5);
         if (damper <= 0) {
             damper = 1;
-        } else if (damper > 10) {
-            damper = 10;
+        } else if (damper > 20) {
+            damper = 20;
         }
         this->damper = damper;
     }
@@ -80,7 +80,7 @@ class Stick {
     }
 
    protected:
-    int damper = 10;
+    int damper = 20;
     int stepsX = 0;
     float stepX = 0;
     int newX = 0;

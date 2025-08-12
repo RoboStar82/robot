@@ -71,7 +71,7 @@ BLECharacteristic *getControllerCharacteristic();
 
 class ControllerCharacteristicCallbacks : public BLECharacteristicCallbacks {
    public:
-    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo& connInfo);
+    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo);
 };
 
 void controllerSetup(BLEService *robotService);

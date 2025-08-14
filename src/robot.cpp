@@ -17,21 +17,21 @@ void robotSetup() {
     robot->setServos(new Servo(1), new Servo(2), new Servo(3), new Servo(4), new Servo(5), new Servo(6), new Servo(7), new Servo(8));
 #endif
     uint8_t *health = getHealth();
+    int healthSize = getHealthSize();
     if (robot->motorLF != nullptr) {
-        health[0] |= (robot->motorLF->health ? 1 : 0) << 0;
+        health[4] |= (robot->motorLF->health ? 1 : 0) << 0;
     }
     if (robot->motorRF != nullptr) {
-        health[0] |= (robot->motorRF->health ? 1 : 0) << 1;
+        health[4] |= (robot->motorRF->health ? 1 : 0) << 1;
     }
     if (robot->motorLB != nullptr) {
-        health[0] |= (robot->motorLB->health ? 1 : 0) << 2;
+        health[4] |= (robot->motorLB->health ? 1 : 0) << 2;
     }
     if (robot->motorRB != nullptr) {
-        health[0] |= (robot->motorRB->health ? 1 : 0) << 3;
+        health[4] |= (robot->motorRB->health ? 1 : 0) << 3;
     }
     BLECharacteristic *healthCharacteristic = getHealthCharacteristic();
-    healthCharacteristic->setValue(health, 1);
-    healthCharacteristic->notify();
+    healthCharacteristic->setValue(health, healthSize);
     xTaskCreatePinnedToCore(robotBegin, "robot", 4096, NULL, 1, NULL, 1);
 }
 
@@ -307,11 +307,18 @@ void SettingsCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacterist
         int maxMotorSpeed = value[1];
         int stickDamper = value[2];
         int servoSpeed = value[3];
+        int servoSpeed2 = servoSpeed;
+        if (value.length() >= 5) {
+            servoSpeed2 = value[4];
+        }
 #if DEBUG_SETTINGS
         debug("V: settings: minMotorSpeed = %d\n", minMotorSpeed);
         debug("V: settings: maxMotorSpeed = %d\n", maxMotorSpeed);
         debug("V: settings: stickDamper = %d\n", stickDamper);
         debug("V: settings: servoSpeed = %d\n", servoSpeed);
+        if (value.length() >= 5) {
+            debug("V: settings: servoSpeed2 = %d\n", servoSpeed2);
+        }
 #endif
         if (robot->motorLF != nullptr) {
             robot->motorLF->setMinSpeed(minMotorSpeed);
@@ -342,7 +349,7 @@ void SettingsCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacterist
             robot->servo1->setMaxSpeed(servoSpeed);
         }
         if (robot->servo2 != nullptr) {
-            robot->servo2->setMaxSpeed(servoSpeed);
+            robot->servo2->setMaxSpeed(servoSpeed2);
         }
         if (robot->servo3 != nullptr) {
             robot->servo3->setMaxSpeed(servoSpeed);

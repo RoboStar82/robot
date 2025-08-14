@@ -44,18 +44,25 @@ void UARTRxCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic
     }
 }
 
-void otaNotify(const char *message) {
-    char value[21];
-    snprintf(value, 20, "OTA:%s", message);
-    debug("V: UART: %s\n", value);
-    uartTxCharacteristic->setValue(value);
-    uartTxCharacteristic->notify();
+void otaNotify(IPAddress addr, int port) {
+    uint8_t value[10];
+    value[0] = 'O';
+    value[1] = 'T';
+    value[2] = 'A';
+    value[3] = ':';
+    value[4] = addr[0];
+    value[5] = addr[1];
+    value[6] = addr[2];
+    value[7] = addr[3];
+    value[8] = port & 0xff;
+    value[9] = (port >> 8) & 0xff;
+    debug("V: UART: OTA: %s:%d\n", addr.toString().c_str(), port);
+    uartTxCharacteristic->indicate(value, sizeof(value));
 }
 
 void otaError(const char *error) {
     char value[21];
-    snprintf(value, 31, "OTA:E:%s", error);
-    debug("E: UART: %s\n", value);
-    uartTxCharacteristic->setValue(value);
-    uartTxCharacteristic->notify();
+    int length = snprintf(value, sizeof(value), "OTA:E:%s", error);
+    debug("E: UART: %s\n", error);
+    uartTxCharacteristic->indicate((const uint8_t *)value, length);
 }

@@ -4,8 +4,11 @@
 #include <NimBLEDevice.h>
 
 #include "print.h"
+#include "version.h"
 
 uint8_t *getHealth();
+
+int getHealthSize();
 
 BLECharacteristic *getHealthCharacteristic();
 

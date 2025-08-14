@@ -1,146 +1,214 @@
 
 #include "ota.h"
 
-// Последний статус Wi-Fi
-wl_status_t status = WL_IDLE_STATUS;
+// Идёт обновление
+TaskHandle_t otaTask;
+TaskHandle_t *otaTaskCreated = nullptr;
 
-// Отслеживание обновления
-bool begin = false;
+// Имя сети Wi-Fi
+char ssid[32] = {0};
+// Пароль Wi-Fi
+char password[64] = {0};
 
 // Порт получения данных
-int port = 0;
-
-// Размер обновления
-int size = 0;
-
-// Протокол UDP
-WiFiUDP Udp;
+int port = 3232;
 
 void otaSetup() {
-    status = WL_IDLE_STATUS;
-    if (!begin) {
-        xTaskCreatePinnedToCore(otaBegin, "ota", 8192, NULL, 1, NULL, 1);
-        begin = true;
+    if (otaTaskCreated == nullptr && ssid[0] != 0 && password[0] != 0 && port > 0) {
+        xTaskCreatePinnedToCore(otaBegin, "ota", 8192, NULL, 1, &otaTask, 1);
+        otaTaskCreated = &otaTask;
     }
 }
 
 void otaBegin(void *params) {
-    while (true) {
-        otaLoop();
-    }
-}
-
-void otaLoop() {
-    // Изменение статуса Wi-Fi
-    if (status != WiFi.status()) {
-        status = WiFi.status();
-        if (status == WL_CONNECTED && port > 0) {
-            Udp.stop();
-#if OTA_DEBUG
-            debug("V: Udp.begin(%d)\n", port);
-#endif
-            Udp.begin(port);
-            if (size > 0) {
-                otaNotify(WiFi.localIP().toString().c_str());
-                otaMain();
-            }
-        } else if (status == WL_CONNECT_FAILED || status == WL_CONNECTION_LOST || status == WL_DISCONNECTED) {
-#if OTA_DEBUG
-            debug("E: WiFi.status: %d\n", status);
-#endif
-            otaError("wifi");
-        }
-    }
-    delay(100);
-}
-
-void otaMain() {
-    int downloadSize = 0;
-    bool updateBegin = false;
-    int updateSize = size;
-    size = 0;
-    esp_err_t r = 0;
+    WiFiServer server(port);
+    WiFiClient client;
+    unsigned int updateSize = 0;
+    unsigned int updateRead = 0;
+    uint8_t updateInit[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    const esp_partition_t *updatePartition;
     esp_ota_handle_t updateHandle = 0;
-    const esp_partition_t *updatePartition = esp_ota_get_next_update_partition(NULL);
-    if (updatePartition == nullptr) {
-        return otaError("partition");
+    bool updateBegin = false;
+    esp_err_t e;
+#if OTA_DEBUG
+    debug("V: OTA: WiFi.begin: \"%s\"; \"%s\"\n", ssid, password);
+#endif
+    WiFi.begin(ssid, password);
+    for (int i = 0; i < 100; i++) {
+        if (WiFi.status() == WL_CONNECTED) {
+            break;
+        }
+        delay(100);
     }
-    while (true) {
-        char packet[4096];
-        int offset = 0;
+    if (WiFi.status() != WL_CONNECTED) {
+#if OTA_DEBUG
+        debug("E: OTA: WiFi.status: %d\n", WiFi.status());
+#endif
+        otaError("wifi");
+        goto end;
+    }
+    server.begin();
+    otaNotify(WiFi.localIP(), port);
+    for (int i = 0; i < 100; i++) {
+        if (client = server.available()) {
+            break;
+        }
+        delay(100);
+    }
+    if (!client) {
+#if OTA_DEBUG
+        debug("E: OTA: WiFi.client\n");
+#endif
+        otaError("client");
+        goto end;
+    }
+    for (int i = 0; i < 100; i++) {
+        if (client.available() >= 8) {
+            break;
+        }
+        delay(100);
+    }
+    if (client.available() < 8) {
+#if OTA_DEBUG
+        debug("E: OTA: WiFi.client.available: %d\n", client.available());
+#endif
+        otaError("init");
+        goto end;
+    }
+    client.read(updateInit, 8);
+    if (updateInit[0] != 'O' || updateInit[1] != 'T' || updateInit[2] != 'A' || updateInit[3] != ':') {
+#if OTA_DEBUG
+        debug("E: OTA: WiFi.client.read: %02x%02x%02x%02x\n", updateInit[0], updateInit[1], updateInit[2], updateInit[3]);
+#endif
+        otaError("magic");
+        goto end;
+    }
+    updateSize = (updateInit[4] << 0) | (updateInit[5] << 8) | (updateInit[6] << 16) | (updateInit[7] << 24);
+    if (!updateSize) {
+#if OTA_DEBUG
+        debug("E: OTA: WiFi.update.size: %d\n", updateSize);
+#endif
+        otaError("size");
+        goto end;
+    }
+#if OTA_DEBUG
+    debug("V: OTA: size: %d\n", updateSize);
+#endif
+    updatePartition = esp_ota_get_next_update_partition(NULL);
+    if (updatePartition == nullptr) {
+#if OTA_DEBUG
+        debug("E: OTA: esp_ota_get_next_update_partition: NULL\n");
+#endif
+        otaError("partition");
+        goto end;
+    }
+    e = esp_ota_begin(updatePartition, OTA_WITH_SEQUENTIAL_WRITES, &updateHandle);
+    if (e != ESP_OK) {
+#if OTA_DEBUG
+        debug("E: OTA: esp_ota_begin: %d\n", e);
+#endif
+        otaError("begin");
+        goto end;
+    }
+    updateBegin = true;
+    while (updateRead < updateSize) {
+        uint8_t packet[4096];
         int length = 0;
-        for (int i = 0; i < 4; i ++) {
-            length = 0;
-            while (length <= 0) {
-                length = Udp.parsePacket();
+        while (true) {
+            for (int i = 0; i < 100; i++) {
+                if (client.available() > 0) {
+                    break;
+                }
+                delay(100);
             }
-            length = Udp.read(packet + offset, length > 1024 ? 1024 : length);
-            downloadSize += length;
-            offset += length;
-            if (Udp.remoteIP() != IPADDR_ANY && Udp.remoteIP() != WiFi.localIP() && Udp.remotePort() > 0) {
-                Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-                Udp.printf("OTA:RX:%d", downloadSize);
-                Udp.endPacket();
+            if (client.available() <= 0) {
+#if OTA_DEBUG
+                debug("E: OTA: WiFi.client.available: %d\n", client.available());
+#endif
+                otaError("data");
+                goto end;
             }
-            /*
-            char message[16];
-            snprintf(message, 15, "RX:%d", downloadSize);
-            otaNotify(message);
-            */
-            if (downloadSize == updateSize) {
+            int size = client.read(packet + length, min(client.available(), 4096 - length));
+            if (size <= 0) {
+                continue;
+            }
+            length += size;
+            updateRead += size;
+#if OTA_DEBUG
+            debug("V: OTA: read: %d\n", updateRead);
+#endif
+            if (length == 4096 || updateRead >= updateSize) {
                 break;
             }
-            if (downloadSize > updateSize) {
-                return otaError("download");
-            }
         }
-        if (!updateBegin) {
-            updateBegin = true;
-            r = esp_ota_begin(updatePartition, OTA_WITH_SEQUENTIAL_WRITES, &updateHandle);
-            if (r != ESP_OK) {
-                return otaError("begin");
+        if (length > 0) {
+            e = esp_ota_write(updateHandle, packet, length);
+            if (e != ESP_OK) {
+#if OTA_DEBUG
+                debug("E: OTA: esp_ota_write: %d\n", e);
+#endif
+                otaError("write");
+                goto end;
             }
-        }
-        r = esp_ota_write(updateHandle, packet, offset);
-        if (r != ESP_OK) {
-            esp_ota_abort(updateHandle);
-            return otaError("write");
-        }
-        if (downloadSize == updateSize) {
-            r = esp_ota_end(updateHandle);
-            if (r != ESP_OK) {
-                esp_ota_abort(updateHandle);
-                return otaError("end");
-            }
-            r = esp_ota_set_boot_partition(updatePartition);
-            if (r != ESP_OK) {
-                return otaError("boot");
-            }
-            return esp_restart();
         }
     }
+    e = esp_ota_end(updateHandle);
+    if (e != ESP_OK) {
+#if OTA_DEBUG
+        debug("E: OTA: esp_ota_end: %d\n", e);
+#endif
+        otaError("end");
+        goto end;
+    }
+    e = esp_ota_set_boot_partition(updatePartition);
+    if (e != ESP_OK) {
+#if OTA_DEBUG
+        debug("E: OTA: esp_ota_set_boot_partition: %d\n", e);
+#endif
+        otaError("reboot");
+        goto end;
+    }
+#if OTA_DEBUG
+    debug("V: OTA: restart\n");
+#endif
+    esp_restart();
+end:
+    if (updateBegin) {
+        esp_ota_abort(updateHandle);
+    }
+    if (client) {
+        client.stop();
+    }
+    if (server) {
+        server.stop();
+    }
+    WiFi.disconnect();
+    otaTaskCreated = nullptr;
+    vTaskDelete(NULL);
 }
 
 bool otaHandle(const char *packet) {
-    size_t length = strlen(packet);
+    int length = strlen(packet);
     if (strncmp(packet, "AT+CWJAP=", 9) == 0) {
-        // Подключение к Wi-Fi: AT+CWJAP=SSID,password
-        char ssid[32] = {0};
-        char password[64] = {0};
-        // const char *ssid = packet + 9;
-        // const char *password = packet + length;
-        for (int i = 9; i < length; i++) {
-            if (packet[i] == ',') {
-                strncat(ssid, packet + 9, min(i - 9, 31));
-                strncat(password, packet + i + 1, 63);
-                break;
+        // Подключение к Wi-Fi: AT+CWJAP="SSID","password"
+        ssid[0] = 0;
+        password[0] = 0;
+        if (packet[9] == '"' && packet[length - 1] == '"') {
+            for (int i = 10; i < length; i++) {
+                if (packet[i] == '"' && packet[i + 1] == ',' && packet[i + 2] == '"') {
+                    strncat(ssid, packet + 10, min(i - 10, 31));
+                    strncat(password, packet + i + 3, min(length - i - 4, 63));
+                }
+            }
+        } else {
+            for (int i = 9; i < length; i++) {
+                if (packet[i] == ',') {
+                    strncat(ssid, packet + 9, min(i - 9, 31));
+                    strncat(password, packet + i + 1, min(length - i - 1, 63));
+                    break;
+                }
             }
         }
-        status = WL_IDLE_STATUS;
-#if OTA_DEBUG
-        debug("V: WiFi.begin(\"%s\", \"%s\")\n", ssid, password);
-#endif
-        WiFi.begin(ssid, password);
         return true;
     }
     if (strncmp(packet, "AT+CIPSERVER=1,", 15) == 0) {
@@ -148,9 +216,8 @@ bool otaHandle(const char *packet) {
         port = atoi(packet + 15);
         return true;
     }
-    if (strncmp(packet, "AT+CIPSEND=", 11) == 0) {
-        // Получение размера обновления
-        size = atoi(packet + 11);
+    if (strncmp(packet, "AT+CIUPDATE", 11) == 0) {
+        // Начало обновления
         otaSetup();
         return true;
     }

@@ -7,7 +7,6 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WiFiUdp.h>
 #include <esp_ota_ops.h>
 
 #include "print.h"
@@ -17,13 +16,9 @@ void otaSetup();
 
 void otaBegin(void *params);
 
-void otaLoop();
-
-void otaMain();
-
 bool otaHandle(const char *packet);
 
-void otaNotify(const char *message);
+void otaNotify(IPAddress addr, int port);
 
 void otaFinish();
 

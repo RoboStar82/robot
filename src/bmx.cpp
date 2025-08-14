@@ -16,7 +16,7 @@ void bmxSetup() {
     bmx->setFastOffset();
     bmx->setFastOffset(bmxCoefficients);
     uint8_t *health = getHealth();
-    health[0] |= (bmxHealth ? 1 : 0) << 4;
+    health[4] |= (bmxHealth ? 1 : 0) << 4;
     xTaskCreatePinnedToCore(bmxBegin, "bmx055", 4096, NULL, 1, NULL, 0);
 }
 

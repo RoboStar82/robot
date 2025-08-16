@@ -462,3 +462,43 @@ void Controller::onChangeXY() {
     robot->changeXY = true;
     robot->autoMode = 0;
 }
+
+#if ROBOT_HAS_LED
+
+int otaLoopN = 0;
+int otaLoopB = 0;
+bool otaLoop2 = false;
+
+void otaBeginLed(void *params) {
+    while (true) {
+        otaLoopLed();
+    }
+}
+
+void otaLoopLed() {
+    if (otaLoop2) {
+        otaLoopB--;
+    } else {
+        otaLoopB++;
+    }
+    uint32_t color = (0x00 << 16) | ((otaLoopB * 4) << 8) | ((otaLoopB * 4) << 0);
+    robot->led->setPixelColor(otaLoopN, color);
+    robot->led->show();
+    delay(10);
+    if (otaLoopB == 0) {
+        otaLoopN = (otaLoopN + 1) % 4;
+        otaLoop2 = !otaLoop2;
+    } else if (otaLoopB == 32) {
+        otaLoop2 = !otaLoop2;
+    }
+}
+
+void otaEndLed() {
+    robot->led->setPixelColor(0, 0);
+    robot->led->setPixelColor(1, 0);
+    robot->led->setPixelColor(2, 0);
+    robot->led->setPixelColor(3, 0);
+    robot->led->show();
+}
+
+#endif

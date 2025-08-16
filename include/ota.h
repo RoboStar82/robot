@@ -16,6 +16,12 @@ void otaSetup();
 
 void otaBegin(void *params);
 
+#if ROBOT_HAS_LED
+void otaBeginLed(void *params);
+void otaLoopLed();
+void otaEndLed();
+#endif
+
 bool otaHandle(const char *packet);
 
 void otaNotify(IPAddress addr, int port);

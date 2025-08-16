@@ -4,11 +4,16 @@
 // Идёт обновление
 TaskHandle_t otaTask;
 TaskHandle_t *otaTaskCreated = nullptr;
+#if ROBOT_HAS_LED
+TaskHandle_t otaLedTask;
+#endif
 
 // Имя сети Wi-Fi
 char ssid[32] = {0};
 // Пароль Wi-Fi
 char password[64] = {0};
+// SoftAP?
+bool softAP = false;
 
 // Порт получения данных
 int port = 3232;
@@ -16,6 +21,9 @@ int port = 3232;
 void otaSetup() {
     if (otaTaskCreated == nullptr && ssid[0] != 0 && password[0] != 0 && port > 0) {
         xTaskCreatePinnedToCore(otaBegin, "ota", 8192, NULL, 1, &otaTask, 1);
+#if ROBOT_HAS_LED
+        xTaskCreatePinnedToCore(otaBeginLed, "ota_led", 4096, NULL, 1, &otaLedTask, 1);
+#endif
         otaTaskCreated = &otaTask;
     }
 }
@@ -30,30 +38,45 @@ void otaBegin(void *params) {
     esp_ota_handle_t updateHandle = 0;
     bool updateBegin = false;
     esp_err_t e;
+    if (softAP) {
 #if OTA_DEBUG
-    debug("V: OTA: WiFi.begin: \"%s\"; \"%s\"\n", ssid, password);
+        debug("V: OTA: WiFi.softAP: \"%s\"; \"%s\"\n", ssid, password);
 #endif
-    WiFi.begin(ssid, password);
-    for (int i = 0; i < 100; i++) {
-        if (WiFi.status() == WL_CONNECTED) {
-            break;
+        WiFi.softAP(ssid, password);
+        server.begin();
+        otaNotify(WiFi.softAPIP(), port);
+        for (int i = 0; i < 1000; i++) {
+            if (client = server.available()) {
+                break;
+            }
+            delay(100);
         }
-        delay(100);
-    }
-    if (WiFi.status() != WL_CONNECTED) {
+    } else {
 #if OTA_DEBUG
-        debug("E: OTA: WiFi.status: %d\n", WiFi.status());
+        debug("V: OTA: WiFi.begin: \"%s\"; \"%s\"\n", ssid, password);
 #endif
-        otaError("wifi");
-        goto end;
-    }
-    server.begin();
-    otaNotify(WiFi.localIP(), port);
-    for (int i = 0; i < 100; i++) {
-        if (client = server.available()) {
-            break;
+        WiFi.begin(ssid, password);
+        for (int i = 0; i < 100; i++) {
+            if (WiFi.status() == WL_CONNECTED) {
+                break;
+            }
+            delay(100);
         }
-        delay(100);
+        if (WiFi.status() != WL_CONNECTED) {
+#if OTA_DEBUG
+            debug("E: OTA: WiFi.status: %d\n", WiFi.status());
+#endif
+            otaError("wifi");
+            goto end;
+        }
+        server.begin();
+        otaNotify(WiFi.localIP(), port);
+        for (int i = 0; i < 100; i++) {
+            if (client = server.available()) {
+                break;
+            }
+            delay(100);
+        }
     }
     if (!client) {
 #if OTA_DEBUG
@@ -182,8 +205,13 @@ end:
     if (server) {
         server.stop();
     }
+    WiFi.softAPdisconnect();
     WiFi.disconnect();
     otaTaskCreated = nullptr;
+#if ROBOT_HAS_LED
+    vTaskDelete(&otaLedTask);
+    otaEndLed();
+#endif
     vTaskDelete(NULL);
 }
 
@@ -214,6 +242,14 @@ bool otaHandle(const char *packet) {
     if (strncmp(packet, "AT+CIPSERVER=1,", 15) == 0) {
         // Открытие порта для приёма данных: AT+CIPSERVER=1,port
         port = atoi(packet + 15);
+        return true;
+    }
+    if (strncmp(packet, "AT+CWMODE=1", 11) == 0) {
+        softAP = false;
+        return true;
+    }
+    if (strncmp(packet, "AT+CWMODE=2", 11) == 0) {
+        softAP = true;
         return true;
     }
     if (strncmp(packet, "AT+CIUPDATE", 11) == 0) {

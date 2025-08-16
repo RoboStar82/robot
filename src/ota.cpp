@@ -316,6 +316,9 @@ void otaFinish() {
           otaDescription.app_elf_sha256[30],
           otaDescription.app_elf_sha256[31]);
 #endif
+#if ROBOT_HAS_LED
+    otaEndLed();
+#endif
 }
 
 bool otaVerify() {

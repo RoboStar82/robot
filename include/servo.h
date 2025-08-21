@@ -2,6 +2,9 @@
 #pragma once
 
 #include <Arduino.h>
+#if ROBOT_HAS_SERVO_I2C
+#include <iarduino_I2C_Motor.h>
+#endif
 
 #include "print.h"
 
@@ -13,6 +16,15 @@ class Servo {
 
     Servo(int n) {
         this->n = n;
+#if ROBOT_HAS_SERVO_I2C
+        servo = new iarduino_I2C_Motor(0x09);
+        servo->setMagnet(9);
+        servo->setStopNeutral(true);
+        servo->setNominalRPM(60);
+        servo->setReducer(1.0);
+        servo->setVoltage(12.0);
+        health = servo->begin();
+#endif
 #if ROBOT_HAS_SERVO_PWM
         int pin1 = 0;
         int pin2 = 0;
@@ -74,6 +86,9 @@ class Servo {
         }
         if (this->speed != speed) {
             this->speed = speed;
+#if ROBOT_HAS_SERVO_I2C
+            servo->setSpeed(speed * maxSpeed, MOT_PWM);
+#endif
 #if ROBOT_HAS_SERVO_PWM
             if (speed == 0) {
                 ledcWrite(channel1, 0);
@@ -102,6 +117,9 @@ class Servo {
     }
 
    protected:
+#if ROBOT_HAS_SERVO_I2C
+    iarduino_I2C_Motor *servo = nullptr;
+#endif
 #if ROBOT_HAS_SERVO_PWM
     uint8_t channel1 = 0;
     uint8_t channel2 = 0;

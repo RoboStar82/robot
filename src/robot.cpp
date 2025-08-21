@@ -13,8 +13,11 @@ void robotSetup() {
 #if ROBOT_HAS_MOTOR_I2C || ROBOT_HAS_MOTOR_PWM
     robot->setMotors(new Motor(1), new Motor(2), new Motor(3), new Motor(4));
 #endif
+#if ROBOT_HAS_SERVO_I2C
+    robot->setServos(new Servo(1), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+#endif
 #if ROBOT_HAS_SERVO_PWM
-    robot->setServos(new Servo(1), new Servo(2), new Servo(3), new Servo(4), new Servo(5), new Servo(6), new Servo(7), new Servo(8));
+    robot->setServos(nullptr, new Servo(2), nullptr, nullptr, new Servo(5), nullptr, nullptr, nullptr);
 #endif
     uint8_t *health = getHealth();
     int healthSize = getHealthSize();
@@ -432,9 +435,14 @@ void Controller::onChangeZ() {
 #if DEBUG_CONTROL
     debug("V: robot: Z: %d %d\n", robot->controller->LZ, robot->controller->RZ);
 #endif
-    robot->servo1->setSpeed(robot->controller->RZ);
-    robot->servo2->setSpeed(robot->controller->LZ);
+    if (robot->servo1 != nullptr) {
+        robot->servo1->setSpeed(robot->controller->LZ);
+    }
+    if (robot->servo2 != nullptr) {
+        robot->servo2->setSpeed(robot->controller->RZ);
+    }
 #if ROBOT_HAS_LED
+#if ROBOT_HAS_SERVO_PWM
     uint32_t color;
 
     if (robot->controller->RZ == 0) {
@@ -444,17 +452,13 @@ void Controller::onChangeZ() {
     } else {
         color = (0xff) << 16;
     }
+    robot->led->setPixelColor(0, color);
     robot->led->setPixelColor(1, color);
-    if (robot->controller->LZ == 0) {
-        color = 0x000000;
-    } else if (robot->controller->LZ > 0) {
-        color = (0xff) | ((0xff) << 8) | ((0xff) << 16);
-    } else {
-        color = (0xff) << 16;
-    }
     robot->led->setPixelColor(2, color);
+    robot->led->setPixelColor(3, color);
 
     robot->led->show();
+#endif
 #endif
 }
 

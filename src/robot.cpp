@@ -146,9 +146,9 @@ void Robot::updateSpeed() {
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
             newSpeed = L->x - (signY > 0 ? signX : 0) * L->y;
-            newSpeedLF = -newSpeed;
+            newSpeedLF = newSpeed;
             newSpeed = L->x + (signY < 0 ? signX : 0) * L->y;
-            newSpeedLB = newSpeed;
+            newSpeedLB = -newSpeed;
         }
     }
 
@@ -174,18 +174,20 @@ void Robot::updateSpeed() {
             // Поворот вверх: верхнее колесо едет медленнее; нижнее колесо без корректировки
             // Поворот вниз: нижнее колесо едет медленнее; верхнее колесо без корректировки
             newSpeed = R->x - (signY > 0 ? signX : 0) * R->y;
-            newSpeedRF = newSpeed;
+            newSpeedRF = -newSpeed;
             newSpeed = R->x + (signY < 0 ? signX : 0) * R->y;
-            newSpeedRB = -newSpeed;
+            newSpeedRB = +newSpeed;
         }
     }
 
+    /*
     if (this->controller->LT || this->controller->RT) {
         newSpeedLF = (float)newSpeedLF / 4;
         newSpeedRF = (float)newSpeedRF / 4;
         newSpeedLB = (float)newSpeedLB / 4;
         newSpeedRB = (float)newSpeedRB / 4;
     }
+    */
 
     if (motorLF->speed != newSpeedLF) {
 #if DEBUG_MOTOR
@@ -314,6 +316,12 @@ void SettingsCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacterist
         if (value.length() >= 5) {
             servoSpeed2 = value[4];
         }
+        if (value.length() >= 9) {
+            robot->servoAngleA = value[5];
+            robot->servoAngleB = value[6];
+            robot->servoAngleX = value[7];
+            robot->servoAngleY = value[8];
+        }
 #if DEBUG_SETTINGS
         debug("V: settings: minMotorSpeed = %d\n", minMotorSpeed);
         debug("V: settings: maxMotorSpeed = %d\n", maxMotorSpeed);
@@ -321,6 +329,12 @@ void SettingsCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacterist
         debug("V: settings: servoSpeed = %d\n", servoSpeed);
         if (value.length() >= 5) {
             debug("V: settings: servoSpeed2 = %d\n", servoSpeed2);
+        }
+        if (value.length() >= 9) {
+            debug("V: settings: servoAngleA = %d\n", robot->servoAngleA);
+            debug("V: settings: servoAngleB = %d\n", robot->servoAngleB);
+            debug("V: settings: servoAngleX = %d\n", robot->servoAngleX);
+            debug("V: settings: servoAngleY = %d\n", robot->servoAngleY);
         }
 #endif
         if (robot->motorLF != nullptr) {
@@ -392,7 +406,7 @@ void Controller::onChangeA() {
     println("V: robot: A");
 #endif
     if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(0);
+        robot->servo5->setAngle(robot->servoAngleA);
     } else {
         robot->autoMode = 'A';
     }
@@ -403,7 +417,7 @@ void Controller::onChangeB() {
     println("V: robot: B");
 #endif
     if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(30);
+        robot->servo5->setAngle(robot->servoAngleB);
     } else {
         robot->autoMode = 'B';
     }
@@ -414,7 +428,7 @@ void Controller::onChangeX() {
     println("V: robot: X");
 #endif
     if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(60);
+        robot->servo5->setAngle(robot->servoAngleX);
     } else {
         robot->autoMode = 'X';
     }
@@ -425,7 +439,7 @@ void Controller::onChangeY() {
     println("V: robot: Y");
 #endif
     if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(90);
+        robot->servo5->setAngle(robot->servoAngleY);
     } else {
         robot->autoMode = 'Y';
     }

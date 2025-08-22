@@ -60,6 +60,11 @@ class Robot {
 
     void setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4, Servo *servo5, Servo *servo6, Servo *servo7, Servo *servo8);
 
+    int servoAngleA = 0;
+    int servoAngleB = 30;
+    int servoAngleX = 60;
+    int servoAngleY = 90;
+
 #if ROBOT_HAS_LED
     Adafruit_NeoPixel *led = new Adafruit_NeoPixel(4, 16, NEO_GRB + NEO_KHZ800);
 #endif

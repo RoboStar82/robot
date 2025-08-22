@@ -19,7 +19,7 @@ class Servo {
 #if ROBOT_HAS_SERVO_I2C
         servo = new iarduino_I2C_Motor(0x09);
         servo->setMagnet(9);
-        servo->setStopNeutral(true);
+        servo->setStopNeutral(false);
         servo->setNominalRPM(60);
         servo->setReducer(1.0);
         servo->setVoltage(12.0);

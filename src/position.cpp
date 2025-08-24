@@ -19,7 +19,7 @@ BLECharacteristic *getPositionCharacteristic() {
 }
 
 void positionSetup(BLEService *robotService) {
-    positionCharacteristic = robotService->createCharacteristic(positionCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
+    positionCharacteristic = robotService->createCharacteristic(positionCharacteristicUuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     xTaskCreatePinnedToCore(positionBegin, "position", 4096, NULL, 1, NULL, 1);
 }
 
@@ -65,4 +65,63 @@ void positionLoop() {
     delay(3000);
 }
 
+#else
+#if ROBOT_HAS_BMX
+
+BLEUUID positionCharacteristicUuid("b0b0c7ab-0002-4000-8000-000000000000");
+
+BLECharacteristic *positionCharacteristic = nullptr;
+
+// Позиция робота
+uint8_t position[2] = {0, 0};
+
+uint8_t *getPosition() {
+    return position;
+}
+
+BLECharacteristic *getPositionCharacteristic() {
+    return positionCharacteristic;
+}
+
+void positionSetup(BLEService *robotService) {
+    positionCharacteristic = robotService->createCharacteristic(positionCharacteristicUuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
+    xTaskCreatePinnedToCore(positionBegin, "position", 4096, NULL, 1, NULL, 1);
+}
+
+void positionBegin(void *params) {
+    while (true) {
+        positionLoop();
+    }
+}
+
+int angleValue = 0;
+
+void positionLoop() {
+    iarduino_Position_BMX055 *bmx = getBMX();
+    int angle = (360 + (int)bmx->axisZ) % 360;
+    if (angleValue != angle) {
+        angleValue = angle;
+        position[0] = angle & 0xff;
+        position[1] = angle >> 8;
+
+#if DEBUG_POSITION
+        debug("V: BMX: angle: %d\n", angle);
+#endif
+
+#if DEBUG_POSITION_TX
+        debug("V: BLE: position: %d:", length);
+        for (int n = 0; n < length; n++) {
+            debug(" %02x", position[n]);
+        }
+        println();
+#endif
+
+        BLECharacteristic *positionCharacteristic = getPositionCharacteristic();
+        positionCharacteristic->setValue(position, 2);
+        positionCharacteristic->notify();
+    }
+    delay(3000);
+}
+
+#endif
 #endif

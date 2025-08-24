@@ -17,15 +17,9 @@
 
 class ServerCallbacks : public BLEServerCallbacks {
    public:
-    void onConnect(BLEServer *bleServer, BLEConnInfo &connInfo) {
-        println("V: BLE: connected");
-    }
+    void onConnect(BLEServer *bleServer, BLEConnInfo &connInfo);
 
-    void onDisconnect(BLEServer *bleServer, BLEConnInfo &connInfo, int reason) {
-        println("V: BLE: disconnected");
-        BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
-        bleAdvertising->start();
-    }
+    void onDisconnect(BLEServer *bleServer, BLEConnInfo &connInfo, int reason);
 };
 
 BLEServer *getBLEServer();

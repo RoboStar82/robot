@@ -35,6 +35,13 @@ void robotSetup() {
     }
     BLECharacteristic *healthCharacteristic = getHealthCharacteristic();
     healthCharacteristic->setValue(health, healthSize);
+#if ROBOT_HAS_LED
+    robot->led->setPixelColor(0, 0xff);
+    robot->led->setPixelColor(1, 0xff);
+    robot->led->setPixelColor(2, 0xff);
+    robot->led->setPixelColor(3, 0xff);
+    robot->led->show();
+#endif
     xTaskCreatePinnedToCore(robotBegin, "robot", 4096, NULL, 1, NULL, 1);
 }
 
@@ -91,11 +98,58 @@ void Robot::setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4
 }
 
 void Robot::updateSpeed() {
-    int newSpeed = 0;
     int newSpeedLF = 0;
     int newSpeedRF = 0;
     int newSpeedLB = 0;
     int newSpeedRB = 0;
+
+#if ROBOT_HAS_CONTROLLER_ALT
+
+    Stick *L = this->L;
+    Stick *R = this->R;
+
+    if (L->x == 0 && L->y == 0) {
+        // D вместо L
+        L = this->D;
+    }
+
+    /*
+    float RotateMul = 1.0f - ((float)Gamepad.Analog(PSS_RX) - 128.0f) / 64.0f;
+    int speed1 = ((float)Gamepad.Analog(PSS_LY) - (float)Gamepad.Analog(PSS_LX)) * RotateMul;
+    int speed2 = ((float)Gamepad.Analog(PSS_LY) + (float)Gamepad.Analog(PSS_LX) - 255.0f) * RotateMul;
+    int Rotate = ((float)Gamepad.Analog(PSS_RX) - 128.0f) * 2.0f / denomRotSpeed;
+    goMotor(DRMotor, speed1 + Rotate);
+    goMotor(URMotor, speed2 + Rotate);
+    goMotor(DLMotor, speed2 - Rotate);
+    goMotor(ULMotor, speed1 - Rotate);
+    */
+
+    /*
+    float multiplier = 1.0f - R->x / 64.0f;
+    int speed1 = (float)(L->y - L->x) * multiplier;
+    int speed2 = (float)(L->y + L->x) * multiplier;
+    */
+
+    if (abs(R->y) > abs(R->x) && ((R->y > 0 && L->y < 0) || (R->y < 0 && L->y > 0))) {
+        // Разворот
+        newSpeedLF = 0.8f * L->y;
+        newSpeedRF = 0.8f * R->y;
+        newSpeedLB = 0.8f * L->y;
+        newSpeedRB = 0.8f * R->y;
+    } else {
+        // Алгоритм Вани
+        int speed1 = L->y + L->x;
+        int speed2 = L->y - L->x;
+        int rotate = 0.8f * R->x;
+        newSpeedLF = speed1 + rotate;
+        newSpeedRF = speed2 - rotate;
+        newSpeedLB = speed2 + rotate;
+        newSpeedRB = speed1 - rotate;
+    }
+
+#else
+
+    int newSpeed = 0;
     int signX = 0;
     int signY = 0;
     int absX = 0;
@@ -125,7 +179,7 @@ void Robot::updateSpeed() {
     }
 
     // Левые моторы
-    if (L == nullptr || L->x == 0 && L->y == 0) {
+    if (L == nullptr || (L->x == 0 && L->y == 0)) {
         // Остановка
         newSpeedLF = 0;
         newSpeedLB = 0;
@@ -153,7 +207,7 @@ void Robot::updateSpeed() {
     }
 
     // Правые моторы
-    if (R == nullptr || R->x == 0 && R->y == 0) {
+    if (R == nullptr || (R->x == 0 && R->y == 0)) {
         // Остановка
         newSpeedRF = 0;
         newSpeedRB = 0;
@@ -189,7 +243,9 @@ void Robot::updateSpeed() {
     }
     */
 
-    if (motorLF->speed != newSpeedLF) {
+#endif
+
+    if (motorLF != nullptr && motorLF->speed != newSpeedLF) {
 #if DEBUG_MOTOR
         debug("V: motor: LF: %d\n", newSpeedLF);
 #endif
@@ -206,7 +262,7 @@ void Robot::updateSpeed() {
         led->setPixelColor(2, color);
 #endif
     }
-    if (motorRF->speed != newSpeedRF) {
+    if (motorRF != nullptr && motorRF->speed != newSpeedRF) {
 #if DEBUG_MOTOR
         debug("V: motor: RF: %d\n", newSpeedRF);
 #endif
@@ -223,7 +279,7 @@ void Robot::updateSpeed() {
         led->setPixelColor(1, color);
 #endif
     }
-    if (motorLB->speed != newSpeedLB) {
+    if (motorLB != nullptr && motorLB->speed != newSpeedLB) {
 #if DEBUG_MOTOR
         debug("V: motor: LB: %d\n", newSpeedLB);
 #endif
@@ -240,7 +296,7 @@ void Robot::updateSpeed() {
         led->setPixelColor(3, color);
 #endif
     }
-    if (motorRB->speed != newSpeedRB) {
+    if (motorRB != nullptr && motorRB->speed != newSpeedRB) {
 #if DEBUG_MOTOR
         debug("V: motor: RB: %d\n", newSpeedRB);
 #endif
@@ -261,6 +317,8 @@ void Robot::updateSpeed() {
     led->show();
 #endif
 }
+
+int timerResetA = 0;
 
 void Robot::loop() {
     if (changeXY) {
@@ -299,6 +357,14 @@ void Robot::loop() {
     }
     if (update) {
         updateSpeed();
+    }
+    if (timerResetA > 0) {
+        timerResetA--;
+        if (timerResetA == 0) {
+            if (robot->servo5 != nullptr) {
+                robot->servo5->setAngle(robot->servoAngleY);
+            }
+        }
     }
     delay(50);
 }
@@ -407,6 +473,7 @@ void Controller::onChangeA() {
 #endif
     if (robot->servo5 != nullptr) {
         robot->servo5->setAngle(robot->servoAngleA);
+        timerResetA = 60;
     } else {
         robot->autoMode = 'A';
     }
@@ -427,10 +494,36 @@ void Controller::onChangeX() {
 #if DEBUG_CONTROL
     println("V: robot: X");
 #endif
+    /*
     if (robot->servo5 != nullptr) {
         robot->servo5->setAngle(robot->servoAngleX);
     } else {
         robot->autoMode = 'X';
+    }
+    */
+    if (robot->motorLF != nullptr) {
+        robot->motorLF->setSpeed(0);
+    }
+    if (robot->motorRF != nullptr) {
+        robot->motorRF->setSpeed(0);
+    }
+    if (robot->motorLB != nullptr) {
+        robot->motorLB->setSpeed(0);
+    }
+    if (robot->motorRB != nullptr) {
+        robot->motorRB->setSpeed(0);
+    }
+    if (robot->servo1 != nullptr) {
+        robot->servo1->setSpeed(0);
+    }
+    if (robot->servo2 != nullptr) {
+        robot->servo2->setSpeed(0);
+    }
+    if (robot->servo3 != nullptr) {
+        robot->servo3->setSpeed(0);
+    }
+    if (robot->servo4 != nullptr) {
+        robot->servo4->setSpeed(0);
     }
 }
 
@@ -479,6 +572,72 @@ void Controller::onChangeZ() {
 void Controller::onChangeXY() {
     robot->changeXY = true;
     robot->autoMode = 0;
+}
+
+void ServerCallbacks::onConnect(BLEServer *bleServer, BLEConnInfo &connInfo) {
+    println("V: BLE: connected");
+#if ROBOT_HAS_LED
+    robot->led->setPixelColor(0, 0);
+    robot->led->setPixelColor(1, 0);
+    robot->led->setPixelColor(2, 0);
+    robot->led->setPixelColor(3, 0);
+    robot->led->show();
+#endif
+}
+
+void ServerCallbacks::onDisconnect(BLEServer *bleServer, BLEConnInfo &connInfo, int reason) {
+    println("V: BLE: disconnected");
+    if (robot->controller != nullptr) {
+        robot->controller->start = false;
+        robot->controller->back = false;
+        robot->controller->A = false;
+        robot->controller->B = false;
+        robot->controller->X = false;
+        robot->controller->Y = false;
+        robot->controller->DX = 0;
+        robot->controller->DY = 0;
+        robot->controller->LX = 0;
+        robot->controller->LY = 0;
+        robot->controller->LZ = 0;
+        robot->controller->RX = 0;
+        robot->controller->RY = 0;
+        robot->controller->RZ = 0;
+        robot->controller->LT = false;
+        robot->controller->RT = false;
+    }
+    if (robot->motorLF != nullptr) {
+        robot->motorLF->setSpeed(0);
+    }
+    if (robot->motorRF != nullptr) {
+        robot->motorRF->setSpeed(0);
+    }
+    if (robot->motorLB != nullptr) {
+        robot->motorLB->setSpeed(0);
+    }
+    if (robot->motorRB != nullptr) {
+        robot->motorRB->setSpeed(0);
+    }
+    if (robot->servo1 != nullptr) {
+        robot->servo1->setSpeed(0);
+    }
+    if (robot->servo2 != nullptr) {
+        robot->servo2->setSpeed(0);
+    }
+    if (robot->servo3 != nullptr) {
+        robot->servo3->setSpeed(0);
+    }
+    if (robot->servo4 != nullptr) {
+        robot->servo4->setSpeed(0);
+    }
+    BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
+    bleAdvertising->start();
+#if ROBOT_HAS_LED
+    robot->led->setPixelColor(0, 0xff);
+    robot->led->setPixelColor(1, 0xff);
+    robot->led->setPixelColor(2, 0xff);
+    robot->led->setPixelColor(3, 0xff);
+    robot->led->show();
+#endif
 }
 
 #if ROBOT_HAS_LED

@@ -31,6 +31,10 @@ void bleSetup() {
 #endif
 #if ROBOT_HAS_LIDAR
     positionSetup(robotService);
+#else
+#if ROBOT_HAS_BMX
+    positionSetup(robotService);
+#endif
 #endif
     healthSetup(robotService);
     robotService->start();

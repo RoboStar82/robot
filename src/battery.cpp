@@ -28,7 +28,7 @@ BLECharacteristic *getBatteryLevelCharacteristic() {
 void batterySetup(BLEServer *bleServer) {
     pinMode(BATTERY_PIN, INPUT);
     batteryService = bleServer->createService(batteryServiceUuid);
-    batteryLevelCharacteristic = batteryService->createCharacteristic(batteryLevelCharacteristicUuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_INDICATE | BLECharacteristic::PROPERTY_NOTIFY);
+    batteryLevelCharacteristic = batteryService->createCharacteristic(batteryLevelCharacteristicUuid, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY);
     batteryService->start();
     BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
     bleAdvertising->addServiceUUID(batteryServiceUuid);

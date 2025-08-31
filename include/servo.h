@@ -85,9 +85,13 @@ class Servo {
             speed = -1;
         }
         if (this->speed != speed) {
-            this->speed = speed;
 #if ROBOT_HAS_SERVO_I2C
-            servo->setSpeed(speed * maxSpeed, MOT_PWM);
+            if (speed == 0) {
+                // После подъёма оставляем натяг, чтобы не сползало
+                servo->setSpeed(this->speed > 0 ? minSpeed : 0, MOT_PWM);
+            } else {
+                servo->setSpeed(speed * maxSpeed, MOT_PWM);
+            }
 #endif
 #if ROBOT_HAS_SERVO_PWM
             if (speed == 0) {
@@ -98,6 +102,7 @@ class Servo {
                 ledcWrite(channel2, speed < 0 ? 2.55f * maxSpeed : 0);
             }
 #endif
+            this->speed = speed;
         }
     }
 
@@ -126,4 +131,6 @@ class Servo {
 #endif
     // 0..100
     int maxSpeed = 100;
+    // 0..100
+    int minSpeed = 10;
 };

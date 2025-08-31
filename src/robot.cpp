@@ -17,7 +17,7 @@ void robotSetup() {
     robot->setServos(new Servo(1), nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 #endif
 #if ROBOT_HAS_SERVO_PWM
-    robot->setServos(nullptr, new Servo(2), nullptr, nullptr, new Servo(5), nullptr, nullptr, nullptr);
+    robot->setServos(nullptr, new Servo(2), nullptr, nullptr, new Servo(5), new Servo(6), nullptr, nullptr);
 #endif
     uint8_t *health = getHealth();
     int healthSize = getHealthSize();
@@ -318,7 +318,7 @@ void Robot::updateSpeed() {
 #endif
 }
 
-int timerResetA = 0;
+int timerResetB = 0;
 
 void Robot::loop() {
     if (changeXY) {
@@ -358,11 +358,11 @@ void Robot::loop() {
     if (update) {
         updateSpeed();
     }
-    if (timerResetA > 0) {
-        timerResetA--;
-        if (timerResetA == 0) {
-            if (robot->servo5 != nullptr) {
-                robot->servo5->setAngle(robot->servoAngleY);
+    if (timerResetB > 0) {
+        timerResetB--;
+        if (timerResetB == 0) {
+            if (robot->servo6 != nullptr) {
+                robot->servo6->setAngle(robot->servoAngleX);
             }
         }
     }
@@ -473,9 +473,6 @@ void Controller::onChangeA() {
 #endif
     if (robot->servo5 != nullptr) {
         robot->servo5->setAngle(robot->servoAngleA);
-#if false
-        timerResetA = 60;
-#endif
     } else {
         robot->autoMode = 'A';
     }
@@ -485,8 +482,9 @@ void Controller::onChangeB() {
 #if DEBUG_CONTROL
     println("V: robot: B");
 #endif
-    if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(robot->servoAngleB);
+    if (robot->servo6 != nullptr) {
+        robot->servo6->setAngle(robot->servoAngleB);
+        timerResetB = 60;
     } else {
         robot->autoMode = 'B';
     }
@@ -496,13 +494,11 @@ void Controller::onChangeX() {
 #if DEBUG_CONTROL
     println("V: robot: X");
 #endif
-    /*
-    if (robot->servo5 != nullptr) {
-        robot->servo5->setAngle(robot->servoAngleX);
+    if (robot->servo6 != nullptr) {
+        robot->servo6->setAngle(robot->servoAngleX);
     } else {
         robot->autoMode = 'X';
     }
-    */
     if (robot->motorLF != nullptr) {
         robot->motorLF->setSpeed(0);
     }

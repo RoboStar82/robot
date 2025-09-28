@@ -484,6 +484,7 @@ void Controller::onChangeB() {
 #endif
     if (robot->servo6 != nullptr) {
         robot->servo6->setAngle(robot->servoAngleB);
+        robot->servo5->setAngle(robot->servoAngleY);
         timerResetB = 60;
     } else {
         robot->autoMode = 'B';

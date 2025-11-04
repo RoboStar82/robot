@@ -1,136 +1,152 @@
 
 #include "controller.h"
 
-BLEUUID controllerCharacteristicUuid("b0b0c7ab-0001-4000-8000-000000000000");
+#include "led.h"
+#include "lora.h"
+#include "ota.h"
+#include "robot.h"
 
-BLECharacteristic *controllerCharacteristic = nullptr;
+Controller controller;
 
-Controller *controller = new Controller;
-
-Controller *getController() {
-    return controller;
+controller_state_t Controller::getState() {
+    return state;
 }
 
-BLECharacteristic *getControllerCharacteristic() {
-    return controllerCharacteristic;
+void Controller::getState(uint8_t copyState[]) {
+    memcpy(copyState, &state, sizeof(controller_state_t));
 }
 
-void controllerSetup(BLEService *robotService) {
-    controllerCharacteristic = robotService->createCharacteristic(controllerCharacteristicUuid, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR);
-    controllerCharacteristic->setCallbacks(new ControllerCharacteristicCallbacks);
+void Controller::getState(controller_state_t* copyState) {
+    memcpy(copyState, &state, sizeof(controller_state_t));
 }
 
-void ControllerCharacteristicCallbacks::onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo) {
-    std::string value = bleCharacteristic->getValue();
-    if (value.length() >= 4) {
-        uint8_t btnValue = value[0];
-        uint8_t padValue = value[1];
-        uint8_t leftValue = value[2];
-        uint8_t rightValue = value[3];
-        bool newStart = (btnValue >> 0) & 1;
-        bool newBack = (btnValue >> 1) & 1;
-        bool newA = (btnValue >> 2) & 1;
-        bool newB = (btnValue >> 3) & 1;
-        bool newX = (btnValue >> 4) & 1;
-        bool newY = (btnValue >> 5) & 1;
-        bool newLT = (btnValue >> 6) & 1;
-        bool newRT = (btnValue >> 7) & 1;
-        int newDX = ((padValue >> 0) & 1) ? 1 : (((padValue >> 1) & 1) ? -1 : 0);
-        int newDY = ((padValue >> 2) & 1) ? 1 : (((padValue >> 3) & 1) ? -1 : 0);
-        int newLZ = ((padValue >> 4) & 1) ? 1 : (((padValue >> 5) & 1) ? -1 : 0);
-        int newRZ = ((padValue >> 6) & 1) ? 1 : (((padValue >> 7) & 1) ? -1 : 0);
-        uint8_t tmpValue;
-        tmpValue = (leftValue >> 0) & 0xf;
-        int newLX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
-        tmpValue = (leftValue >> 4) & 0xf;
-        int newLY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
-        tmpValue = (rightValue >> 0) & 0xf;
-        int newRX = tmpValue < 8 ? tmpValue : (8 - tmpValue);
-        tmpValue = (rightValue >> 4) & 0xf;
-        int newRY = tmpValue < 8 ? tmpValue : (8 - tmpValue);
-        if (controller->start != newStart) {
-            controller->start = newStart;
-            if (!newStart) {
-                controller->onChangeStart();
+void Controller::setState(controller_state_t newState) {
+    if (memcmp(&newState, &state, sizeof(controller_state_t))) {
+        controller_state_t oldState = state;
+        state = newState;
+        onChange(oldState);
+    }
+}
+
+void Controller::setState(controller_state_t* newState) {
+    setState(*newState);
+}
+
+void Controller::setState(uint8_t newState[]) {
+    setState(*((controller_state_t*)newState));
+}
+
+void Controller::onChange(controller_state_t oldState) {
+#if ROBOT_HAS_TRANSCEIVER_LORA
+    lora.needSendControllerState();
+#endif
+#if ROBOT_HAS_WHEELS
+    robot.updateSpeed();
+#endif
+#if ROBOT_HAS_RGB_LED
+    if (false) {
+    } else if (state.a && !oldState.a) {
+        led.setControllerButton('A');
+    } else if (state.b && !oldState.b) {
+        led.setControllerButton('B');
+    } else if (state.x && !oldState.x) {
+        led.setControllerButton('X');
+    } else if (state.y && !oldState.y) {
+        led.setControllerButton('Y');
+    } else {
+        led.setControllerButton(0);
+    }
+#endif
+    if (state.back) {
+        if (state.a) {
+            if (state.b) {
+                ota.enableBLE();
+            }
+            if (state.y) {
+                ota.enableWiFi();
             }
         }
-        if (controller->back != newBack) {
-            controller->back = newBack;
-            if (!newBack) {
-                controller->onChangeBack();
+        if (state.x) {
+            if (state.b) {
+                ota.disableBLE();
             }
-        }
-        if (controller->A != newA) {
-            controller->A = newA;
-            if (!newA) {
-                controller->onChangeA();
+            if (state.y) {
+                ota.disableWiFi();
             }
-        }
-        if (controller->B != newB) {
-            controller->B = newB;
-            if (!newB) {
-                controller->onChangeB();
-            }
-        }
-        if (controller->X != newX) {
-            controller->X = newX;
-            if (!newX) {
-                controller->onChangeX();
-            }
-        }
-        if (controller->Y != newY) {
-            controller->Y = newY;
-            if (!newY) {
-                controller->onChangeY();
-            }
-        }
-        bool changeXY = false;
-        if (controller->LX != newLX) {
-            controller->LX = newLX * 16;
-            changeXY = true;
-        }
-        if (controller->LY != newLY) {
-            controller->LY = newLY * 16;
-            changeXY = true;
-        }
-        if (controller->LT != newLT) {
-            controller->LT = newLT;
-            changeXY = true;
-        }
-        if (controller->RX != newRX) {
-            controller->RX = newRX * 16;
-            changeXY = true;
-        }
-        if (controller->RY != newRY) {
-            controller->RY = newRY * 16;
-            changeXY = true;
-        }
-        if (controller->RT != newRT) {
-            controller->RT = newRT;
-            changeXY = true;
-        }
-        if (controller->DX != newDX) {
-            controller->DX = newDX * 64;
-            changeXY = true;
-        }
-        if (controller->DY != newDY) {
-            controller->DY = newDY * 64;
-            changeXY = true;
-        }
-        if (changeXY) {
-            controller->onChangeXY();
-        }
-        bool changeZ = false;
-        if (controller->LZ != newLZ) {
-            controller->LZ = newLZ;
-            changeZ = true;
-        }
-        if (controller->RZ != newRZ) {
-            controller->RZ = newRZ;
-            changeZ = true;
-        }
-        if (changeZ) {
-            controller->onChangeZ();
         }
     }
+    print();
+}
+
+void Controller::print() {
+    Serial.printf("[%6u][I] Controller: mode=%x ", (unsigned long)(esp_timer_get_time() / 1000ULL), state.mode);
+    bool none = true;
+    if (state.lx) {
+        Serial.printf("lx=%d ", state.lx);
+        none = false;
+    }
+    if (state.ly) {
+        Serial.printf("ly=%d ", state.ly);
+        none = false;
+    }
+    if (state.rx) {
+        Serial.printf("rx=%d ", state.rx);
+        none = false;
+    }
+    if (state.ry) {
+        Serial.printf("ry=%d ", state.ry);
+        none = false;
+    }
+    if (state.dx) {
+        Serial.printf("dx=%d ", state.dx);
+        none = false;
+    }
+    if (state.dy) {
+        Serial.printf("dy=%d ", state.dy);
+        none = false;
+    }
+    if (state.lz) {
+        Serial.printf("lz=%d ", state.lz);
+        none = false;
+    }
+    if (state.rz) {
+        Serial.printf("rz=%d ", state.rz);
+        none = false;
+    }
+    if (state.lt) {
+        Serial.printf("lt=%d ", state.lt);
+        none = false;
+    }
+    if (state.rt) {
+        Serial.printf("rt=%d ", state.rt);
+        none = false;
+    }
+    if (state.a) {
+        Serial.printf("a=1 ");
+        none = false;
+    }
+    if (state.b) {
+        Serial.printf("b=1 ");
+        none = false;
+    }
+    if (state.x) {
+        Serial.printf("x=1 ");
+        none = false;
+    }
+    if (state.y) {
+        Serial.printf("y=1 ");
+        none = false;
+    }
+    if (state.start) {
+        Serial.printf("start=1 ");
+        none = false;
+    }
+    if (state.back) {
+        Serial.printf("back=1 ");
+        none = false;
+    }
+    if (none) {
+        Serial.print("none");
+    }
+    Serial.print("\n");
 }

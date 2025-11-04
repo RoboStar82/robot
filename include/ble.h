@@ -1,29 +1,33 @@
 
 #pragma once
 
-#ifndef BLE_DEVICE_NAME
-#define BLE_DEVICE_NAME "RoboStar82"
-#endif
-
 #include <NimBLEDevice.h>
 
-#include "battery.h"
-#include "controller.h"
-#include "health.h"
-#include "position.h"
-#include "print.h"
-#include "settings.h"
-#include "uart.h"
+#include "ble_battery.h"
+#include "ble_robot.h"
+#include "ble_uart.h"
 
-class ServerCallbacks : public BLEServerCallbacks {
+class BLE : BLEServerCallbacks {
    public:
-    void onConnect(BLEServer *bleServer, BLEConnInfo &connInfo);
+    BLEServer* server = nullptr;
+    BLEAdvertising* advertising = nullptr;
 
-    void onDisconnect(BLEServer *bleServer, BLEConnInfo &connInfo, int reason);
+    BLEBattery battery;
+    BLERobot robot;
+    BLEUart uart;
+
+    void begin();
+    void startAdvertising();
+    void stopAdvertising();
+    void end();
+
+    void onConnect(BLEServer* bleServer, BLEConnInfo& connInfo);
+    void onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason);
+
+   protected:
+    bool started = false;
+    bool connected = false;
+    uint32_t advertisingDuration = 9999;
 };
 
-BLEServer *getBLEServer();
-
-BLEService *getRobotService();
-
-void bleSetup();
+extern BLE ble;

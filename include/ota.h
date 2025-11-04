@@ -1,33 +1,43 @@
 
 #pragma once
 
-#ifndef OTA_DEBUG
-#define OTA_DEBUG 1
-#endif
-
-#include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <WiFi.h>
-#include <esp_ota_ops.h>
 
-#include "print.h"
-#include "version.h"
+typedef enum {
+    OTA_OFF = 0,
+    OTA_BLE = 1,
+    OTA_WIFI = 2,
+} ota_status_t;
 
-void otaSetup();
+class OTA {
+   public:
+    void begin();
 
-void otaBegin(void *params);
+    void beginBLE();
+    void beginWiFi();
 
-#if ROBOT_HAS_LED
-void otaBeginLed(void *params);
-void otaLoopLed();
-void otaEndLed();
-#endif
+    void enableBLE();
+    void enableWiFi();
 
-bool otaHandle(const char *packet);
+    void disableBLE();
+    void disableWiFi();
 
-void otaNotify(IPAddress addr, int port);
+    void endBLE();
+    void endWiFi();
 
-void otaFinish();
+    void task();
 
-bool otaVerify();
+    static void task(void* arg);
 
-void otaError(const char *error);
+   protected:
+    ota_status_t otaStatus = OTA_OFF;
+
+    wifi_mode_t wifiMode = WIFI_MODE_NULL;
+    wl_status_t wifiStatus = WL_NO_SHIELD;
+    bool wifiConnected = false;
+
+    bool taskCreated = false;
+};
+
+extern OTA ota;

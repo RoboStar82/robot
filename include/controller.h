@@ -1,77 +1,51 @@
 
 #pragma once
 
-#include <NimBLEDevice.h>
+#include <Arduino.h>
 
-#include "print.h"
+typedef struct {
+    int8_t lx : 4 = 0;
+    int8_t ly : 4 = 0;
+    int8_t rx : 4 = 0;
+    int8_t ry : 4 = 0;
+    int8_t dx : 2 = 0;
+    int8_t dy : 2 = 0;
+    int8_t lz : 2 = 0;
+    int8_t rz : 2 = 0;
+    bool lt : 1 = 0;
+    bool rt : 1 = 0;
+    bool a : 1 = 0;
+    bool b : 1 = 0;
+    bool x : 1 = 0;
+    bool y : 1 = 0;
+    bool start : 1 = 0;
+    bool back : 1 = 0;
+    uint8_t mode : 8 = 0;
+} __attribute__((packed)) controller_state_t;
 
 class Controller {
    public:
-    // Кнопки
+    controller_state_t getState();
 
-    // Start
-    bool start = false;
-    // Back
-    bool back = false;
+    void getState(uint8_t state[]);
 
-    // A
-    bool A = false;
-    // B
-    bool B = false;
-    // X
-    bool X = false;
-    // Y
-    bool Y = false;
+    void getState(controller_state_t* state);
 
-    // D-pad X (right-left)
-    int DX = 0;
-    // D-pad Y (up-down)
-    int DY = 0;
+    void setState(controller_state_t newState);
 
-    // Left X (right-left)
-    int LX = 0;
-    // Left Y (up-down)
-    int LY = 0;
-    // Right X (right-left)
-    int RX = 0;
-    // Right Y (up-down)
-    int RY = 0;
+    void setState(uint8_t newState[]);
 
-    // Left Z (up-down)
-    int LZ = 0;
-    // Right Z (up-down)
-    int RZ = 0;
+    void setState(controller_state_t* newState);
 
-    // Thumb (left)
-    bool LT = false;
-    // Thumb (right)
-    bool RT = false;
+    void onChange(controller_state_t oldState);
 
-    void onChangeStart();
+    void onChangeLora();
+    void onChangeRobot(controller_state_t oldState);
 
-    void onChangeBack();
+    void print();
 
-    void onChangeA();
-
-    void onChangeB();
-
-    void onChangeX();
-
-    void onChangeY();
-
-    void onChangeZ();
-
-    void onChangeXY();
-
+   protected:
+    controller_state_t state;
 };
 
-Controller *getController();
-
-BLECharacteristic *getControllerCharacteristic();
-
-class ControllerCharacteristicCallbacks : public BLECharacteristicCallbacks {
-   public:
-    void onWrite(BLECharacteristic *bleCharacteristic, BLEConnInfo &connInfo);
-};
-
-void controllerSetup(BLEService *robotService);
+extern Controller controller;

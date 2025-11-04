@@ -1,81 +1,40 @@
 
 #pragma once
 
-#ifndef DEBUG_CONTROL
-#define DEBUG_CONTROL 1
-#endif
-
-#ifndef DEBUG_MOTOR
-#define DEBUG_MOTOR 1
-#endif
-
 #include <Arduino.h>
-#include <Wire.h>
 
-#if ROBOT_HAS_LED
-#include <Adafruit_NeoPixel.h>
-#endif
-
-#include "ble.h"
-#include "bmx.h"
-#include "lidar.h"
 #include "motor.h"
-#include "ota.h"
-#include "print.h"
-#include "servo.h"
-#include "stick.h"
 
 class Robot {
    public:
-    Controller *controller = nullptr;
+    void begin();
 
-    Motor *motorLF = nullptr;
-    Motor *motorRF = nullptr;
-    Motor *motorLB = nullptr;
-    Motor *motorRB = nullptr;
-    Motor *motors[4] = {nullptr, nullptr, nullptr, nullptr};
-
-    Servo *servo1 = nullptr;
-    Servo *servo2 = nullptr;
-    Servo *servo3 = nullptr;
-    Servo *servo4 = nullptr;
-    Servo *servo5 = nullptr;
-    Servo *servo6 = nullptr;
-    Servo *servo7 = nullptr;
-    Servo *servo8 = nullptr;
-    Servo *servos[8] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-
-    Stick *L = nullptr;
-    Stick *R = nullptr;
-    Stick *D = nullptr;
-
-    bool changeXY = false;
-    char autoMode = 0;
-
-    void setController(Controller *controller);
-
-    void setSticks(Stick *L, Stick *R, Stick *D);
-
-    void setMotors(Motor *motorLF, Motor *motorRF, Motor *motorLB, Motor *motorRB);
-
-    void setServos(Servo *servo1, Servo *servo2, Servo *servo3, Servo *servo4, Servo *servo5, Servo *servo6, Servo *servo7, Servo *servo8);
-
-    int servoAngleA = 0;
-    int servoAngleB = 30;
-    int servoAngleX = 60;
-    int servoAngleY = 90;
-
-#if ROBOT_HAS_LED
-    Adafruit_NeoPixel *led = new Adafruit_NeoPixel(4, 16, NEO_GRB + NEO_KHZ800);
-#endif
+    void setSpeed(int8_t speedLF, int8_t speedRF, int8_t speedLB, int8_t speedRB);
 
     void updateSpeed();
 
-    void loop();
+   protected:
+#if ROBOT_HAS_MOTOR_PWM && ROBOT_HAS_MOTOR_ENCODER
+    MotorPWM motorLF = MotorPWM(4, 5, 4, 5);
+    MotorPWM motorRF = MotorPWM(1, 2, 1, 2);
+    MotorPWM motorLB = MotorPWM(6, 7, 6, 7);
+    MotorPWM motorRB = MotorPWM(42, 41, 42, 41);
+#elif ROBOT_HAS_MOTOR_PWM
+    MotorPWM motorLF = MotorPWM(4, 5);
+    MotorPWM motorRF = MotorPWM(1, 2);
+    MotorPWM motorLB = MotorPWM(6, 7);
+    MotorPWM motorRB = MotorPWM(42, 41);
+#elif ROBOT_HAS_MOTOR_ENCODER
+    MotorEncoder motorLF = MotorEncoder(4, 5);
+    MotorEncoder motorRF = MotorEncoder(1, 2);
+    MotorEncoder motorLB = MotorEncoder(6, 7);
+    MotorEncoder motorRB = MotorEncoder(42, 41);
+#else
+    Motor motorLF;
+    Motor motorRF;
+    Motor motorLB;
+    Motor motorRB;
+#endif
 };
 
-void robotSetup();
-
-void robotBegin(void *params);
-
-void robotLoop();
+extern Robot robot;

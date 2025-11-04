@@ -1,44 +1,61 @@
 
 #include "ble.h"
 
-BLEServer *bleServer = nullptr;
+BLE ble;
 
-BLEUUID robotServiceUuid("b0b0c7ab-0000-4000-8000-000000000000");
-
-BLEService *robotService = nullptr;
-
-BLEServer *getBLEServer() {
-    return bleServer;
+void BLE::begin() {
+    if (!started) {
+        started = true;
+        log_i("BLE: Init");
+        BLEDevice::init("");
+#if BLE_SECURITY_PASSKEY
+        BLEDevice::setSecurityAuth(true, true, true);
+        BLEDevice::setSecurityPasskey(BLE_SECURITY_PASSKEY);
+        BLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
+#endif
+        server = BLEDevice::createServer();
+        server->setCallbacks(this);
+        advertising = BLEDevice::getAdvertising();
+        advertising->setName(BLE_DEVICE_NAME);
+        battery.begin();
+        robot.begin();
+        uart.begin();
+    }
+    if (!connected) {
+        startAdvertising();
+    }
 }
 
-BLEService *getRobotService() {
-    return robotService;
+void BLE::startAdvertising() {
+    if (!ble_gap_adv_active()) {
+        log_i("BLE: Advertising start...");
+        advertising->start(advertisingDuration);
+    }
 }
 
-void bleSetup() {
-    BLEDevice::init("");
-    bleServer = BLEDevice::createServer();
-    bleServer->setCallbacks(new ServerCallbacks);
-    BLEAdvertising *bleAdvertising = BLEDevice::getAdvertising();
-    bleAdvertising->setName(BLE_DEVICE_NAME);
-#if ROBOT_HAS_BATTERY
-    batterySetup(bleServer);
-#endif
-    robotService = bleServer->createService(robotServiceUuid);
-#if ROBOT_HAS_CONTROLLER_BLE
-    settingsSetup(robotService);
-    controllerSetup(robotService);
-#endif
-#if ROBOT_HAS_LIDAR
-    positionSetup(robotService);
-#else
-#if ROBOT_HAS_BMX
-    positionSetup(robotService);
-#endif
-#endif
-    healthSetup(robotService);
-    robotService->start();
-    uartSetup(bleServer);
-    bleAdvertising->addServiceUUID(robotServiceUuid);
-    bleAdvertising->start();
+void BLE::stopAdvertising() {
+    log_i("BLE: Advertising stop");
+    advertising->stop();
+}
+
+void BLE::end() {
+    log_i("BLE: deinit");
+    battery.end();
+    robot.end();
+    uart.end();
+    BLEDevice::deinit();
+    advertising = nullptr;
+    server = nullptr;
+    started = false;
+}
+
+void BLE::onConnect(BLEServer* bleServer, BLEConnInfo& connInfo) {
+    log_i("BLE: Connected");
+    stopAdvertising();
+    connected = true;
+}
+
+void BLE::onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason) {
+    log_i("BLE: Disconnected");
+    connected = false;
 }

@@ -9,6 +9,9 @@ class BLEBatteryLevel {
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
+
+    void setValue(uint8_t value);
+
     void end();
 
     void task();
@@ -23,9 +26,13 @@ class BLEBatteryLevel {
     bool taskCreated = false;
     uint8_t value = 0;
 #if ROBOT_HAS_TRANSCEIVER_LORA
-    uint8_t pin = 46;
+    uint8_t batteryPin = 2;
+    uint32_t minVoltage = 1500;
+    uint32_t maxVoltage = 2000;
 #else
-    uint8_t pin = 0;
+    uint8_t batteryPin = 0;
+    uint32_t minVoltage = 0;
+    uint32_t maxVoltage = 0;
 #endif
 };
 

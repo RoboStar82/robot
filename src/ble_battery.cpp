@@ -17,9 +17,12 @@ void BLEBatteryLevel::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    if (pin && !taskCreated) {
-        xTaskCreate(task, "battery_level_task", 4096, NULL, 1, NULL);
-        taskCreated = true;
+    if (batteryPin) {
+        pinMode(batteryPin, INPUT);
+        if (!taskCreated) {
+            xTaskCreate(task, "battery_level_task", 4096, NULL, 1, NULL);
+            taskCreated = true;
+        }
     }
 }
 
@@ -32,10 +35,74 @@ void BLEBatteryLevel::task(void* arg) {
 }
 
 void BLEBatteryLevel::task() {
-    pinMode(pin, INPUT);
+    uint32_t voltage = 0;
+    int lowCount = 0;
     while (true) {
-        log_i("%d", analogRead(pin));
+        uint32_t voltages[4] = {0, 0, 0, 0};
+        voltage = analogReadMilliVolts(batteryPin);
+        voltages[0] = voltage;
+        delay(9);
+        voltage = analogReadMilliVolts(batteryPin);
+        if (voltage < voltages[0]) {
+            voltages[1] = voltages[0];
+            voltages[0] = voltage;
+        } else {
+            voltages[1] = voltage;
+        }
+        delay(9);
+        voltage = analogReadMilliVolts(batteryPin);
+        if (voltage < voltages[0]) {
+            voltages[2] = voltages[1];
+            voltages[1] = voltages[0];
+            voltages[0] = voltage;
+        } else if (voltage < voltages[1]) {
+            voltages[2] = voltages[1];
+            voltages[1] = voltage;
+        } else {
+            voltages[2] = voltage;
+        }
+        delay(9);
+        voltage = analogReadMilliVolts(batteryPin);
+        if (voltage < voltages[0]) {
+            voltages[3] = voltages[2];
+            voltages[2] = voltages[1];
+            voltages[1] = voltages[0];
+            voltages[0] = voltage;
+        } else if (voltage < voltages[1]) {
+            voltages[3] = voltages[2];
+            voltages[2] = voltages[1];
+            voltages[1] = voltage;
+        } else if (voltage < voltages[2]) {
+            voltages[3] = voltages[2];
+            voltages[2] = voltage;
+        } else {
+            voltages[3] = voltage;
+        }
+        voltage = (voltages[1] + voltages[2]) >> 1;
+        if (voltage > maxVoltage) {
+            setValue(100);
+            lowCount = 0;
+        } else if (voltage > minVoltage) {
+            setValue(round(100.0f * (voltage - minVoltage) / (maxVoltage - minVoltage)));
+            lowCount = 0;
+        } else if (voltage > 0) {
+            if (++lowCount > 9) {
+                esp_deep_sleep_start();
+            }
+        }
         delay(9999);
+    }
+}
+
+void BLEBatteryLevel::setValue(uint8_t _value) {
+    if (value == _value) {
+        return;
+    }
+    value = _value;
+    log_i("Battery: %d%%", value);
+    if (characteristic) {
+        characteristic->setValue(value);
+        characteristic->indicate();
     }
 }
 

@@ -3,10 +3,45 @@
 
 #include "led.h"
 #include "lora.h"
+#include "navigation.h"
 #include "ota.h"
 #include "robot.h"
 
 Controller controller;
+
+#if ROBOT_HAS_CONTROLLER_SERIAL
+
+void Controller::begin() {
+    xTaskCreate(task, "controller_task", 4096, NULL, 1, NULL);
+}
+
+void Controller::task() {
+    while (true) {
+        if (ControllerSerial.available()) {
+            uint8_t data[32];
+            size_t length = ControllerSerial.readBytesUntil('\n', data, 32);
+            if (length > 20 && strncmp((const char*)data, "CTRL=", length) == 0) {
+                data[0] = ((data[5] <= '9' ? data[5] - '0' : toupper(data[5]) - 'A' + 10) << 4) | (data[6] <= '9' ? data[6] - '0' : toupper(data[6]) - 'A' + 10);
+                data[1] = ((data[7] <= '9' ? data[5] - '0' : toupper(data[7]) - 'A' + 10) << 4) | (data[8] <= '9' ? data[8] - '0' : toupper(data[8]) - 'A' + 10);
+                data[2] = ((data[9] <= '9' ? data[5] - '0' : toupper(data[9]) - 'A' + 10) << 4) | (data[10] <= '9' ? data[10] - '0' : toupper(data[10]) - 'A' + 10);
+                data[3] = ((data[11] <= '9' ? data[5] - '0' : toupper(data[11]) - 'A' + 10) << 4) | (data[12] <= '9' ? data[12] - '0' : toupper(data[12]) - 'A' + 10);
+                data[4] = ((data[13] <= '9' ? data[5] - '0' : toupper(data[13]) - 'A' + 10) << 4) | (data[14] <= '9' ? data[14] - '0' : toupper(data[14]) - 'A' + 10);
+                data[5] = ((data[15] <= '9' ? data[5] - '0' : toupper(data[15]) - 'A' + 10) << 4) | (data[16] <= '9' ? data[16] - '0' : toupper(data[16]) - 'A' + 10);
+                data[6] = ((data[17] <= '9' ? data[5] - '0' : toupper(data[17]) - 'A' + 10) << 4) | (data[18] <= '9' ? data[18] - '0' : toupper(data[18]) - 'A' + 10);
+                data[7] = ((data[19] <= '9' ? data[5] - '0' : toupper(data[19]) - 'A' + 10) << 4) | (data[20] <= '9' ? data[20] - '0' : toupper(data[20]) - 'A' + 10);
+                setState(data);
+            }
+        } else {
+            delay(100);
+        }
+    }
+}
+
+void Controller::task(void* arg) {
+    controller.task();
+}
+
+#endif
 
 controller_state_t Controller::getState() {
     return state;
@@ -37,13 +72,16 @@ void Controller::setState(uint8_t newState[]) {
 }
 
 void Controller::onChange(controller_state_t oldState) {
-#if ROBOT_HAS_TRANSCEIVER_LORA
-    lora.needSendControllerState();
-#endif
 #if ROBOT_HAS_WHEELS
     robot.updateSpeed();
 #endif
-#if ROBOT_HAS_RGB_LED
+#if ROBOT_HAS_TRANSCEIVER_LORA
+    lora.needSendControllerState();
+#endif
+#if ROBOT_HAS_NAVIGATION_SERIAL
+    navigation.sendControllerState();
+#endif
+#ifdef RGB_BUILTIN
     if (false) {
     } else if (state.a && !oldState.a) {
         led.setControllerButton('A');

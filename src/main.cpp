@@ -1,6 +1,8 @@
 
+#include "controller.h"
 #include "led.h"
 #include "lora.h"
+#include "navigation.h"
 #include "ota.h"
 #include "robot.h"
 #include "settings.h"
@@ -15,7 +17,15 @@ void setup() {
 #if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
     lora.begin();
 #endif
-#if ROBOT_HAS_LED || ROBOT_HAS_RGB_LED
+#if ROBOT_HAS_CONTROLLER_SERIAL
+    controller.begin();
+#endif
+#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_NAVIGATION_SERIAL
+    navigation.begin();
+#endif
+#ifdef RGB_BUILTIN
+    led.begin();
+#elifdef LED_BUILTIN
     led.begin();
 #endif
     robot.begin();

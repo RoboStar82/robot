@@ -25,6 +25,18 @@ typedef struct {
 
 class Controller {
    public:
+#if ROBOT_HAS_CONTROLLER_SERIAL
+
+#define ControllerSerial Serial0
+
+    void begin();
+
+    void task();
+
+    static void task(void* arg);
+
+#endif
+
     controller_state_t getState();
 
     void getState(uint8_t state[]);
@@ -39,8 +51,7 @@ class Controller {
 
     void onChange(controller_state_t oldState);
 
-    void onChangeLora();
-    void onChangeRobot(controller_state_t oldState);
+    void sendControllerState();
 
     void print();
 

@@ -3,63 +3,52 @@
 
 Led led;
 
-Led::Led() {
-#if ROBOT_HAS_RGB_LED
-    neoPixel = new Adafruit_NeoPixel(1, 48, NEO_GRB + NEO_KHZ800);
-#endif
-}
-
 void Led::begin() {
-#if ROBOT_HAS_TRANSCEIVER_LORA
+    setPowerOn(true);
+#ifdef RGB_BUILTIN
+    rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
+#elifdef LED_BUILTIN
     ledcAttach(LED_BUILTIN, 5000, 8);
 #endif
-    if (neoPixel) {
-        neoPixel->begin();
-        neoPixel->setPixelColor(0, 0x000000);
-        neoPixel->show();
-    }
-    setPowerOn(true);
     xTaskCreate(task, "led_task", 4096, NULL, 1, NULL);
 }
 
 void Led::onChange() {
-#if ROBOT_HAS_RGB_LED
-    if (state.controller.button == '\0') {
-        neoPixel->setPixelColor(0, 0x000000);
-    } else if (state.controller.button == 'A') {
-        neoPixel->setPixelColor(0, 0x001100);
-    } else if (state.controller.button == 'B') {
-        neoPixel->setPixelColor(0, 0x110000);
-    } else if (state.controller.button == 'X') {
-        neoPixel->setPixelColor(0, 0x000011);
-    } else if (state.controller.button == 'Y') {
-        neoPixel->setPixelColor(0, 0x111100);
-    } else {
-        neoPixel->setPixelColor(0, 0x000000);
-    }
-    neoPixel->show();
-#endif
-#if ROBOT_HAS_TRANSCEIVER_LORA
-    int value = 0;
+#ifdef RGB_BUILTIN
+    uint8_t r = 0x00, g = 0x00, b = 0x00;
     if (timers.power.on.value) {
-        value += 9;
+        r = g = b = 0x33;
+    } else if (timers.ota.ble.value) {
+        g = b = 0x11;
+    } else if (timers.ota.wifi.value) {
+        g = b = 0x11;
+    } else if (state.controller.button == 'A') {
+        g = 0x11;
+    } else if (state.controller.button == 'B') {
+        r = 0x11;
+    } else if (state.controller.button == 'X') {
+        b = 0x000011;
+    } else if (state.controller.button == 'Y') {
+        r = g = 0x11;
     }
-    if (timers.lora.sleeping.value) {
-        value++;
-    }
-    if (timers.lora.errors.value) {
-        value++;
+    rgbLedWrite(RGB_BUILTIN, r, g, b);
+#elifdef LED_BUILTIN
+    uint8_t c = 0x00;
+    if (timers.power.on.value) {
+        c = 0x11;
+    } else if (timers.lora.errors.value) {
+        c = 0x01;
+    } else if (timers.ota.ble.value) {
+        c = 0x01;
+    } else if (timers.ota.wifi.value) {
+        c = 0x01;
     }
     if (state.lora.sending) {
-        value++;
+        c++;
+    } else if (state.lora.sleeping) {
+        c = timers.lora.sleeping.value ? 1 : 0;
     }
-    if (timers.ota.ble.value) {
-        value++;
-    }
-    if (timers.ota.wifi.value) {
-        value++;
-    }
-    ledcWrite(LED_BUILTIN, value);
+    ledcWrite(LED_BUILTIN, c);
 #endif
 }
 
@@ -103,6 +92,10 @@ void Led::setLoraSleeping(bool value) {
     if (state.lora.sleeping != value) {
         timers.lora.errors.counter = 0;
         timers.lora.errors.value = false;
+        timers.ota.ble.counter = 0;
+        timers.ota.ble.value = false;
+        timers.ota.wifi.counter = 0;
+        timers.ota.wifi.value = false;
         state.lora.sleeping = value;
         changed = true;
     }
@@ -113,7 +106,7 @@ void Led::setOtaBle(bool value) {
         timers.ota.ble.counter = 0;
         timers.ota.ble.value = false;
         timers.ota.wifi.counter = 0;
-        timers.ota.wifi.value = false;;
+        timers.ota.wifi.value = false;
         state.ota.ble = value;
         changed = true;
     }

@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
 
 typedef struct {
@@ -58,8 +57,6 @@ typedef struct {
 
 class Led {
    public:
-    Led();
-
     void begin();
 
     void onChange();
@@ -78,7 +75,6 @@ class Led {
     void task();
 
    protected:
-    Adafruit_NeoPixel* neoPixel = nullptr;
     led_timers_t timers;
     led_state_t state;
     bool changed = false;

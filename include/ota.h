@@ -8,7 +8,8 @@ typedef enum {
     OTA_OFF = 0,
     OTA_BLE = 1,
     OTA_WIFI = 2,
-} ota_status_t;
+    OTA_ALL = 7,
+} ota_mode_t;
 
 class OTA {
    public:
@@ -31,7 +32,7 @@ class OTA {
     static void task(void* arg);
 
    protected:
-    ota_status_t otaStatus = OTA_OFF;
+    ota_mode_t otaMode = OTA_OFF;
 
     wifi_mode_t wifiMode = WIFI_MODE_NULL;
     wl_status_t wifiStatus = WL_NO_SHIELD;

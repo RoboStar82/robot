@@ -20,22 +20,40 @@ void OTA::begin() {
 }
 
 void OTA::beginBLE() {
+    switch (otaMode) {
+        case OTA_OFF:
+            otaMode = OTA_BLE;
+            break;
+        case OTA_WIFI:
+            otaMode = OTA_ALL;
+            break;
+    }
     ble.begin();
     led.setOtaBle(true);
 }
 
 void OTA::beginWiFi() {
+    switch (otaMode) {
+        case OTA_OFF:
+            otaMode = OTA_WIFI;
+            break;
+        case OTA_BLE:
+            otaMode = OTA_ALL;
+            break;
+    }
     wifiMode = (wifi_mode_t)settings.getUChar("wifi.mode");
     String ssid = settings.getString("wifi.ssid");
     String password = settings.getString("wifi.password");
     if (wifiMode == WIFI_MODE_STA) {
         log_i("Wi-Fi: STA %s", ssid.c_str());
+        WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         log_i("Wi-Fi: AP %s", ssid.c_str());
+        WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
@@ -73,6 +91,14 @@ void OTA::disableWiFi() {
 void OTA::endBLE() {
     ble.end();
     led.setOtaBle(false);
+    switch (otaMode) {
+        case OTA_BLE:
+            otaMode = OTA_OFF;
+            break;
+        case OTA_ALL:
+            otaMode = OTA_WIFI;
+            break;
+    }
 }
 
 void OTA::endWiFi() {
@@ -80,6 +106,14 @@ void OTA::endWiFi() {
     WiFi.softAPdisconnect();
     WiFi.disconnect();
     led.setOtaWiFi(false);
+    switch (otaMode) {
+        case OTA_WIFI:
+            otaMode = OTA_OFF;
+            break;
+        case OTA_ALL:
+            otaMode = OTA_BLE;
+            break;
+    }
 }
 
 void OTA::task(void* arg) {
@@ -112,6 +146,11 @@ void OTA::task() {
             delay(100);
         } else {
             delay(1000);
+        }
+        switch (otaMode) {
+            case OTA_OFF:
+            case OTA_BLE:
+                vTaskDelete(NULL);
         }
     }
 }

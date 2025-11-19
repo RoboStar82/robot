@@ -5,88 +5,96 @@ Motor::Motor(const char* _name) {
     name = _name;
 }
 
-void Motor::begin() {
-    return;
-}
+void Motor::begin() {}
 
-void Motor::setSpeed(int value) {
-    return;
+const char* Motor::getName() {
+    return name;
 }
 
 void Motor::setMinSpeed(uint value) {
-    return;
+    minSpeed = value;
 }
 
 void Motor::setMaxSpeed(uint value) {
-    return;
+    maxSpeed = value;
+}
+
+void Motor::setSpeed(int value) {
+    bool back = value < 0;
+    uint absSpeed = back ? -value : value;
+    if (absSpeed) {
+        if (minSpeed < maxSpeed) {
+            if (absSpeed < minSpeed) {
+                absSpeed = minSpeed;
+            } else if (absSpeed > maxSpeed) {
+                absSpeed = maxSpeed;
+            }
+        }
+    }
+    speed = back ? -speed : speed;
+    log_i("Motor %s: %d", name, speed);
 }
 
 MotorEncoder::MotorEncoder(const char* _name, uint8_t _encoderPin1, uint8_t _encoderPin2) : Motor(_name) {
-    name = _name;
     encoderPin1 = _encoderPin1;
     encoderPin2 = _encoderPin2;
 }
 
-void MotorEncoder::begin() {
-    return;
-}
+void MotorEncoder::begin() {}
 
-void MotorEncoder::setSpeed(int value) {
-    return;
-}
-
-void MotorEncoder::setMinSpeed(uint value) {
-    return;
-}
-
-void MotorEncoder::setMaxSpeed(uint value) {
-    return;
-}
-
-MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : MotorEncoder(_name, 0, 0) {
-    name = _name;
-    pwmPin1 = _pwmPin1;
-    pwmPin2 = _pwmPin2;
-}
-
-MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2, uint8_t _encoderPin1, uint8_t _encoderPin2) : MotorEncoder(_name, _encoderPin1, _encoderPin2) {
-    name = _name;
+MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : Motor(_name) {
     pwmPin1 = _pwmPin1;
     pwmPin2 = _pwmPin2;
 }
 
 void MotorPWM::begin() {
     if (pwmPin1) {
-        ledcAttach(pwmPin1, 80000, 8);
+        ledcAttach(pwmPin1, 20000, 8);
     }
     if (pwmPin2) {
-        ledcAttach(pwmPin2, 80000, 8);
+        ledcAttach(pwmPin2, 20000, 8);
     }
 }
 
 void MotorPWM::setSpeed(int value) {
-    if (pwmPin1 && pwmPin2) {
-        bool back = value < 0;
-        uint speed = back ? -value : value;
-        if (speed) {
-            if (minSpeed < maxSpeed) {
-                if (speed < 0xff) {
-                    speed = minSpeed + speed * (maxSpeed - minSpeed) / 0xff;
-                } else {
-                    speed = maxSpeed;
-                }
+    bool back = value < 0;
+    uint absSpeed = back ? -value : value;
+    if (absSpeed) {
+        if (minSpeed < maxSpeed) {
+            if (absSpeed < 0xff) {
+                absSpeed = minSpeed + absSpeed * (maxSpeed - minSpeed) / 0xff;
+            } else {
+                absSpeed = maxSpeed;
             }
         }
-        log_i("Motor %s: %d", name, back ? -speed : speed);
-        ledcWrite(pwmPin1, back ? 0 : speed);
-        ledcWrite(pwmPin2, back ? speed : 0);
+    }
+    speed = back ? -speed : speed;
+    log_i("Motor %s: %d", name, speed);
+    if (pwmPin1 && pwmPin2) {
+        ledcWrite(pwmPin1, back ? 0 : absSpeed);
+        ledcWrite(pwmPin2, back ? absSpeed : 0);
     }
 }
 
-void MotorPWM::setMinSpeed(uint value) {
-    minSpeed = value;
+MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : MotorPWM(_name, _pwmPin1, _pwmPin2) {}
+
+void MotorMCPWM::begin() {
 }
 
-void MotorPWM::setMaxSpeed(uint value) {
-    maxSpeed = value;
+void MotorMCPWM::setSpeed(int value) {
+    bool back = value < 0;
+    uint absSpeed = back ? -value : value;
+    if (absSpeed) {
+        if (minSpeed < maxSpeed) {
+            if (absSpeed < 0xff) {
+                absSpeed = minSpeed + absSpeed * (maxSpeed - minSpeed) / 0xff;
+            } else {
+                absSpeed = maxSpeed;
+            }
+        }
+    }
+    speed = back ? -speed : speed;
+    log_i("Motor %s: %d", name, speed);
+    if (pwmPin1 && pwmPin2) {
+    }
 }

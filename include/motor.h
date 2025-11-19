@@ -2,18 +2,26 @@
 #pragma once
 
 #include <Arduino.h>
+#include <driver/mcpwm_prelude.h>
 
 class Motor {
    public:
     Motor(const char* name);
+
     void begin();
 
-    void setSpeed(int value);
+    const char* getName();
+
     void setMinSpeed(uint value);
     void setMaxSpeed(uint value);
 
+    void setSpeed(int value);
+
    protected:
     const char* name;
+    uint minSpeed = 50;
+    uint maxSpeed = 200;
+    int speed = 0;
 };
 
 class MotorEncoder : Motor {
@@ -22,31 +30,61 @@ class MotorEncoder : Motor {
 
     void begin();
 
-    void setSpeed(int value);
-    void setMinSpeed(uint value);
-    void setMaxSpeed(uint value);
+    using Motor::getName;
+
+    using Motor::setMaxSpeed;
+    using Motor::setMinSpeed;
+    using Motor::setSpeed;
 
    protected:
-    const char* name;
+    using Motor::maxSpeed;
+    using Motor::minSpeed;
+    using Motor::name;
+    using Motor::speed;
     uint8_t encoderPin1 = 0;
     uint8_t encoderPin2 = 0;
 };
 
-class MotorPWM : MotorEncoder {
+class MotorPWM : Motor {
    public:
     MotorPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2);
-    MotorPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2, uint8_t encoderPin1, uint8_t encoderPin2);
 
     void begin();
 
-    virtual void setSpeed(int value);
-    void setMinSpeed(uint value);
-    void setMaxSpeed(uint value);
+    using Motor::getName;
+
+    using Motor::setMaxSpeed;
+    using Motor::setMinSpeed;
+
+    void setSpeed(int value);
 
    protected:
-    const char* name;
+    using Motor::maxSpeed;
+    using Motor::minSpeed;
+    using Motor::name;
+    using Motor::speed;
     uint8_t pwmPin1 = 0;
     uint8_t pwmPin2 = 0;
-    uint minSpeed = 50;
-    uint maxSpeed = 200;
+};
+
+class MotorMCPWM : MotorPWM {
+   public:
+    MotorMCPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2);
+
+    void begin();
+
+    using MotorPWM::getName;
+
+    using MotorPWM::setMaxSpeed;
+    using MotorPWM::setMinSpeed;
+
+    void setSpeed(int value);
+
+   protected:
+    using MotorPWM::maxSpeed;
+    using MotorPWM::minSpeed;
+    using MotorPWM::name;
+    using MotorPWM::pwmPin1;
+    using MotorPWM::pwmPin2;
+    using MotorPWM::speed;
 };

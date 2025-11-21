@@ -1,6 +1,32 @@
 
 #include "motor.h"
 
+#if ROBOT_HAS_MOTOR_PWM
+MotorPWM motorLF = MotorPWM("LF", 4, 5);
+MotorPWM motorRF = MotorPWM("RF", 2, 1);
+MotorPWM motorLB = MotorPWM("LB", 7, 6);
+MotorPWM motorRB = MotorPWM("RB", 41, 42);
+MotorPWM motorCC = MotorPWM("CC", 39, 40);
+#elif ROBOT_HAS_MOTOR_MCPWM
+MotorMCPWM motorLF = MotorMCPWM("LF", 4, 5);
+MotorMCPWM motorRF = MotorMCPWM("RF", 2, 1);
+MotorMCPWM motorLB = MotorMCPWM("LB", 7, 6);
+MotorMCPWM motorRB = MotorMCPWM("RB", 41, 42);
+MotorMCPWM motorCC = MotorMCPWM("CC", 39, 40);
+#elif ROBOT_HAS_MOTOR_ENCODER
+MotorEncoder motorLF = MotorEncoder("LF", 4, 5);
+MotorEncoder motorRF = MotorEncoder("RF", 2, 1);
+MotorEncoder motorLB = MotorEncoder("LB", 7, 6);
+MotorEncoder motorRB = MotorEncoder("RB", 41, 42);
+Motor motorCC = Motor("CC");
+#else
+Motor motorLF = Motor("LF");
+Motor motorRF = Motor("RF");
+Motor motorLB = Motor("LB");
+Motor motorRB = Motor("RB");
+Motor motorCC = Motor("CC");
+#endif
+
 Motor::Motor(const char* _name) {
     name = _name;
 }
@@ -49,10 +75,10 @@ MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : Moto
 
 void MotorPWM::begin() {
     if (pwmPin1) {
-        ledcAttach(pwmPin1, 20000, 8);
+        ledcAttach(pwmPin1, 25000, 8);
     }
     if (pwmPin2) {
-        ledcAttach(pwmPin2, 20000, 8);
+        ledcAttach(pwmPin2, 25000, 8);
     }
 }
 
@@ -79,6 +105,36 @@ void MotorPWM::setSpeed(int value) {
 MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : MotorPWM(_name, _pwmPin1, _pwmPin2) {}
 
 void MotorMCPWM::begin() {
+    int group = name[1] == 'F' ? 0 : 1;
+    mcpwm_timer_config_t timerConfig = {
+        .group_id = group,
+        .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
+        .resolution_hz = 1000000,
+        .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
+        .period_ticks = 1000000 / 25000,
+    };
+    mcpwm_new_timer(&timerConfig, &mcpwmTimer);
+    mcpwm_operator_config_t operatorConfig = {
+        .group_id = group,
+    };
+    mcpwm_new_operator(&operatorConfig, &mcpwmOperator);
+    mcpwm_operator_connect_timer(mcpwmOperator, mcpwmTimer);
+    mcpwm_comparator_config_t comparatorConfig = {};
+    mcpwm_new_comparator(mcpwmOperator, &comparatorConfig, &mcpwmComparator1);
+    mcpwm_new_comparator(mcpwmOperator, &comparatorConfig, &mcpwmComparator2);
+    mcpwm_comparator_set_compare_value(mcpwmComparator1, 0);
+    mcpwm_comparator_set_compare_value(mcpwmComparator2, 0);
+    mcpwm_generator_config_t generatorConfig = {};
+    generatorConfig.gen_gpio_num = pwmPin1 ? pwmPin1 : -1;
+    mcpwm_new_generator(mcpwmOperator, &generatorConfig, &mcpwmGenerator1);
+    generatorConfig.gen_gpio_num = pwmPin2 ? pwmPin2 : -1;
+    mcpwm_new_generator(mcpwmOperator, &generatorConfig, &mcpwmGenerator2);
+    mcpwm_generator_set_action_on_timer_event(mcpwmGenerator1, MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH));
+    mcpwm_generator_set_action_on_compare_event(mcpwmGenerator1, MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwmComparator1, MCPWM_GEN_ACTION_LOW));
+    mcpwm_generator_set_action_on_timer_event(mcpwmGenerator2, MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_HIGH));
+    mcpwm_generator_set_action_on_compare_event(mcpwmGenerator2, MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwmComparator2, MCPWM_GEN_ACTION_LOW));
+    mcpwm_timer_enable(mcpwmTimer);
+    mcpwm_timer_start_stop(mcpwmTimer, MCPWM_TIMER_START_NO_STOP);
 }
 
 void MotorMCPWM::setSpeed(int value) {
@@ -93,8 +149,12 @@ void MotorMCPWM::setSpeed(int value) {
             }
         }
     }
-    speed = back ? -speed : speed;
-    log_i("Motor %s: %d", name, speed);
-    if (pwmPin1 && pwmPin2) {
+    if (back != (speed < 0)) {
+        mcpwm_generator_set_force_level(mcpwmGenerator1, back ? 0 : -1, true);
+        mcpwm_generator_set_force_level(mcpwmGenerator2, back ? -1 : 0, true);
     }
+    speed = back ? -absSpeed : absSpeed;
+    mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
+    mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
+    log_i("Motor %s: %d", name, speed);
 }

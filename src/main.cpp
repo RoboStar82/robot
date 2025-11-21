@@ -7,9 +7,11 @@
 #include "robot.h"
 #include "settings.h"
 #include "usb.h"
+#include "version.h"
 
 void setup() {
     Serial.begin(115200);
+    log_i(BUILD_DATETIME);
     settings.begin();
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();

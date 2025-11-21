@@ -75,6 +75,8 @@ class Led {
     void task();
 
    protected:
+    uint8_t rgbPin = 0;
+    uint8_t ledPin = 0;
     led_timers_t timers;
     led_state_t state;
     bool changed = false;

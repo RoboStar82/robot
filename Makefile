@@ -2,8 +2,8 @@
 .PHONY: archive build clean
 
 archive:
-	rm -f ../robot_esp32.zip
-	zip -r ../robot_esp32.zip .git .gitignore src include platformio.ini version.py Makefile
+	rm -f ../robot_2026.zip
+	zip -r ../robot_2026.zip .git .gitignore src include platformio.ini version.py Makefile
 
 build:
 	~/.platformio/penv/bin/pio run -e robot
@@ -11,4 +11,4 @@ build:
 	~/.platformio/penv/bin/pio run -e transceiver
 
 clean:
-	rm -f ../robot_esp32.zip
+	rm -f ../robot_2026.zip

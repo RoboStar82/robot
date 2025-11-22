@@ -2,6 +2,8 @@
 #include "robot.h"
 
 #include "controller.h"
+#include "motor.h"
+#include "servo.h"
 
 Robot robot;
 
@@ -10,6 +12,10 @@ void Robot::begin() {
     motorRF.begin();
     motorLB.begin();
     motorRB.begin();
+    servoLF.begin();
+    servoRF.begin();
+    servoLB.begin();
+    servoRB.begin();
 }
 
 void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
@@ -33,5 +39,13 @@ void Robot::updateSpeed() {
     } else {
         // Обычное
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
+    }
+    if (state.lz > 0) {
+        servoLB.setAngle(90);
+        servoRB.setAngle(90);
+    }
+    if (state.lz < 0) {
+        servoLB.setAngle(135);
+        servoRB.setAngle(45);
     }
 }

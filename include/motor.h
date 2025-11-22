@@ -18,9 +18,9 @@ class Motor {
     void setSpeed(int value);
 
    protected:
-    const char* name;
-    uint minSpeed = 50;
-    uint maxSpeed = 200;
+    const char* name = "";
+    uint minSpeed = 0;
+    uint maxSpeed = 255;
     int speed = 0;
 };
 
@@ -87,6 +87,12 @@ class MotorMCPWM : MotorPWM {
     using MotorPWM::pwmPin1;
     using MotorPWM::pwmPin2;
     using MotorPWM::speed;
+
+    bool isLeft = false;
+    bool isRight = false;
+    bool isFront = false;
+    bool isBack = false;
+
     mcpwm_timer_handle_t mcpwmTimer = nullptr;
     mcpwm_oper_handle_t mcpwmOperator = nullptr;
     mcpwm_cmpr_handle_t mcpwmComparator1 = nullptr;

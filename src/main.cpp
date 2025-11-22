@@ -11,7 +11,7 @@
 
 void setup() {
     Serial.begin(115200);
-    log_i(BUILD_DATETIME);
+    log_i("Firmware: %u (%s)", BUILD_TIMESTAMP, BUILD_DATETIME);
     settings.begin();
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();

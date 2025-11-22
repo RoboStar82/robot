@@ -3,8 +3,6 @@
 
 #include <Arduino.h>
 
-#include "motor.h"
-
 class Robot {
    public:
     void begin();

@@ -57,8 +57,11 @@ void Motor::setSpeed(int value) {
             }
         }
     }
-    speed = back ? -speed : speed;
-    log_i("Motor %s: %d", name, speed);
+    int newSpeed = back ? -absSpeed : absSpeed;
+    if (speed != newSpeed) {
+        speed = newSpeed;
+        log_i("Motor %s: %d", name, speed);
+    }
 }
 
 MotorEncoder::MotorEncoder(const char* _name, uint8_t _encoderPin1, uint8_t _encoderPin2) : Motor(_name) {
@@ -94,18 +97,28 @@ void MotorPWM::setSpeed(int value) {
             }
         }
     }
-    speed = back ? -speed : speed;
-    log_i("Motor %s: %d", name, speed);
-    if (pwmPin1 && pwmPin2) {
-        ledcWrite(pwmPin1, back ? 0 : absSpeed);
-        ledcWrite(pwmPin2, back ? absSpeed : 0);
+    int newSpeed = back ? -absSpeed : absSpeed;
+    if (speed != newSpeed) {
+        speed = newSpeed;
+        if (pwmPin1 && pwmPin2) {
+            ledcWrite(pwmPin1, back ? 0 : absSpeed);
+            ledcWrite(pwmPin2, back ? absSpeed : 0);
+        }
+        log_i("Motor %s: %d", name, speed);
     }
 }
 
-MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : MotorPWM(_name, _pwmPin1, _pwmPin2) {}
+MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : MotorPWM(_name, _pwmPin1, _pwmPin2) {
+    if (strlen(name) > 1) {
+        isLeft = name[0] == 'L';
+        isRight = name[0] == 'R';
+        isFront = name[1] == 'F';
+        isBack = name[1] == 'B';
+    }
+}
 
 void MotorMCPWM::begin() {
-    int group = name[1] == 'F' ? 0 : 1;
+    int group = isFront ? 0 : 1;
     mcpwm_timer_config_t timerConfig = {
         .group_id = group,
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -113,6 +126,8 @@ void MotorMCPWM::begin() {
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         .period_ticks = 1000000 / 25000,
     };
+    maxSpeed = 0.8f * timerConfig.period_ticks;
+    minSpeed = 0.4f * timerConfig.period_ticks;
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);
     mcpwm_operator_config_t operatorConfig = {
         .group_id = group,
@@ -149,12 +164,15 @@ void MotorMCPWM::setSpeed(int value) {
             }
         }
     }
-    if (back != (speed < 0)) {
-        mcpwm_generator_set_force_level(mcpwmGenerator1, back ? 0 : -1, true);
-        mcpwm_generator_set_force_level(mcpwmGenerator2, back ? -1 : 0, true);
+    int newSpeed = back ? -absSpeed : absSpeed;
+    if (speed != newSpeed) {
+        if (back != (speed < 0)) {
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, back ? 0 : -1, true);
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, back ? -1 : 0, true);
+        }
+        speed = newSpeed;
+        mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
+        mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
+        log_i("Motor %s: %d", name, speed);
     }
-    speed = back ? -absSpeed : absSpeed;
-    mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
-    mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
-    log_i("Motor %s: %d", name, speed);
 }

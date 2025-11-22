@@ -4,8 +4,8 @@
 #if ROBOT_HAS_SERVO_PWM
 ServoPWM servoLF = ServoPWM("LF", 0);
 ServoPWM servoRF = ServoPWM("RF", 0);
-ServoPWM servoLB = ServoPWM("LB", 0);
-ServoPWM servoRB = ServoPWM("RB", 0);
+ServoPWM servoLB = ServoPWM("LB", 37);
+ServoPWM servoRB = ServoPWM("RB", 38);
 #else
 Servo servoLF = Servo("LF");
 Servo servoRF = Servo("RF");
@@ -31,15 +31,17 @@ void Servo::setMaxAngle(int value) {
     maxAngle = value;
 }
 
-void Servo::setAngle(int value) {
+void Servo::setAngle(int value, bool force) {
     int newAngle = value;
     if (newAngle < minAngle) {
         newAngle = minAngle;
     } else if (newAngle > maxAngle) {
         newAngle = maxAngle;
     }
-    angle = newAngle;
-    log_i("Servo %s: %d", name, angle);
+    if (angle != newAngle || force) {
+        angle = newAngle;
+        log_i("Servo %s: %d", name, angle);
+    }
 }
 
 ServoPWM::ServoPWM(const char* _name, uint8_t _pwmPin) : Servo(_name) {
@@ -48,18 +50,21 @@ ServoPWM::ServoPWM(const char* _name, uint8_t _pwmPin) : Servo(_name) {
 
 void ServoPWM::begin() {
     if (pwmPin) {
-        ledcAttach(pwmPin, 50, 16);
+        ledcAttach(pwmPin, 50, 12);
+        setAngle(angle, true);
     }
 }
 
-void ServoPWM::setAngle(int value) {
+void ServoPWM::setAngle(int value, bool force) {
     int newAngle = value;
     if (newAngle < minAngle) {
         newAngle = minAngle;
     } else if (newAngle > maxAngle) {
         newAngle = maxAngle;
     }
-    angle = newAngle;
-    ledcWrite(pwmPin, map(newAngle, minAngle, maxAngle, 500, 2500) * 65536 / 20000);
-    log_i("Servo %s: %d", name, angle);
+    if (angle != newAngle || force) {
+        angle = newAngle;
+        ledcWrite(pwmPin, map(newAngle, minAngle, maxAngle, 500, 2500) * 4096 / 20000);
+        log_i("Servo %s: %d", name, angle);
+    }
 }

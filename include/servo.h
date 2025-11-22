@@ -14,13 +14,13 @@ class Servo {
     void setMinAngle(int value);
     void setMaxAngle(int value);
 
-    void setAngle(int value);
+    void setAngle(int value, bool force = false);
 
    protected:
     const char* name;
     int minAngle = 0;
     int maxAngle = 180;
-    int angle = 0;
+    int angle = 90;
 };
 
 class ServoPWM : Servo {
@@ -34,13 +34,13 @@ class ServoPWM : Servo {
     using Servo::setMaxAngle;
     using Servo::setMinAngle;
 
-    void setAngle(int value);
+    void setAngle(int value, bool force = false);
 
    protected:
+    using Servo::angle;
     using Servo::maxAngle;
     using Servo::minAngle;
     using Servo::name;
-    using Servo::angle;
     uint8_t pwmPin = 0;
 };
 

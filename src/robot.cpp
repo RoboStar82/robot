@@ -45,7 +45,7 @@ void Robot::updateSpeed() {
         servoRB.setAngle(90);
     }
     if (state.lz < 0) {
-        servoLB.setAngle(135);
-        servoRB.setAngle(45);
+        servoLB.setAngle(90 + 30);
+        servoRB.setAngle(90 - 30);
     }
 }

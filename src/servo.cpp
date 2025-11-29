@@ -2,8 +2,8 @@
 #include "servo.h"
 
 #if ROBOT_HAS_SERVO_PWM
-ServoPWM servoLF = ServoPWM("LF", 0);
-ServoPWM servoRF = ServoPWM("RF", 0);
+ServoPWM servoLF = ServoPWM("LF", 35);
+ServoPWM servoRF = ServoPWM("RF", 36);
 ServoPWM servoLB = ServoPWM("LB", 37);
 ServoPWM servoRB = ServoPWM("RB", 38);
 #else
@@ -51,7 +51,6 @@ ServoPWM::ServoPWM(const char* _name, uint8_t _pwmPin) : Servo(_name) {
 void ServoPWM::begin() {
     if (pwmPin) {
         ledcAttach(pwmPin, 50, 12);
-        setAngle(angle, true);
     }
 }
 

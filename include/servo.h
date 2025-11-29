@@ -20,7 +20,7 @@ class Servo {
     const char* name;
     int minAngle = 0;
     int maxAngle = 180;
-    int angle = 90;
+    int angle = -1;
 };
 
 class ServoPWM : Servo {

@@ -6,13 +6,13 @@ MotorPWM motorLF = MotorPWM("LF", 4, 5);
 MotorPWM motorRF = MotorPWM("RF", 2, 1);
 MotorPWM motorLB = MotorPWM("LB", 7, 6);
 MotorPWM motorRB = MotorPWM("RB", 41, 42);
-MotorPWM motorCC = MotorPWM("CC", 39, 40);
+MotorPWM motorCC = MotorPWM("CC", 45, 40);
 #elif ROBOT_HAS_MOTOR_MCPWM
 MotorMCPWM motorLF = MotorMCPWM("LF", 4, 5);
 MotorMCPWM motorRF = MotorMCPWM("RF", 2, 1);
 MotorMCPWM motorLB = MotorMCPWM("LB", 7, 6);
 MotorMCPWM motorRB = MotorMCPWM("RB", 41, 42);
-MotorMCPWM motorCC = MotorMCPWM("CC", 39, 40);
+MotorMCPWM motorCC = MotorMCPWM("CC", 45, 40);
 #elif ROBOT_HAS_MOTOR_ENCODER
 MotorEncoder motorLF = MotorEncoder("LF", 4, 5);
 MotorEncoder motorRF = MotorEncoder("RF", 2, 1);

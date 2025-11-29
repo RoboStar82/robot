@@ -12,6 +12,7 @@ void Robot::begin() {
     motorRF.begin();
     motorLB.begin();
     motorRB.begin();
+    motorCC.begin();
     servoLF.begin();
     servoRF.begin();
     servoLB.begin();
@@ -40,12 +41,38 @@ void Robot::updateSpeed() {
         // Обычное
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
-    if (state.lz > 0) {
+
+    if (state.dy == 0) {
+        motorCC.setSpeed(0);
+    } else if (state.dy > 0) {
+        motorCC.setSpeed(255);
+    } else if (state.dy < 0) {
+        motorCC.setSpeed(-255);
+    }
+
+    if (raise == -1) {
+        raise = 0;
         servoLB.setAngle(90);
         servoRB.setAngle(90);
-    }
-    if (state.lz < 0) {
-        servoLB.setAngle(90 + 30);
-        servoRB.setAngle(90 - 30);
+    } else if (state.lz > 0) {
+        if (raise >= 2) {
+            raise = 1;
+            servoLF.setAngle(90);
+            servoRF.setAngle(90);
+        } else {
+            raise = 0;
+            servoLB.setAngle(90);
+            servoRB.setAngle(90);
+        }
+    } else if (state.lz < 0) {
+        if (raise == 0) {
+            raise = 1;
+            servoLB.setAngle(90 + 40);
+            servoRB.setAngle(90 - 40);
+        } else {
+            raise = 2;
+            servoLF.setAngle(90 + 20);
+            servoRF.setAngle(90 - 20);
+        }
     }
 }

@@ -10,6 +10,9 @@ class Robot {
     void setSpeed(int speedLF, int speedRF, int speedLB, int speedRB);
 
     void updateSpeed();
+
+   protected:
+    int raise = -1;
 };
 
 extern Robot robot;

@@ -90,6 +90,7 @@ class MotorMCPWM : MotorPWM {
 
     bool isLeft = false;
     bool isRight = false;
+    bool isCenter = false;
     bool isFront = false;
     bool isBack = false;
 

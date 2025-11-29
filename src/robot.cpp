@@ -45,9 +45,9 @@ void Robot::updateSpeed() {
     if (state.dy == 0) {
         motorCC.setSpeed(0);
     } else if (state.dy > 0) {
-        motorCC.setSpeed(255);
-    } else if (state.dy < 0) {
         motorCC.setSpeed(-255);
+    } else if (state.dy < 0) {
+        motorCC.setSpeed(255);
     }
 
     if (raise == -1) {

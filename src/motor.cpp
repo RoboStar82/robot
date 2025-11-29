@@ -112,6 +112,7 @@ MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : 
     if (strlen(name) > 1) {
         isLeft = name[0] == 'L';
         isRight = name[0] == 'R';
+        isCenter = name[0] == 'C';
         isFront = name[1] == 'F';
         isBack = name[1] == 'B';
     }
@@ -128,6 +129,10 @@ void MotorMCPWM::begin() {
     };
     maxSpeed = 0.8f * timerConfig.period_ticks;
     minSpeed = 0.4f * timerConfig.period_ticks;
+    if (isCenter) {
+        maxSpeed = timerConfig.period_ticks;
+        minSpeed = 0.5f * timerConfig.period_ticks;
+    }
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);
     mcpwm_operator_config_t operatorConfig = {
         .group_id = group,

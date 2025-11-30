@@ -7,6 +7,7 @@
 class Motor {
    public:
     Motor(const char* name);
+    ~Motor();
 
     void begin();
 
@@ -27,6 +28,7 @@ class Motor {
 class MotorEncoder : Motor {
    public:
     MotorEncoder(const char* name, uint8_t encoderPin1, uint8_t encoderPin2);
+    ~MotorEncoder();
 
     void begin();
 
@@ -48,6 +50,7 @@ class MotorEncoder : Motor {
 class MotorPWM : Motor {
    public:
     MotorPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2);
+    ~MotorPWM();
 
     void begin();
 
@@ -70,6 +73,7 @@ class MotorPWM : Motor {
 class MotorMCPWM : MotorPWM {
    public:
     MotorMCPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2);
+    ~MotorMCPWM();
 
     void begin();
 
@@ -102,18 +106,22 @@ class MotorMCPWM : MotorPWM {
     mcpwm_gen_handle_t mcpwmGenerator2 = nullptr;
 };
 
+#if ROBOT_HAS_MOTOR_MCPWM
+extern MotorMCPWM motorLF;
+extern MotorMCPWM motorRF;
+extern MotorMCPWM motorLB;
+extern MotorMCPWM motorRB;
 #if ROBOT_HAS_MOTOR_PWM
+extern MotorPWM motorCC;
+#else
+extern MotorMCPWM motorCC;
+#endif
+#elif ROBOT_HAS_MOTOR_PWM
 extern MotorPWM motorLF;
 extern MotorPWM motorRF;
 extern MotorPWM motorLB;
 extern MotorPWM motorRB;
 extern MotorPWM motorCC;
-#elif ROBOT_HAS_MOTOR_MCPWM
-extern MotorMCPWM motorLF;
-extern MotorMCPWM motorRF;
-extern MotorMCPWM motorLB;
-extern MotorMCPWM motorRB;
-extern MotorMCPWM motorCC;
 #elif ROBOT_HAS_MOTOR_ENCODER
 extern MotorEncoder motorLF;
 extern MotorEncoder motorRF;

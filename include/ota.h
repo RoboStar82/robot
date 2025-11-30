@@ -13,6 +13,9 @@ typedef enum {
 
 class OTA {
    public:
+    OTA();
+    ~OTA();
+
     void begin();
 
     void beginBLE();

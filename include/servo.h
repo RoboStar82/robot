@@ -6,6 +6,7 @@
 class Servo {
    public:
     Servo(const char* name);
+    ~Servo();
 
     void begin();
 
@@ -20,12 +21,13 @@ class Servo {
     const char* name;
     int minAngle = 0;
     int maxAngle = 180;
-    int angle = -1;
+    int angle = 90;
 };
 
 class ServoPWM : Servo {
    public:
     ServoPWM(const char* name, uint8_t pin);
+    ~ServoPWM();
 
     void begin();
 

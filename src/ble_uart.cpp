@@ -1,6 +1,10 @@
 
 #include "ble.h"
 
+BLEUartRx::BLEUartRx() {}
+
+BLEUartRx::~BLEUartRx() {}
+
 void BLEUartRx::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -29,6 +33,10 @@ void BLEUartRx::end() {
     characteristic = nullptr;
 }
 
+BLEUartTx::BLEUartTx() {}
+
+BLEUartTx::~BLEUartTx() {}
+
 void BLEUartTx::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -50,6 +58,10 @@ void BLEUartTx::begin(BLEService* service) {
 void BLEUartTx::end() {
     characteristic = nullptr;
 }
+
+BLEUart::BLEUart() {}
+
+BLEUart::~BLEUart() {}
 
 void BLEUart::begin() {
     service = ble.server->createService(serviceUuid);

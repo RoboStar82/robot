@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 
+#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
+#define ControllerSerial Serial2
+#endif
+
 typedef struct {
     int8_t lx : 4 = 0;
     int8_t ly : 4 = 0;
@@ -25,17 +29,10 @@ typedef struct {
 
 class Controller {
    public:
-#if ROBOT_HAS_CONTROLLER_SERIAL
-
-#define ControllerSerial Serial0
+    Controller();
+    ~Controller();
 
     void begin();
-
-    void task();
-
-    static void task(void* arg);
-
-#endif
 
     controller_state_t getState();
 
@@ -51,12 +48,20 @@ class Controller {
 
     void onChange(controller_state_t oldState);
 
-    void sendControllerState();
-
     void print();
+
+    void needSendState();
+
+    void task();
+
+    static void task(void* arg);
 
    protected:
     controller_state_t state;
+
+    bool needSend = false;
+
+    void sendState();
 };
 
 extern Controller controller;

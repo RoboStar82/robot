@@ -17,6 +17,8 @@ Servo::Servo(const char* _name) {
     name = _name;
 }
 
+Servo::~Servo() {}
+
 void Servo::begin() {}
 
 const char* Servo::getName() {
@@ -48,9 +50,12 @@ ServoPWM::ServoPWM(const char* _name, uint8_t _pwmPin) : Servo(_name) {
     pwmPin = _pwmPin;
 }
 
+ServoPWM::~ServoPWM() {}
+
 void ServoPWM::begin() {
     if (pwmPin) {
         ledcAttach(pwmPin, 50, 12);
+        setAngle(angle, true);
     }
 }
 

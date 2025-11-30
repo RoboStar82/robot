@@ -36,6 +36,9 @@ typedef struct {
 
 class USB {
    public:
+    USB();
+    ~USB();
+
     void begin();
 
    protected:

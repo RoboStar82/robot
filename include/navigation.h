@@ -3,15 +3,16 @@
 
 #include <Arduino.h>
 
-#if ROBOT_HAS_NAVIGATION_SERIAL
-#define NavigationSerial Serial1
+#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
+#define NavigationSerial Serial2
 #endif
 
 class Navigation {
    public:
-    void begin();
+    Navigation();
+    ~Navigation();
 
-    void sendControllerState();
+    void begin();
 
     void task();
 

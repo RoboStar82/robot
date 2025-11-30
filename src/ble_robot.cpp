@@ -3,6 +3,10 @@
 #include "ota.h"
 #include "settings.h"
 
+BLERobotSettings::BLERobotSettings() {}
+
+BLERobotSettings::~BLERobotSettings() {}
+
 void BLERobotSettings::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -32,6 +36,10 @@ void BLERobotSettings::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo
 void BLERobotSettings::end() {
     characteristic = nullptr;
 }
+
+BLERobotOTA::BLERobotOTA() {}
+
+BLERobotOTA::~BLERobotOTA() {}
 
 void BLERobotOTA::begin(BLEService* service) {
     if (characteristic) {
@@ -66,6 +74,10 @@ void BLERobotOTA::end() {
     characteristic = nullptr;
 }
 
+BLERobotWiFiMode::BLERobotWiFiMode() {}
+
+BLERobotWiFiMode::~BLERobotWiFiMode() {}
+
 void BLERobotWiFiMode::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -99,6 +111,10 @@ void BLERobotWiFiMode::end() {
     characteristic = nullptr;
 }
 
+BLERobotWiFiSSID::BLERobotWiFiSSID() {}
+
+BLERobotWiFiSSID::~BLERobotWiFiSSID() {}
+
 void BLERobotWiFiSSID::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -130,6 +146,10 @@ void BLERobotWiFiSSID::end() {
     characteristic = nullptr;
 }
 
+BLERobotWiFiPassword::BLERobotWiFiPassword() {}
+
+BLERobotWiFiPassword::~BLERobotWiFiPassword() {}
+
 void BLERobotWiFiPassword::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -160,6 +180,10 @@ void BLERobotWiFiPassword::onWrite(BLECharacteristic* bleCharacteristic, BLEConn
 void BLERobotWiFiPassword::end() {
     characteristic = nullptr;
 }
+
+BLERobot::BLERobot() {}
+
+BLERobot::~BLERobot() {}
 
 void BLERobot::begin() {
     service = ble.server->createService(serviceUuid);

@@ -3,14 +3,20 @@
 
 Led led;
 
+Led::Led() {}
+
+Led::~Led() {}
+
 void Led::begin() {
     setPowerOn(true);
 #ifdef RGB_BUILTIN
     rgbPin = RGB_BUILTIN;
     rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
-#elifdef LED_BUILTIN
+#else
+#ifdef LED_BUILTIN
     ledPin = LED_BUILTIN;
     ledcAttach(LED_BUILTIN, 5000, 8);
+#endif
 #endif
     xTaskCreate(task, "led_task", 4096, NULL, 1, NULL);
 }
@@ -34,7 +40,8 @@ void Led::onChange() {
         r = g = 0x11;
     }
     rgbLedWrite(rgbPin, r, g, b);
-#elifdef LED_BUILTIN
+#else
+#ifdef LED_BUILTIN
     uint8_t c = 0x00;
     if (timers.power.on.value) {
         c = 0x11;
@@ -51,6 +58,7 @@ void Led::onChange() {
         c = timers.lora.sleeping.value ? 1 : 0;
     }
     ledcWrite(ledPin, c);
+#endif
 #endif
 }
 

@@ -7,6 +7,10 @@
 
 Robot robot;
 
+Robot::Robot() {}
+
+Robot::~Robot() {}
+
 void Robot::begin() {
     motorLF.begin();
     motorRF.begin();
@@ -45,11 +49,13 @@ void Robot::updateSpeed() {
     if (state.dy == 0) {
         motorCC.setSpeed(0);
     } else if (state.dy > 0) {
-        motorCC.setSpeed(-255);
-    } else if (state.dy < 0) {
         motorCC.setSpeed(255);
+    } else if (state.dy < 0) {
+        motorCC.setSpeed(-255);
     }
+}
 
+void Robot::updateServo() {
     if (raise == -1) {
         raise = 0;
         servoLB.setAngle(90);
@@ -67,12 +73,12 @@ void Robot::updateSpeed() {
     } else if (state.lz < 0) {
         if (raise == 0) {
             raise = 1;
-            servoLB.setAngle(90 + 40);
-            servoRB.setAngle(90 - 40);
+            servoLB.setAngle(90 + 20);
+            servoRB.setAngle(90 - 20);
         } else {
             raise = 2;
-            servoLF.setAngle(90 + 20);
-            servoRF.setAngle(90 - 20);
+            servoLF.setAngle(90 + 14);
+            servoRF.setAngle(90 - 14);
         }
     }
 }

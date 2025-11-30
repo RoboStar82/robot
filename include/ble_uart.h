@@ -6,6 +6,9 @@
 // client write server read
 class BLEUartRx : BLECharacteristicCallbacks {
    public:
+    BLEUartRx();
+    ~BLEUartRx();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -23,6 +26,9 @@ class BLEUartRx : BLECharacteristicCallbacks {
 // server write client read
 class BLEUartTx {
    public:
+    BLEUartTx();
+    ~BLEUartTx();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -37,6 +43,9 @@ class BLEUartTx {
 
 class BLEUart : public BLECharacteristicCallbacks {
    public:
+    BLEUart();
+    ~BLEUart();
+
     BLEService* service = nullptr;
 
     // client write server read

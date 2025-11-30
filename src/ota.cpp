@@ -7,6 +7,10 @@
 
 OTA ota;
 
+OTA::OTA() {}
+
+OTA::~OTA() {}
+
 void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);

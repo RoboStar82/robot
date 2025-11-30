@@ -6,6 +6,9 @@
 // server write client read
 class BLEBatteryLevel {
    public:
+    BLEBatteryLevel();
+    ~BLEBatteryLevel();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);

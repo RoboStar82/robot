@@ -1,6 +1,10 @@
 
 #include "ble.h"
 
+BLEBatteryLevel::BLEBatteryLevel() {}
+
+BLEBatteryLevel::~BLEBatteryLevel() {}
+
 void BLEBatteryLevel::begin(BLEService* service) {
     if (characteristic) {
         return;

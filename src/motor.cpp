@@ -1,23 +1,27 @@
 
 #include "motor.h"
 
+#if ROBOT_HAS_MOTOR_MCPWM
+MotorMCPWM motorLF = MotorMCPWM("LF", 1, 2);
+MotorMCPWM motorRF = MotorMCPWM("RF", 5, 4);
+MotorMCPWM motorLB = MotorMCPWM("LB", 42, 41);
+MotorMCPWM motorRB = MotorMCPWM("RB", 6, 7);
 #if ROBOT_HAS_MOTOR_PWM
-MotorPWM motorLF = MotorPWM("LF", 4, 5);
-MotorPWM motorRF = MotorPWM("RF", 2, 1);
-MotorPWM motorLB = MotorPWM("LB", 7, 6);
-MotorPWM motorRB = MotorPWM("RB", 41, 42);
-MotorPWM motorCC = MotorPWM("CC", 45, 40);
-#elif ROBOT_HAS_MOTOR_MCPWM
-MotorMCPWM motorLF = MotorMCPWM("LF", 4, 5);
-MotorMCPWM motorRF = MotorMCPWM("RF", 2, 1);
-MotorMCPWM motorLB = MotorMCPWM("LB", 7, 6);
-MotorMCPWM motorRB = MotorMCPWM("RB", 41, 42);
-MotorMCPWM motorCC = MotorMCPWM("CC", 45, 40);
+MotorPWM motorCC = MotorPWM("CC", 45, 47);
+#else
+MotorPWM motorCC = MotorMCPWM("CC", 45, 47);
+#endif
+#elif ROBOT_HAS_MOTOR_PWM
+MotorPWM motorLF = MotorPWM("LF", 1, 2);
+MotorPWM motorRF = MotorPWM("RF", 5, 4);
+MotorPWM motorLB = MotorPWM("LB", 42, 41);
+MotorPWM motorRB = MotorPWM("RB", 6, 7);
+MotorPWM motorCC = MotorPWM("CC", 45, 47);
 #elif ROBOT_HAS_MOTOR_ENCODER
-MotorEncoder motorLF = MotorEncoder("LF", 4, 5);
-MotorEncoder motorRF = MotorEncoder("RF", 2, 1);
-MotorEncoder motorLB = MotorEncoder("LB", 7, 6);
-MotorEncoder motorRB = MotorEncoder("RB", 41, 42);
+MotorEncoder motorLF = MotorEncoder("LF", 1, 2);
+MotorEncoder motorRF = MotorEncoder("RF", 5, 4);
+MotorEncoder motorLB = MotorEncoder("LB", 42, 41);
+MotorEncoder motorRB = MotorEncoder("RB", 6, 7);
 Motor motorCC = Motor("CC");
 #else
 Motor motorLF = Motor("LF");
@@ -30,6 +34,8 @@ Motor motorCC = Motor("CC");
 Motor::Motor(const char* _name) {
     name = _name;
 }
+
+Motor::~Motor() {}
 
 void Motor::begin() {}
 
@@ -69,12 +75,16 @@ MotorEncoder::MotorEncoder(const char* _name, uint8_t _encoderPin1, uint8_t _enc
     encoderPin2 = _encoderPin2;
 }
 
+MotorEncoder::~MotorEncoder() {}
+
 void MotorEncoder::begin() {}
 
 MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : Motor(_name) {
     pwmPin1 = _pwmPin1;
     pwmPin2 = _pwmPin2;
 }
+
+MotorPWM::~MotorPWM() {}
 
 void MotorPWM::begin() {
     if (pwmPin1) {
@@ -101,8 +111,8 @@ void MotorPWM::setSpeed(int value) {
     if (speed != newSpeed) {
         speed = newSpeed;
         if (pwmPin1 && pwmPin2) {
-            ledcWrite(pwmPin1, back ? 0 : absSpeed);
-            ledcWrite(pwmPin2, back ? absSpeed : 0);
+            ledcWrite(pwmPin1, back ? absSpeed : 0);
+            ledcWrite(pwmPin2, back ? 0 : absSpeed);
         }
         log_i("Motor %s: %d", name, speed);
     }
@@ -118,6 +128,8 @@ MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : 
     }
 }
 
+MotorMCPWM::~MotorMCPWM();
+
 void MotorMCPWM::begin() {
     int group = isFront ? 0 : 1;
     mcpwm_timer_config_t timerConfig = {
@@ -127,12 +139,8 @@ void MotorMCPWM::begin() {
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         .period_ticks = 1000000 / 25000,
     };
-    maxSpeed = 0.8f * timerConfig.period_ticks;
-    minSpeed = 0.4f * timerConfig.period_ticks;
-    if (isCenter) {
-        maxSpeed = timerConfig.period_ticks;
-        minSpeed = 0.5f * timerConfig.period_ticks;
-    }
+    maxSpeed = 1.0f * timerConfig.period_ticks;
+    minSpeed = 0.5f * timerConfig.period_ticks;
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);
     mcpwm_operator_config_t operatorConfig = {
         .group_id = group,

@@ -57,6 +57,9 @@ typedef struct {
 
 class Led {
    public:
+    Led();
+    ~Led();
+
     void begin();
 
     void onChange();

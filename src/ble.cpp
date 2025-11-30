@@ -3,6 +3,10 @@
 
 BLE ble;
 
+BLE::BLE() {}
+
+BLE::~BLE() {}
+
 void BLE::begin() {
     if (!started) {
         started = true;

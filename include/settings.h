@@ -6,6 +6,9 @@
 
 class Settings : Preferences {
    public:
+    Settings();
+    ~Settings();
+
     using Preferences::isKey;
 
     using Preferences::getBool;

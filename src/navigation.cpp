@@ -5,22 +5,25 @@
 
 Navigation navigation;
 
-void Navigation::begin() {
-#if ROBOT_HAS_NAVIGATION_SERIAL
-    NavigationSerial.begin(115200);
-#endif
-    xTaskCreate(task, "navigation_task", 4096, NULL, 1, NULL);
-}
+Navigation::Navigation() {}
 
-void Navigation::sendControllerState() {
-#if ROBOT_HAS_NAVIGATION_SERIAL
-    uint8_t data[8];
-    controller.getState(data);
-    NavigationSerial.printf("CTRL=%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+Navigation::~Navigation() {}
+
+void Navigation::begin() {
+#if (ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL) && !(ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL)
+    NavigationSerial.begin(115200, SERIAL_8N1, 19, 20);
+#endif
+#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
+    xTaskCreate(task, "navigation_task", 4096, NULL, 1, NULL);
 #endif
 }
 
 void Navigation::task() {
+#if ROBOT_HAS_NAVIGATION_ROLE
+    while (true) {
+        delay(1000);
+    }
+#endif
 #if ROBOT_HAS_NAVIGATION_SERIAL
     while (true) {
         if (NavigationSerial.available()) {
@@ -31,10 +34,6 @@ void Navigation::task() {
         } else {
             delay(1000);
         }
-    }
-#else
-    while (true) {
-        delay(1000);
     }
 #endif
 }

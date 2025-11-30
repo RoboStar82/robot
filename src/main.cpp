@@ -1,5 +1,6 @@
 
 #include "controller.h"
+#include "imu.h"
 #include "led.h"
 #include "lora.h"
 #include "navigation.h"
@@ -19,16 +20,21 @@ void setup() {
 #if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
     lora.begin();
 #endif
-#if ROBOT_HAS_CONTROLLER_SERIAL
+#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
     controller.begin();
 #endif
-#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_NAVIGATION_SERIAL
+#if ROBOT_HAS_IMU
+    imu.begin();
+#endif
+#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
     navigation.begin();
 #endif
 #ifdef RGB_BUILTIN
     led.begin();
-#elifdef LED_BUILTIN
+#else
+#ifdef LED_BUILTIN
     led.begin();
+#endif
 #endif
     robot.begin();
     ota.begin();

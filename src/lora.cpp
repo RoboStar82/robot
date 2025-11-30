@@ -16,11 +16,17 @@ Lora::Lora() {
 #endif
 }
 
+Lora::~Lora() {
+#if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
+    delete module;
+#endif
+}
+
 void Lora::begin() {
     if (!module) {
         return;
     }
-    module->begin(868.f, 125.f, 9, 7, 0xfa, 16);
+    module->begin(868.f, 125.f, 7, 5, 0xfa, 16);
 #if ROBOT_HAS_TRANSCEIVER_LORA
     module->setPacketSentAction(packetSentCallback);
 #endif

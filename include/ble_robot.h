@@ -7,6 +7,9 @@
 // client write server read
 class BLERobotSettings : BLECharacteristicCallbacks {
    public:
+    BLERobotSettings();
+    ~BLERobotSettings();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -25,6 +28,9 @@ class BLERobotSettings : BLECharacteristicCallbacks {
 // client write server read
 class BLERobotOTA : BLECharacteristicCallbacks {
    public:
+    BLERobotOTA();
+    ~BLERobotOTA();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -43,6 +49,9 @@ class BLERobotOTA : BLECharacteristicCallbacks {
 // client write server read
 class BLERobotWiFiMode : BLECharacteristicCallbacks {
    public:
+    BLERobotWiFiMode();
+    ~BLERobotWiFiMode();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -61,6 +70,9 @@ class BLERobotWiFiMode : BLECharacteristicCallbacks {
 // client write server read
 class BLERobotWiFiSSID : BLECharacteristicCallbacks {
    public:
+    BLERobotWiFiSSID();
+    ~BLERobotWiFiSSID();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -79,6 +91,9 @@ class BLERobotWiFiSSID : BLECharacteristicCallbacks {
 // client write server read
 class BLERobotWiFiPassword : BLECharacteristicCallbacks {
    public:
+    BLERobotWiFiPassword();
+    ~BLERobotWiFiPassword();
+
     BLECharacteristic* characteristic = nullptr;
 
     void begin(BLEService* service);
@@ -95,6 +110,9 @@ class BLERobotWiFiPassword : BLECharacteristicCallbacks {
 
 class BLERobot {
    public:
+    BLERobot();
+    ~BLERobot();
+
     BLEService* service = nullptr;
 
     // server write client read

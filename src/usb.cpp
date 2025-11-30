@@ -5,6 +5,10 @@
 
 USB usb;
 
+USB::USB() {}
+
+USB::~USB() {}
+
 void USB::begin() {
     xTaskCreate(hidHostTask, "usb_hid_host_task", 4096, NULL, 1, NULL);
     xTaskCreatePinnedToCore(hostLibTask, "usb_host_lib_task", 4096, xTaskGetCurrentTaskHandle(), 1, NULL, 0);

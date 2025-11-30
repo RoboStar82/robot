@@ -9,6 +9,9 @@
 
 class BLE : BLEServerCallbacks {
    public:
+    BLE();
+    ~BLE();
+
     BLEServer* server = nullptr;
     BLEAdvertising* advertising = nullptr;
 

@@ -3,6 +3,10 @@
 
 TEA tea;
 
+TEA::TEA() {}
+
+TEA::~TEA() {}
+
 bool TEA::encryptData(uint8_t* data) {
     unsigned long salt = millis();
     data[7] = salt & 0xff;

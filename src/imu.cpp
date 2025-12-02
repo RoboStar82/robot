@@ -13,10 +13,12 @@ IMU::~IMU() {}
 
 void IMU::begin() {
     if (bmx != nullptr) {
-        bmx->begin(&Wire, true);
-        bmx->setFastOffset();
-        bmx->setFastOffset(coefficients);
-        xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, NULL, 0);
+        started = bmx->begin(&Wire, true);
+        if (started) {
+            bmx->setFastOffset();
+            bmx->setFastOffset(coefficients);
+            xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, NULL, 0);
+        }
     }
 }
 
@@ -32,7 +34,9 @@ void IMU::calibrate(int time) {
 
 void IMU::task() {
     while (true) {
-        bmx->read();
+        if (!bmx->read()) {
+            delay(1000);
+        }
     }
 }
 

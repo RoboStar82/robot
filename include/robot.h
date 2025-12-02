@@ -17,6 +17,7 @@ class Robot {
     void updateServo();
 
    protected:
+    bool started = false;
     int raise = 0;
 };
 

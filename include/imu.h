@@ -18,6 +18,7 @@ class IMU {
     static void task(void* arg);
 
    protected:
+    bool started = false;
     float coefficients[3] = {135.00, 105.00, 0.00};
     iarduino_Position_BMX055* bmx = nullptr;
 };

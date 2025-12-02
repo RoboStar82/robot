@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
+#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
 #define NavigationSerial Serial2
 #endif
 

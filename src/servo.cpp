@@ -4,7 +4,7 @@
 #if ROBOT_HAS_SERVO_PWM
 ServoPWM servoLF = ServoPWM("LF", 35);
 ServoPWM servoRF = ServoPWM("RF", 36);
-ServoPWM servoLB = ServoPWM("LB", 37);
+ServoPWM servoLB = ServoPWM("LB", 39);
 ServoPWM servoRB = ServoPWM("RB", 38);
 #else
 Servo servoLF = Servo("LF");

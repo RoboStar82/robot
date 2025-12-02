@@ -26,7 +26,7 @@ void setup() {
 #if ROBOT_HAS_IMU
     imu.begin();
 #endif
-#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
+#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
     navigation.begin();
 #endif
 #ifdef RGB_BUILTIN
@@ -36,8 +36,9 @@ void setup() {
     led.begin();
 #endif
 #endif
-    robot.begin();
     ota.begin();
+    delay(2000);
+    robot.begin();
 }
 
 void loop() {

@@ -14,6 +14,7 @@ OTA::~OTA() {}
 void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
+    /*
     int ota = settings.getUChar("ota");
     if (ota & OTA_BLE) {
         beginBLE();
@@ -21,6 +22,7 @@ void OTA::begin() {
     if (ota & OTA_WIFI) {
         beginWiFi();
     }
+    */
 }
 
 void OTA::beginBLE() {
@@ -50,14 +52,14 @@ void OTA::beginWiFi() {
     String password = settings.getString("wifi.password");
     if (wifiMode == WIFI_MODE_STA) {
         log_i("Wi-Fi: STA %s", ssid.c_str());
-        WiFi.setHostname(NET_HOSTNAME);
+        // WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         log_i("Wi-Fi: AP %s", ssid.c_str());
-        WiFi.softAPsetHostname(NET_HOSTNAME);
+        // WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);

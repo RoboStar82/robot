@@ -128,7 +128,7 @@ MotorMCPWM::MotorMCPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : 
     }
 }
 
-MotorMCPWM::~MotorMCPWM();
+MotorMCPWM::~MotorMCPWM() {}
 
 void MotorMCPWM::begin() {
     int group = isFront ? 0 : 1;

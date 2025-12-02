@@ -10,16 +10,16 @@ Navigation::Navigation() {}
 Navigation::~Navigation() {}
 
 void Navigation::begin() {
-#if (ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL) && !(ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL)
+#if (ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL) && !(ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL)
     NavigationSerial.begin(115200, SERIAL_8N1, 19, 20);
 #endif
-#if ROBOT_HAS_NAVIGATION_ROLE || ROBOT_HAS_NAVIGATION_SERIAL
+#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
     xTaskCreate(task, "navigation_task", 4096, NULL, 1, NULL);
 #endif
 }
 
 void Navigation::task() {
-#if ROBOT_HAS_NAVIGATION_ROLE
+#if ROBOT_HAS_NAVIGATION_SENDER
     while (true) {
         delay(1000);
     }

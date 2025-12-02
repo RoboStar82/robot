@@ -46,6 +46,8 @@ class Settings : Preferences {
     using Preferences::putUShort;
 
     void begin();
+
+    void end();
 };
 
 extern Settings settings;

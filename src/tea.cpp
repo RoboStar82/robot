@@ -36,7 +36,7 @@ void TEA::encryptBlock(uint32_t* block) {
 
 void TEA::decryptBlock(uint32_t* block) {
     uint32_t b0 = block[0], b1 = block[1], sum = sumDelta;
-    for (uint32_t i = 0; i < 32; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         b1 -= ((b0 << 4) | key[2]) ^ (b0 | sum) ^ ((b0 >> 5) | key[3]);
         b0 -= ((b1 << 4) | key[0]) ^ (b1 | sum) ^ ((b1 >> 5) | key[1]);
         sum -= delta;

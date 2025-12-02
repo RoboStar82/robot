@@ -21,6 +21,7 @@ void Robot::begin() {
     servoRF.begin();
     servoLB.begin();
     servoRB.begin();
+    started = true;
 }
 
 void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
@@ -56,6 +57,7 @@ void Robot::updateSpeed() {
 }
 
 void Robot::updateServo() {
+    controller_state_t state = controller.getState();
     if (raise == -1) {
         raise = 0;
         servoLB.setAngle(90);

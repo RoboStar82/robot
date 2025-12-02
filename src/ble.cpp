@@ -43,7 +43,7 @@ void BLE::stopAdvertising() {
 }
 
 void BLE::end() {
-    log_i("BLE: deinit");
+    log_i("BLE: Deinit");
     battery.end();
     robot.end();
     uart.end();

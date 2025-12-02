@@ -4,10 +4,14 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+#include "ota.h"
+
 class Settings : Preferences {
    public:
     Settings();
     ~Settings();
+
+    using Preferences::begin;
 
     using Preferences::isKey;
 
@@ -47,7 +51,38 @@ class Settings : Preferences {
 
     void begin();
 
+    void read();
+
     void end();
+
+    ota_mode_t getOtaMode();
+    bool hasOtaBLE();
+    bool hasOtaWiFi();
+    bool setOtaMode(ota_mode_t value);
+    bool addOtaBLE();
+    bool addOtaWiFi();
+    bool removeOtaBLE();
+    bool removeOtaWiFi();
+
+    wifi_mode_t getWiFiMode();
+    String getWiFiSSID();
+    String getWiFiPassword();
+    bool setWiFiMode(wifi_mode_t value);
+    void setWiFiSSID(String value);
+    void setWiFiPassword(String value);
+
+    String getRobotSettings(String value);
+
+   protected:
+    bool started = false;
+
+    ota_mode_t otaMode = OTA_OFF;
+
+    wifi_mode_t wifiMode = WIFI_MODE_NULL;
+    String wifiSSID = "";
+    String wifiPassword = "";
+
+    String robotSettings = "";
 };
 
 extern Settings settings;

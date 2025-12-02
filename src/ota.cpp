@@ -14,120 +14,152 @@ OTA::~OTA() {}
 void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
-    /*
-    int ota = settings.getUChar("ota");
-    if (ota & OTA_BLE) {
-        beginBLE();
+    if (!started) {
+        xTaskCreate(task, "ota_task", 4096, NULL, 1, NULL);
+        xQueueSend(needQueue, settings.getOtaMode());
+        started = true;
     }
-    if (ota & OTA_WIFI) {
-        beginWiFi();
-    }
-    */
 }
 
 void OTA::beginBLE() {
-    switch (otaMode) {
-        case OTA_OFF:
-            otaMode = OTA_BLE;
-            break;
-        case OTA_WIFI:
-            otaMode = OTA_ALL;
-            break;
+    if (otaMode & OTA_WIFI) {
+        otaMode = OTA_ALL;
+    } else {
+        otaMode = OTA_BLE;
     }
     ble.begin();
-    led.setOtaBle(true);
+    led.setOtaBLE(true);
 }
 
 void OTA::beginWiFi() {
-    switch (otaMode) {
-        case OTA_OFF:
-            otaMode = OTA_WIFI;
-            break;
-        case OTA_BLE:
-            otaMode = OTA_ALL;
-            break;
+    if (otaMode & OTA_BLE) {
+        otaMode = OTA_ALL;
+    } else {
+        otaMode = OTA_WIFI;
     }
-    wifiMode = (wifi_mode_t)settings.getUChar("wifi.mode");
-    String ssid = settings.getString("wifi.ssid");
-    String password = settings.getString("wifi.password");
+    wifiMode = settings.getWiFiMode();
+    String ssid = settings.getWiFiSSID();
+    String password = settings.getWiFiPassword();
     if (wifiMode == WIFI_MODE_STA) {
         log_i("Wi-Fi: STA %s", ssid.c_str());
-        // WiFi.setHostname(NET_HOSTNAME);
+        WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         log_i("Wi-Fi: AP %s", ssid.c_str());
-        // WiFi.softAPsetHostname(NET_HOSTNAME);
+        WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
     }
-    if (!taskCreated) {
-        xTaskCreate(task, "ota_task", 4096, NULL, 1, NULL);
-        taskCreated = true;
-    }
 }
 
 void OTA::enableBLE() {
-    int ota = settings.getUChar("ota");
-    settings.putUChar("ota", OTA_BLE | (ota & OTA_WIFI));
+    settings.addOtaBLE();
     beginBLE();
 }
 
 void OTA::enableWiFi() {
-    int ota = settings.getUChar("ota");
-    settings.putUChar("ota", OTA_WIFI | (ota & OTA_BLE));
+    settings.addOtaWiFi();
     beginWiFi();
 }
 
 void OTA::disableBLE() {
-    int ota = settings.getUChar("ota");
-    settings.putUChar("ota", ota & OTA_WIFI);
+    settings.removeOtaBLE();
     endBLE();
 }
 
 void OTA::disableWiFi() {
-    int ota = settings.getUChar("ota");
-    settings.putUChar("ota", ota & OTA_BLE);
+    settings.removeOtaWiFi();
     endWiFi();
+}
+
+void OTA::needEnableBLE() {
+    xQueueSend(needQueue, OTA_BLE);
+}
+
+void OTA::needEnableWiFi() {
+    xQueueSend(needQueue, OTA_WIFI);
+}
+
+void OTA::needDisableBLE() {
+    xQueueSend(needQueue, -OTA_BLE);
+}
+
+void OTA::needDisableWiFi() {
+    xQueueSend(needQueue, -OTA_WIFI);
 }
 
 void OTA::endBLE() {
     ble.end();
-    led.setOtaBle(false);
-    switch (otaMode) {
-        case OTA_BLE:
-            otaMode = OTA_OFF;
-            break;
-        case OTA_ALL:
-            otaMode = OTA_WIFI;
-            break;
+    led.setOtaBLE(false);
+    if (otaMode & OTA_WIFI) {
+        otaMode = OTA_WIFI;
+    } else {
+        otaMode = OTA_OFF;
     }
 }
 
 void OTA::endWiFi() {
     log_i("Wi-Fi: Disconnect");
-    WiFi.softAPdisconnect();
-    WiFi.disconnect();
+    if (wifiMode == WIFI_MODE_STA) {
+        WiFi.disconnect();
+    } else if (wifiMode == WIFI_MODE_AP) {
+        WiFi.softAPdisconnect();
+    }
     led.setOtaWiFi(false);
-    switch (otaMode) {
-        case OTA_WIFI:
-            otaMode = OTA_OFF;
-            break;
-        case OTA_ALL:
-            otaMode = OTA_BLE;
-            break;
+    if (otaMode & OTA_BLE) {
+        otaMode = OTA_BLE;
+    } else {
+        otaMode = OTA_OFF;
     }
 }
 
-void OTA::task(void* arg) {
-    ota.task();
-}
-
 void OTA::task() {
+    if (xQueueReceive(needQueue, &otaMode, 1000)) {
+        switch (otaMode) {
+            case OTA_OFF:
+                vTaskDelay(1000);
+                break;
+            case OTA_BLE:
+                vTaskDelay(1000);
+                beginBLE();
+                vTaskDelay(1000);
+                break;
+            case OTA_WIFI:
+                vTaskDelay(1000);
+                beginWiFi();
+                vTaskDelay(1000);
+                break;
+            case OTA_ALL:
+                vTaskDelay(1000);
+                beginBLE();
+                vTaskDelay(1000);
+                beginWiFi();
+                vTaskDelay(1000);
+                break;
+        }
+    }
     while (true) {
+        int8_t action;
+        if (xQueueReceive(needQueue, &action, 1000)) {
+            if (!action) {
+            } else if (action == OTA_BLE) {
+                enableBLE();
+                vTaskDelay(1000);
+            } else if (action == -OTA_BLE) {
+                disableBLE();
+                vTaskDelay(1000);
+            } else if (action == OTA_WIFI) {
+                enableWiFi();
+                vTaskDelay(1000);
+            } else if (action == -OTA_WIFI) {
+                disableWiFi();
+                vTaskDelay(1000);
+            }
+        }
         if (wifiMode == WIFI_MODE_STA) {
             if (wifiStatus != WiFi.status()) {
                 wifiStatus = WiFi.status();
@@ -146,17 +178,16 @@ void OTA::task() {
             if (wifiConnected) {
                 ArduinoOTA.handle();
             }
-            delay(100);
+            vTaskDelay(1000);
         } else if (wifiMode == WIFI_MODE_AP) {
             ArduinoOTA.handle();
-            delay(100);
+            vTaskDelay(1000);
         } else {
-            delay(1000);
-        }
-        switch (otaMode) {
-            case OTA_OFF:
-            case OTA_BLE:
-                vTaskDelete(NULL);
+            vTaskDelay(1000);
         }
     }
+}
+
+void OTA::task(void* arg) {
+    ota.task();
 }

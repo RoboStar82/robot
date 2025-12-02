@@ -12,16 +12,10 @@ Robot::Robot() {}
 Robot::~Robot() {}
 
 void Robot::begin() {
-    motorLF.begin();
-    motorRF.begin();
-    motorLB.begin();
-    motorRB.begin();
-    motorCC.begin();
-    servoLF.begin();
-    servoRF.begin();
-    servoLB.begin();
-    servoRB.begin();
-    started = true;
+    if (!started) {
+        xTaskCreate(task, "robot_task", 4096, NULL, 1, NULL);
+        started = true;
+    }
 }
 
 void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
@@ -33,6 +27,7 @@ void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
 
 void Robot::updateSpeed() {
     controller_state_t state = controller.getState();
+
     int ly = (int)36 * state.ly;
     int lx = (int)36 * state.lx;
     int ry = (int)30 * state.ry;
@@ -83,4 +78,35 @@ void Robot::updateServo() {
             servoRF.setAngle(90 - 14);
         }
     }
+}
+
+void Robot::task() {
+    vTaskDelay(1000);
+    motorLF.begin();
+    motorRF.begin();
+    motorLB.begin();
+    motorRB.begin();
+    motorCC.begin();
+    servoLF.begin();
+    servoRF.begin();
+    servoLB.begin();
+    servoRB.begin();
+    vTaskDelay(1000);
+    while (true) {
+        robot_update_t update;
+        if (xQueueReceive(needQueue, &update, 1000)) {
+            switch (update) {
+                case UPDATE_SPEED:
+                    updateSpeed();
+                    break;
+                case UPDATE_SERVO:
+                    updateServo();
+                    break;
+            }
+        }
+    }
+}
+
+void Robot::task(void* arg) {
+    robot.task();
 }

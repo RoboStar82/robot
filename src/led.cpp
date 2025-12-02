@@ -111,7 +111,7 @@ void Led::setLoraSleeping(bool value) {
     }
 }
 
-void Led::setOtaBle(bool value) {
+void Led::setOtaBLE(bool value) {
     if (state.ota.ble != value) {
         timers.ota.ble.counter = 0;
         timers.ota.ble.value = false;

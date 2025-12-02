@@ -72,7 +72,7 @@ class Led {
     void setLoraSending(bool value);
     void setLoraSleeping(bool value);
 
-    void setOtaBle(bool value);
+    void setOtaBLE(bool value);
     void setOtaWiFi(bool value);
 
     void task();

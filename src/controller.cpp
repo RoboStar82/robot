@@ -49,8 +49,12 @@ void Controller::setState(uint8_t newState[]) {
 
 void Controller::onChange(controller_state_t oldState) {
 #if ROBOT_ROLE_CHASSIS
-    robot.updateSpeed();
-    robot.updateServo();
+    if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.dy != oldState.dy) {
+        robot.needUpdateSpeed();
+    }
+    if (state.lz != oldState.lz || state.rz != oldState.rz) {
+        robot.needUpdateServo();
+    }
 #endif
 #if ROBOT_HAS_TRANSCEIVER_LORA
     lora.needSendControllerState();
@@ -75,18 +79,18 @@ void Controller::onChange(controller_state_t oldState) {
     if (state.back) {
         if (state.a) {
             if (state.b) {
-                ota.enableBLE();
+                ota.needEnableBLE();
             }
             if (state.y) {
-                ota.enableWiFi();
+                ota.needEnableWiFi();
             }
         }
         if (state.x) {
             if (state.b) {
-                ota.disableBLE();
+                ota.needDisableBLE();
             }
             if (state.y) {
-                ota.disableWiFi();
+                ota.needDisableWiFi();
             }
         }
     }

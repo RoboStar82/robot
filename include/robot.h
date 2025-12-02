@@ -3,6 +3,11 @@
 
 #include <Arduino.h>
 
+typedef enum {
+    UPDATE_SPEED = 1,
+    UPDATE_SERVO = 1,
+} robot_update_t;
+
 class Robot {
    public:
     Robot();
@@ -13,11 +18,18 @@ class Robot {
     void setSpeed(int speedLF, int speedRF, int speedLB, int speedRB);
 
     void updateSpeed();
-
     void updateServo();
+
+    void needUpdateSpeed();
+    void needUpdateServo();
+
+    void task();
+
+    static void task(void* arg);
 
    protected:
     bool started = false;
+    QueueHandle_t needQueue = xQueueCreate(4, sizeof(robot_update_t));
     int raise = 0;
 };
 

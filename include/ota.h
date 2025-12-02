@@ -3,6 +3,7 @@
 
 #include <ArduinoOTA.h>
 #include <WiFi.h>
+#include <sys/queue.h>
 
 typedef enum {
     OTA_OFF = 0,
@@ -27,6 +28,12 @@ class OTA {
     void disableBLE();
     void disableWiFi();
 
+    void needEnableBLE();
+    void needEnableWiFi();
+
+    void needDisableBLE();
+    void needDisableWiFi();
+
     void endBLE();
     void endWiFi();
 
@@ -35,13 +42,14 @@ class OTA {
     static void task(void* arg);
 
    protected:
+    bool started = false;
+    QueueHandle_t needQueue = xQueueCreate(4, sizeof(int8_t));
+
     ota_mode_t otaMode = OTA_OFF;
 
     wifi_mode_t wifiMode = WIFI_MODE_NULL;
     wl_status_t wifiStatus = WL_NO_SHIELD;
     bool wifiConnected = false;
-
-    bool taskCreated = false;
 };
 
 extern OTA ota;

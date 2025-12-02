@@ -24,24 +24,24 @@ void BLERobotSettings::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getString("settings"));
+    characteristic->setValue(settings.getRobotSettings());
     characteristic->setCallbacks(this);
 }
 
 void BLERobotSettings::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    log_i("settings: %s", value.c_str());
+    settings.setRobotSettings(value.c_str());
 }
 
 void BLERobotSettings::end() {
     characteristic = nullptr;
 }
 
-BLERobotOTA::BLERobotOTA() {}
+BLERobotOtaMode::BLERobotOtaMode() {}
 
-BLERobotOTA::~BLERobotOTA() {}
+BLERobotOtaMode::~BLERobotOtaMode() {}
 
-void BLERobotOTA::begin(BLEService* service) {
+void BLERobotOtaMode::begin(BLEService* service) {
     if (characteristic) {
         return;
     }
@@ -58,19 +58,18 @@ void BLERobotOTA::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getUChar("ota"));
+    characteristic->setValue(settings.getOtaMode());
     characteristic->setCallbacks(this);
 }
 
-void BLERobotOTA::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
+void BLERobotOtaMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    int otaValue = value.length() > 0 ? value[0] : 0;
-    settings.putUChar("ota", otaValue);
-    log_i("ota: %d", otaValue);
+    int8_t otaMode = value.length() > 0 ? value[0] : 0;
+    settings.setOtaMode((ota_mode_t)otaMode);
     ota.begin();
 }
 
-void BLERobotOTA::end() {
+void BLERobotOtaMode::end() {
     characteristic = nullptr;
 }
 
@@ -95,15 +94,14 @@ void BLERobotWiFiMode::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getUChar("wifi.mode"));
+    characteristic->setValue(settings.getWiFiMode());
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    int wifiModeValue = value.length() > 0 ? value[0] : 0;
-    settings.putUChar("wifi.mode", wifiModeValue);
-    log_i("wifi.mode: %d", wifiModeValue);
+    int8_t wifiMode = value.length() > 0 ? value[0] : 0;
+    settings.setWiFiMode((wifi_mode_t)wifiMode);
     ota.begin();
 }
 
@@ -132,14 +130,13 @@ void BLERobotWiFiSSID::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getString("wifi.ssid"));
+    characteristic->setValue(settings.getWiFiSSID());
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiSSID::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    settings.putString("wifi.ssid", value.c_str());
-    log_i("wifi.ssid: %s", value.c_str());
+    settings.setWiFiSSID(value.c_str());
 }
 
 void BLERobotWiFiSSID::end() {
@@ -167,14 +164,13 @@ void BLERobotWiFiPassword::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getString("wifi.password"));
+    characteristic->setValue(settings.getWiFiPassword());
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiPassword::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    settings.putString("wifi.password", value.c_str());
-    log_i("wifi.password: %s", value.c_str());
+    settings.setWiFiPassword(value.c_str());
 }
 
 void BLERobotWiFiPassword::end() {
@@ -188,7 +184,7 @@ BLERobot::~BLERobot() {}
 void BLERobot::begin() {
     service = ble.server->createService(serviceUuid);
     settings.begin(service);
-    ota.begin(service);
+    otaMode.begin(service);
     wifiMode.begin(service);
     wifiSSID.begin(service);
     wifiPassword.begin(service);
@@ -197,7 +193,7 @@ void BLERobot::begin() {
 
 void BLERobot::end() {
     settings.end();
-    ota.end();
+    otaMode.end();
     wifiMode.end();
     wifiSSID.end();
     wifiPassword.end();

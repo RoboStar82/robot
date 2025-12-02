@@ -80,6 +80,16 @@ void Robot::updateServo() {
     }
 }
 
+void Robot::needUpdateSpeed() {
+    robot_update_t value = ROBOT_UPDATE_SPEED;
+    xQueueSend(needQueue, &value, 0);
+}
+
+void Robot::needUpdateServo() {
+    robot_update_t value = ROBOT_UPDATE_SERVO;
+    xQueueSend(needQueue, &value, 0);
+}
+
 void Robot::task() {
     vTaskDelay(1000);
     motorLF.begin();
@@ -96,10 +106,10 @@ void Robot::task() {
         robot_update_t update;
         if (xQueueReceive(needQueue, &update, 1000)) {
             switch (update) {
-                case UPDATE_SPEED:
+                case ROBOT_UPDATE_SPEED:
                     updateSpeed();
                     break;
-                case UPDATE_SERVO:
+                case ROBOT_UPDATE_SERVO:
                     updateServo();
                     break;
             }

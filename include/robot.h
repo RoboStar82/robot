@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 typedef enum {
-    UPDATE_SPEED = 1,
-    UPDATE_SERVO = 1,
+    ROBOT_UPDATE_SPEED = 1,
+    ROBOT_UPDATE_SERVO = 2,
 } robot_update_t;
 
 class Robot {

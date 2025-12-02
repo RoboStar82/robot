@@ -2,8 +2,8 @@
 #include "servo.h"
 
 #if ROBOT_HAS_SERVO_PWM
-ServoPWM servoLF = ServoPWM("LF", 35);
-ServoPWM servoRF = ServoPWM("RF", 36);
+ServoPWM servoLF = ServoPWM("LF", 18);
+ServoPWM servoRF = ServoPWM("RF", 17);
 ServoPWM servoLB = ServoPWM("LB", 39);
 ServoPWM servoRB = ServoPWM("RB", 38);
 #else

@@ -15,8 +15,9 @@ void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     if (!started) {
-        xTaskCreate(task, "ota_task", 4096, NULL, 1, NULL);
-        xQueueSend(needQueue, settings.getOtaMode());
+        xTaskCreate(task, "ota_task", 16384, NULL, 1, NULL);
+        int8_t value = settings.getOtaMode();
+        xQueueSend(needQueue, &value, 0);
         started = true;
     }
 }
@@ -53,6 +54,7 @@ void OTA::beginWiFi() {
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_8_5dBm);
         led.setOtaWiFi(true);
+        log_i("Wi-Fi: Enabled: %s", WiFi.softAPIP().toString().c_str());
     }
 }
 
@@ -77,19 +79,23 @@ void OTA::disableWiFi() {
 }
 
 void OTA::needEnableBLE() {
-    xQueueSend(needQueue, OTA_BLE);
+    int8_t value = OTA_BLE;
+    xQueueSend(needQueue, &value, 0);
 }
 
 void OTA::needEnableWiFi() {
-    xQueueSend(needQueue, OTA_WIFI);
+    int8_t value = OTA_WIFI;
+    xQueueSend(needQueue, &value, 0);
 }
 
 void OTA::needDisableBLE() {
-    xQueueSend(needQueue, -OTA_BLE);
+    int8_t value = -OTA_BLE;
+    xQueueSend(needQueue, &value, 0);
 }
 
 void OTA::needDisableWiFi() {
-    xQueueSend(needQueue, -OTA_WIFI);
+    int8_t value = -OTA_WIFI;
+    xQueueSend(needQueue, &value, 0);
 }
 
 void OTA::endBLE() {
@@ -105,10 +111,12 @@ void OTA::endBLE() {
 void OTA::endWiFi() {
     log_i("Wi-Fi: Disconnect");
     if (wifiMode == WIFI_MODE_STA) {
-        WiFi.disconnect();
+        WiFi.setAutoReconnect(false);
+        WiFi.disconnect(true);
     } else if (wifiMode == WIFI_MODE_AP) {
-        WiFi.softAPdisconnect();
+        WiFi.softAPdisconnect(true);
     }
+    wifiMode = WIFI_MODE_NULL;
     led.setOtaWiFi(false);
     if (otaMode & OTA_BLE) {
         otaMode = OTA_BLE;
@@ -159,12 +167,15 @@ void OTA::task() {
                 disableWiFi();
                 vTaskDelay(1000);
             }
+            if (ble.robot.otaMode.characteristic) {
+                ble.robot.otaMode.characteristic->setValue(otaMode);
+            }
         }
         if (wifiMode == WIFI_MODE_STA) {
             if (wifiStatus != WiFi.status()) {
                 wifiStatus = WiFi.status();
                 if (wifiStatus == WL_CONNECTED) {
-                    log_i("Wi-Fi: Connected");
+                    log_i("Wi-Fi: Connected: %s", WiFi.localIP().toString().c_str());
                     wifiConnected = true;
                     ArduinoOTA.begin();
                 } else {

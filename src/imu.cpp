@@ -35,7 +35,7 @@ void IMU::calibrate(int time) {
 void IMU::task() {
     while (true) {
         if (!bmx->read()) {
-            delay(1000);
+            vTaskDelay(1000);
         }
     }
 }

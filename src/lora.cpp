@@ -93,7 +93,7 @@ void Lora::task() {
                 }
             }
         } else {
-            delay(1);
+            vTaskDelay(1);
         }
     }
 #endif
@@ -106,9 +106,9 @@ void Lora::task() {
                 module->finishTransmit();
                 led.setLoraSending(false);
                 delays = 0;
-                delay(1);
+                vTaskDelay(1);
             } else {
-                delay(1);
+                vTaskDelay(1);
             }
         } else if (needSend) {
             needSend = false;
@@ -132,16 +132,16 @@ void Lora::task() {
                 }
             }
             delays = 0;
-            delay(1);
+            vTaskDelay(1);
         } else if (sleeping) {
-            delay(100);
+            vTaskDelay(100);
         } else if (++delays >= 99999) {
             sleeping = true;
             module->sleep(true);
             led.setLoraSleeping(true);
-            delay(100);
+            vTaskDelay(100);
         } else {
-            delay(1);
+            vTaskDelay(1);
         }
     }
 #endif

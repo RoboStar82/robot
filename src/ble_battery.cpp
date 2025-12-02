@@ -45,7 +45,7 @@ void BLEBatteryLevel::task() {
         uint32_t voltages[4] = {0, 0, 0, 0};
         voltage = analogReadMilliVolts(batteryPin);
         voltages[0] = voltage;
-        delay(9);
+        vTaskDelay(9);
         voltage = analogReadMilliVolts(batteryPin);
         if (voltage < voltages[0]) {
             voltages[1] = voltages[0];
@@ -53,7 +53,7 @@ void BLEBatteryLevel::task() {
         } else {
             voltages[1] = voltage;
         }
-        delay(9);
+        vTaskDelay(9);
         voltage = analogReadMilliVolts(batteryPin);
         if (voltage < voltages[0]) {
             voltages[2] = voltages[1];
@@ -65,7 +65,7 @@ void BLEBatteryLevel::task() {
         } else {
             voltages[2] = voltage;
         }
-        delay(9);
+        vTaskDelay(9);
         voltage = analogReadMilliVolts(batteryPin);
         if (voltage < voltages[0]) {
             voltages[3] = voltages[2];
@@ -94,7 +94,7 @@ void BLEBatteryLevel::task() {
                 esp_deep_sleep_start();
             }
         }
-        delay(9999);
+        vTaskDelay(9999);
     }
 }
 

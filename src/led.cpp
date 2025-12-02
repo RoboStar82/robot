@@ -195,7 +195,7 @@ void Led::task() {
             onChange();
         }
         counter++;
-        delay(10);
+        vTaskDelay(10);
     }
 }
 

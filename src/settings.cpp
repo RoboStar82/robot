@@ -31,24 +31,25 @@ void Settings::read() {
     }
 }
 
-ota_mode_t getOtaMode() {
+ota_mode_t Settings::getOtaMode() {
     return otaMode;
 }
 
-bool hasOtaBLE() {
+bool Settings::hasOtaBLE() {
     return otaMode & OTA_BLE;
 }
 
-bool hasOtaWiFi() {
+bool Settings::hasOtaWiFi() {
     return otaMode & OTA_WIFI;
 }
 
-bool setOtaMode(ota_mode_t value) {
+bool Settings::setOtaMode(ota_mode_t value) {
     otaMode = value;
+    log_i("ota.mode: %d", value);
     return true;
 }
 
-bool addOtaBLE() {
+bool Settings::addOtaBLE() {
     if (otaMode & OTA_WIFI) {
         return setOtaMode(OTA_ALL);
     } else {
@@ -56,7 +57,7 @@ bool addOtaBLE() {
     }
 }
 
-bool addOtaWiFi() {
+bool Settings::addOtaWiFi() {
     if (otaMode & OTA_BLE) {
         return setOtaMode(OTA_ALL);
     } else {
@@ -64,7 +65,7 @@ bool addOtaWiFi() {
     }
 }
 
-bool removeOtaBLE() {
+bool Settings::removeOtaBLE() {
     if (otaMode & OTA_WIFI) {
         return setOtaMode(OTA_WIFI);
     } else {
@@ -72,7 +73,7 @@ bool removeOtaBLE() {
     }
 }
 
-bool removeOtaWiFi() {
+bool Settings::removeOtaWiFi() {
     if (otaMode & OTA_BLE) {
         return setOtaMode(OTA_BLE);
     } else {
@@ -80,26 +81,46 @@ bool removeOtaWiFi() {
     }
 }
 
-bool setWiFiMode(wifi_mode_t value) {
+wifi_mode_t Settings::getWiFiMode() {
+    return wifiMode;
+}
+
+bool Settings::setWiFiMode(wifi_mode_t value) {
     wifiMode = value;
+    log_i("wifi.mode: %d", value);
     putUChar("wifi.mode", value);
     return true;
 }
 
-bool setWiFiSSID(String value) {
+String Settings::getWiFiSSID() {
+    return wifiSSID;
+}
+
+bool Settings::setWiFiSSID(String value) {
     wifiSSID = value;
+    log_i("wifi.ssid: %s", value.c_str());
     putString("wifi.ssid", value);
     return true;
 }
 
-bool setWiFiPassword(String value) {
+String Settings::getWiFiPassword() {
+    return wifiPassword;
+}
+
+bool Settings::setWiFiPassword(String value) {
     wifiPassword = value;
+    log_i("wifi.password: %s", value.c_str());
     putString("wifi.password", value);
     return true;
 }
 
-bool setRobotSettings(String value) {
+String Settings::getRobotSettings() {
+    return robotSettings;
+}
+
+bool Settings::setRobotSettings(String value) {
     robotSettings = value;
+    log_i("robot.settings: %02x", value.charAt(0));
     putString("robot.settings", value);
     return true;
 }

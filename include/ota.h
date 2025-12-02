@@ -3,7 +3,6 @@
 
 #include <ArduinoOTA.h>
 #include <WiFi.h>
-#include <sys/queue.h>
 
 typedef enum {
     OTA_OFF = 0,

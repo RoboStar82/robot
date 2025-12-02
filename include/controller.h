@@ -59,7 +59,7 @@ class Controller {
    protected:
     controller_state_t state;
 
-    bool needSend = false;
+    QueueHandle_t needQueue = xQueueCreate(4, sizeof(bool));
 
     void sendState();
 };

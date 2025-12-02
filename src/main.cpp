@@ -12,7 +12,7 @@
 
 void setup() {
     Serial.begin(115200);
-    log_i("Firmware: %u (%s)", BUILD_TIMESTAMP, BUILD_DATETIME);
+    log_i("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
     settings.begin();
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();
@@ -37,10 +37,9 @@ void setup() {
 #endif
 #endif
     ota.begin();
-    delay(2000);
     robot.begin();
 }
 
 void loop() {
-    delay(1000);
+    vTaskDelay(1000);
 }

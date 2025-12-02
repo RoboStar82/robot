@@ -21,7 +21,7 @@ void Navigation::begin() {
 void Navigation::task() {
 #if ROBOT_HAS_NAVIGATION_SENDER
     while (true) {
-        delay(1000);
+        vTaskDelay(1000);
     }
 #endif
 #if ROBOT_HAS_NAVIGATION_SERIAL
@@ -32,7 +32,7 @@ void Navigation::task() {
             data[length] = '\0';
             Serial.print((char*)data);
         } else {
-            delay(1000);
+            vTaskDelay(1000);
         }
     }
 #endif

@@ -98,87 +98,94 @@ void Controller::onChange(controller_state_t oldState) {
 }
 
 void Controller::print() {
-    Serial.printf("[%6u][I] Controller: mode=%x ", (unsigned long)(esp_timer_get_time() / 1000ULL), state.mode);
+    size_t length = 0;
+    char message[256] = {0};
+    length += snprintf(message + length, 256 - length, "[%6u][I] Controller: mode=%x ", (unsigned long)(esp_timer_get_time() / 1000ULL), state.mode);
     bool none = true;
     if (state.lx) {
-        Serial.printf("lx=%d ", state.lx);
+        length += snprintf(message + length, 256 - length, "lx=%d ", state.lx);
         none = false;
     }
     if (state.ly) {
-        Serial.printf("ly=%d ", state.ly);
+        length += snprintf(message + length, 256 - length, "ly=%d ", state.ly);
         none = false;
     }
     if (state.rx) {
-        Serial.printf("rx=%d ", state.rx);
+        length += snprintf(message + length, 256 - length, "rx=%d ", state.rx);
         none = false;
     }
     if (state.ry) {
-        Serial.printf("ry=%d ", state.ry);
+        length += snprintf(message + length, 256 - length, "ry=%d ", state.ry);
         none = false;
     }
     if (state.dx) {
-        Serial.printf("dx=%d ", state.dx);
+        length += snprintf(message + length, 256 - length, "dx=%d ", state.dx);
         none = false;
     }
     if (state.dy) {
-        Serial.printf("dy=%d ", state.dy);
+        length += snprintf(message + length, 256 - length, "dy=%d ", state.dy);
         none = false;
     }
     if (state.lz) {
-        Serial.printf("lz=%d ", state.lz);
+        length += snprintf(message + length, 256 - length, "lz=%d ", state.lz);
         none = false;
     }
     if (state.rz) {
-        Serial.printf("rz=%d ", state.rz);
+        length += snprintf(message + length, 256 - length, "rz=%d ", state.rz);
         none = false;
     }
     if (state.lt) {
-        Serial.printf("lt=%d ", state.lt);
+        length += snprintf(message + length, 256 - length, "lt=%d ", state.lt);
         none = false;
     }
     if (state.rt) {
-        Serial.printf("rt=%d ", state.rt);
+        length += snprintf(message + length, 256 - length, "rt=%d ", state.rt);
         none = false;
     }
     if (state.a) {
-        Serial.printf("a=1 ");
+        length += snprintf(message + length, 256 - length, "a=1 ");
         none = false;
     }
     if (state.b) {
-        Serial.printf("b=1 ");
+        length += snprintf(message + length, 256 - length, "b=1 ");
         none = false;
     }
     if (state.x) {
-        Serial.printf("x=1 ");
+        length += snprintf(message + length, 256 - length, "x=1 ");
         none = false;
     }
     if (state.y) {
-        Serial.printf("y=1 ");
+        length += snprintf(message + length, 256 - length, "y=1 ");
         none = false;
     }
     if (state.start) {
-        Serial.printf("start=1 ");
+        length += snprintf(message + length, 256 - length, "start=1 ");
         none = false;
     }
     if (state.back) {
-        Serial.printf("back=1 ");
+        length += snprintf(message + length, 256 - length, "back=1 ");
         none = false;
     }
     if (none) {
-        Serial.print("none");
+        length += snprintf(message + length, 256 - length, "none");
     }
-    Serial.print("\n");
+    message[length] = '\n';
+    length ++;
+    message[length] = '\0';
+    log_printf(message);
 }
 
 void Controller::needSendState() {
-    needSend = true;
+    bool value = true;
+    xQueueSend(needQueue, &value, 0);
 }
 
 void Controller::sendState() {
-    needSend = false;
 #if ROBOT_HAS_TRANSCEIVER_SERIAL
+    char message[32] = {0};
     uint8_t* data = (uint8_t*)(&state);
-    ControllerSerial.printf("CTRL=%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+    int length = snprintf(message, 32, "CTRL=%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+    ControllerSerial.write(message, length);
 #endif
 }
 
@@ -188,28 +195,28 @@ void Controller::task() {
         if (ControllerSerial.available()) {
             uint8_t data[32];
             size_t length = ControllerSerial.readBytesUntil('\n', data, 32);
-            if (length > 20 && strncmp((const char*)data, "CTRL=", length) == 0) {
+            if (length > 20 && strncmp((const char*)data, "CTRL=", 5) == 0) {
                 data[0] = ((data[5] <= '9' ? data[5] - '0' : toupper(data[5]) - 'A' + 10) << 4) | (data[6] <= '9' ? data[6] - '0' : toupper(data[6]) - 'A' + 10);
-                data[1] = ((data[7] <= '9' ? data[5] - '0' : toupper(data[7]) - 'A' + 10) << 4) | (data[8] <= '9' ? data[8] - '0' : toupper(data[8]) - 'A' + 10);
-                data[2] = ((data[9] <= '9' ? data[5] - '0' : toupper(data[9]) - 'A' + 10) << 4) | (data[10] <= '9' ? data[10] - '0' : toupper(data[10]) - 'A' + 10);
-                data[3] = ((data[11] <= '9' ? data[5] - '0' : toupper(data[11]) - 'A' + 10) << 4) | (data[12] <= '9' ? data[12] - '0' : toupper(data[12]) - 'A' + 10);
-                data[4] = ((data[13] <= '9' ? data[5] - '0' : toupper(data[13]) - 'A' + 10) << 4) | (data[14] <= '9' ? data[14] - '0' : toupper(data[14]) - 'A' + 10);
-                data[5] = ((data[15] <= '9' ? data[5] - '0' : toupper(data[15]) - 'A' + 10) << 4) | (data[16] <= '9' ? data[16] - '0' : toupper(data[16]) - 'A' + 10);
-                data[6] = ((data[17] <= '9' ? data[5] - '0' : toupper(data[17]) - 'A' + 10) << 4) | (data[18] <= '9' ? data[18] - '0' : toupper(data[18]) - 'A' + 10);
-                data[7] = ((data[19] <= '9' ? data[5] - '0' : toupper(data[19]) - 'A' + 10) << 4) | (data[20] <= '9' ? data[20] - '0' : toupper(data[20]) - 'A' + 10);
+                data[1] = ((data[7] <= '9' ? data[7] - '0' : toupper(data[7]) - 'A' + 10) << 4) | (data[8] <= '9' ? data[8] - '0' : toupper(data[8]) - 'A' + 10);
+                data[2] = ((data[9] <= '9' ? data[9] - '0' : toupper(data[9]) - 'A' + 10) << 4) | (data[10] <= '9' ? data[10] - '0' : toupper(data[10]) - 'A' + 10);
+                data[3] = ((data[11] <= '9' ? data[11] - '0' : toupper(data[11]) - 'A' + 10) << 4) | (data[12] <= '9' ? data[12] - '0' : toupper(data[12]) - 'A' + 10);
+                data[4] = ((data[13] <= '9' ? data[13] - '0' : toupper(data[13]) - 'A' + 10) << 4) | (data[14] <= '9' ? data[14] - '0' : toupper(data[14]) - 'A' + 10);
+                data[5] = ((data[15] <= '9' ? data[15] - '0' : toupper(data[15]) - 'A' + 10) << 4) | (data[16] <= '9' ? data[16] - '0' : toupper(data[16]) - 'A' + 10);
+                data[6] = ((data[17] <= '9' ? data[17] - '0' : toupper(data[17]) - 'A' + 10) << 4) | (data[18] <= '9' ? data[18] - '0' : toupper(data[18]) - 'A' + 10);
+                data[7] = ((data[19] <= '9' ? data[19] - '0' : toupper(data[19]) - 'A' + 10) << 4) | (data[20] <= '9' ? data[20] - '0' : toupper(data[20]) - 'A' + 10);
                 setState(data);
             }
         } else {
-            delay(100);
+            vTaskDelay(1);
         }
     }
 #endif
 #if ROBOT_HAS_TRANSCEIVER_SERIAL
     while (true) {
-        if (needSend) {
+        bool update;
+        if (xQueueReceive(needQueue, &update, 1000)) {
             sendState();
         }
-        delay(100);
     }
 #endif
 }

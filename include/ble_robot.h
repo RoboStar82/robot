@@ -26,10 +26,10 @@ class BLERobotSettings : BLECharacteristicCallbacks {
 
 // server write client read
 // client write server read
-class BLERobotOTA : BLECharacteristicCallbacks {
+class BLERobotOtaMode : BLECharacteristicCallbacks {
    public:
-    BLERobotOTA();
-    ~BLERobotOTA();
+    BLERobotOtaMode();
+    ~BLERobotOtaMode();
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -41,7 +41,7 @@ class BLERobotOTA : BLECharacteristicCallbacks {
 
    protected:
     BLEUUID characteristicUuid = BLEUUID("b0b0c7ab-0009-4000-8000-000000000000");
-    const char* characteristicDescription = "OTA";
+    const char* characteristicDescription = "OTA Mode";
     uint8_t characteristicFormat = BLE2904::FORMAT_UINT8;
 };
 
@@ -120,7 +120,7 @@ class BLERobot {
     BLERobotSettings settings;
     // server write client read
     // client write server read
-    BLERobotOTA ota;
+    BLERobotOtaMode otaMode;
     // server write client read
     // client write server read
     BLERobotWiFiMode wifiMode;

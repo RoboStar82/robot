@@ -139,8 +139,8 @@ void MotorMCPWM::begin() {
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         .period_ticks = 1000000 / 25000,
     };
-    maxSpeed = 1.0f * timerConfig.period_ticks;
-    minSpeed = 0.5f * timerConfig.period_ticks;
+    maxSpeed = 0.8f * timerConfig.period_ticks;
+    minSpeed = 0.4f * timerConfig.period_ticks;
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);
     mcpwm_operator_config_t operatorConfig = {
         .group_id = group,
@@ -180,8 +180,8 @@ void MotorMCPWM::setSpeed(int value) {
     int newSpeed = back ? -absSpeed : absSpeed;
     if (speed != newSpeed) {
         if (back != (speed < 0)) {
-            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, back ? 0 : -1, true);
-            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, back ? -1 : 0, true);
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, back ? -1 : 0, true);
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, back ? 0 : -1, true);
         }
         speed = newSpeed;
         mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);

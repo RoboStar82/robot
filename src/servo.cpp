@@ -25,16 +25,16 @@ const char* Servo::getName() {
     return name;
 }
 
-void Servo::setMinAngle(int value) {
+void Servo::setMinAngle(float value) {
     minAngle = value;
 }
 
-void Servo::setMaxAngle(int value) {
+void Servo::setMaxAngle(float value) {
     maxAngle = value;
 }
 
-void Servo::setAngle(int value, bool force) {
-    int newAngle = value;
+void Servo::setAngle(float value, bool force) {
+    float newAngle = value;
     if (newAngle < minAngle) {
         newAngle = minAngle;
     } else if (newAngle > maxAngle) {
@@ -59,8 +59,8 @@ void ServoPWM::begin() {
     }
 }
 
-void ServoPWM::setAngle(int value, bool force) {
-    int newAngle = value;
+void ServoPWM::setAngle(float value, bool force) {
+    float newAngle = value;
     if (newAngle < minAngle) {
         newAngle = minAngle;
     } else if (newAngle > maxAngle) {

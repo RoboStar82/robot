@@ -45,38 +45,26 @@ void Robot::updateSpeed() {
     if (state.dy == 0) {
         motorCC.setSpeed(0);
     } else if (state.dy > 0) {
-        motorCC.setSpeed(255);
-    } else if (state.dy < 0) {
         motorCC.setSpeed(-255);
+    } else if (state.dy < 0) {
+        motorCC.setSpeed(255);
     }
 }
 
 void Robot::updateServo() {
     controller_state_t state = controller.getState();
-    if (raise == -1) {
+    if (state.lz > 0) {
         raise = 0;
-        servoLB.setAngle(90);
-        servoRB.setAngle(90);
-    } else if (state.lz > 0) {
-        if (raise >= 2) {
-            raise = 1;
-            servoLF.setAngle(90);
-            servoRF.setAngle(90);
-        } else {
-            raise = 0;
-            servoLB.setAngle(90);
-            servoRB.setAngle(90);
-        }
+        servoLF.setAngle(90.0f);
+        servoRF.setAngle(90.0f);
+        servoLB.setAngle(90.0f);
+        servoRB.setAngle(90.0f);
     } else if (state.lz < 0) {
-        if (raise == 0) {
-            raise = 1;
-            servoLB.setAngle(90 + 20);
-            servoRB.setAngle(90 - 20);
-        } else {
-            raise = 2;
-            servoLF.setAngle(90 + 14);
-            servoRF.setAngle(90 - 14);
-        }
+        raise = 1;
+        servoLF.setAngle(90.0f + 25.2);
+        servoRF.setAngle(90.0f - 25.4);
+        servoLB.setAngle(90.0f + 21.0);
+        servoRB.setAngle(90.0f - 21.6);
     }
 }
 

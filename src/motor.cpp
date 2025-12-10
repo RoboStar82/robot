@@ -111,8 +111,8 @@ void MotorPWM::setSpeed(int value) {
     if (speed != newSpeed) {
         speed = newSpeed;
         if (pwmPin1 && pwmPin2) {
-            ledcWrite(pwmPin1, back ? absSpeed : 0);
-            ledcWrite(pwmPin2, back ? 0 : absSpeed);
+            ledcWrite(pwmPin1, back ? 0 : absSpeed);
+            ledcWrite(pwmPin2, back ? absSpeed : 0);
         }
         log_i("Motor %s: %d", name, speed);
     }

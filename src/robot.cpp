@@ -42,29 +42,47 @@ void Robot::updateSpeed() {
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
 
-    if (state.dy == 0) {
+    if (raise == 2) {
+        motorCC.setSpeed(20);
+    } else if (state.dy == 0) {
         motorCC.setSpeed(0);
     } else if (state.dy > 0) {
-        motorCC.setSpeed(-255);
-    } else if (state.dy < 0) {
         motorCC.setSpeed(255);
+    } else if (state.dy < 0) {
+        motorCC.setSpeed(-255);
     }
 }
 
 void Robot::updateServo() {
     controller_state_t state = controller.getState();
+    bool updateRaise = false;
     if (state.lz > 0) {
-        raise = 0;
-        servoLF.setAngle(90.0f);
-        servoRF.setAngle(90.0f);
-        servoLB.setAngle(90.0f);
-        servoRB.setAngle(90.0f);
+        if (raise > 0) {
+            raise--;
+            updateRaise = true;
+        }
     } else if (state.lz < 0) {
-        raise = 1;
-        servoLF.setAngle(90.0f + 25.2);
-        servoRF.setAngle(90.0f - 25.4);
-        servoLB.setAngle(90.0f + 21.0);
-        servoRB.setAngle(90.0f - 21.6);
+        if (raise < 2) {
+            raise++;
+            updateRaise = true;
+        }
+    }
+    if (updateRaise) {
+        if (raise == 0) {
+            servoLF.setAngle(90.0f);
+            servoRF.setAngle(90.0f);
+            servoLB.setAngle(90.0f);
+            servoRB.setAngle(90.0f);
+        } else if (raise == 1) {
+            servoLF.setAngle(90.0f + 25.2);
+            servoRF.setAngle(90.0f - 25.4);
+            servoLB.setAngle(90.0f + 22.0);
+            servoRB.setAngle(90.0f - 23.2);
+        } else {
+            servoLB.setAngle(90.0f + 44.0);
+            servoRB.setAngle(90.0f - 44.4);
+            motorCC.setSpeed(20);
+        }
     }
 }
 

@@ -35,7 +35,7 @@ void Led::onChange() {
     } else if (state.controller.button == 'B') {
         r = 0x11;
     } else if (state.controller.button == 'X') {
-        b = 0x000011;
+        b = 0x11;
     } else if (state.controller.button == 'Y') {
         r = g = 0x11;
     }

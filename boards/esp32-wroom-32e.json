@@ -1,0 +1,46 @@
+{
+  "build": {
+    "arduino":{
+      "ldscript": "esp32_out.ld",
+      "partitions": "min_spiffs.csv"
+    },
+    "core": "esp32",
+    "extra_flags": [
+      "-DARDUINO_ESP32_WROOM_32E",
+      "-DARDUINO_RUNNING_CORE=1",
+      "-DARDUINO_EVENT_RUNNING_CORE=1"
+    ],
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "flash_mode": "dio",
+    "hwids": [
+      [
+        "0x1A86",
+        "0x7523"
+      ]
+    ],
+    "mcu": "esp32",
+    "variant": "esp32-wroom-32e"
+  },
+  "connectivity": [
+    "bluetooth",
+    "wifi"
+  ],
+  "debug": {
+    "openocd_board": "esp-wroom-32.cfg"
+  },
+  "frameworks": [
+    "arduino",
+    "espidf"
+  ],
+  "name": "ESP32-WROOM-32E",
+  "upload": {
+    "flash_size": "4MB",
+    "maximum_ram_size": 327680,
+    "maximum_size": 4194304,
+    "require_upload_port": true,
+    "speed": 460800
+  },
+  "url": "https://aliexpress.ru/item/1005007945409281.html",
+  "vendor": "Emakefun"
+}

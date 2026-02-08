@@ -7,7 +7,9 @@
 #include "ota.h"
 #include "robot.h"
 #include "settings.h"
+#if ROBOT_HAS_CONTROLLER_USB
 #include "usb.h"
+#endif
 #include "version.h"
 
 void setup() {

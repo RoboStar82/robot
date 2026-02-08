@@ -1,4 +1,6 @@
 
+#if ROBOT_HAS_CONTROLLER_USB
+
 #include "usb.h"
 
 #include "controller.h"
@@ -128,3 +130,5 @@ void USB::hidHostInterfaceInputReportEventHandler(hid_host_device_handle_t devic
         }
     }
 }
+
+#endif

@@ -4,7 +4,11 @@
 #include <Arduino.h>
 
 #if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
+#if ROBOT_ROLE_MAKER
+#define ControllerSerial Serial
+#else
 #define ControllerSerial Serial2
+#endif
 #endif
 
 typedef struct {

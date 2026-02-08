@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if ROBOT_HAS_CONTROLLER_USB
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1386,4 +1388,6 @@ hid_class_request_set_protocol(hid_host_device_handle_t hid_dev_handle,
 }
 #ifdef __cplusplus
 }
+#endif
+
 #endif

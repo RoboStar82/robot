@@ -111,27 +111,27 @@ extern MotorMCPWM motorLF;
 extern MotorMCPWM motorRF;
 extern MotorMCPWM motorLB;
 extern MotorMCPWM motorRB;
-#if ROBOT_HAS_MOTOR_PWM
-extern MotorPWM motorCC;
-#else
-extern MotorMCPWM motorCC;
-#endif
 #elif ROBOT_HAS_MOTOR_PWM
 extern MotorPWM motorLF;
 extern MotorPWM motorRF;
 extern MotorPWM motorLB;
 extern MotorPWM motorRB;
-extern MotorPWM motorCC;
 #elif ROBOT_HAS_MOTOR_ENCODER
 extern MotorEncoder motorLF;
 extern MotorEncoder motorRF;
 extern MotorEncoder motorLB;
 extern MotorEncoder motorRB;
-extern Motor motorCC;
 #else
 extern Motor motorLF;
 extern Motor motorRF;
 extern Motor motorLB;
 extern Motor motorRB;
+#endif
+
+#if ROBOT_HAS_MOTOR_CC_MCPWM
+extern MotorMCPWM motorCC;
+#elif ROBOT_HAS_MOTOR_CC_PWM
+extern MotorPWM motorCC;
+#else
 extern Motor motorCC;
 #endif

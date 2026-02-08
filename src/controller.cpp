@@ -14,7 +14,9 @@ Controller::~Controller() {}
 
 void Controller::begin() {
 #if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
+#if !ROBOT_ROLE_MAKER
     ControllerSerial.begin(115200, SERIAL_8N1, 19, 20);
+#endif
     xTaskCreate(task, "controller_task", 4096, NULL, 1, NULL);
 #endif
 }

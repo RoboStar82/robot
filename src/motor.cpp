@@ -1,33 +1,38 @@
 
 #include "motor.h"
 
-#if ROBOT_HAS_MOTOR_MCPWM
+#if ROBOT_HAS_MOTOR_MCPWM && ROBOT_ROLE_MAKER
+MotorMCPWM motorLF = MotorMCPWM("LF", 13, 27);
+MotorMCPWM motorRF = MotorMCPWM("RF", 2, 4);
+MotorMCPWM motorLB = MotorMCPWM("LB", 12, 17);
+MotorMCPWM motorRB = MotorMCPWM("RB", 14, 15);
+#elif ROBOT_HAS_MOTOR_MCPWM
 MotorMCPWM motorLF = MotorMCPWM("LF", 1, 2);
 MotorMCPWM motorRF = MotorMCPWM("RF", 5, 4);
 MotorMCPWM motorLB = MotorMCPWM("LB", 42, 41);
 MotorMCPWM motorRB = MotorMCPWM("RB", 6, 7);
-#if ROBOT_HAS_MOTOR_PWM
-MotorPWM motorCC = MotorPWM("CC", 45, 47);
-#else
-MotorPWM motorCC = MotorMCPWM("CC", 45, 47);
-#endif
 #elif ROBOT_HAS_MOTOR_PWM
 MotorPWM motorLF = MotorPWM("LF", 1, 2);
 MotorPWM motorRF = MotorPWM("RF", 5, 4);
 MotorPWM motorLB = MotorPWM("LB", 42, 41);
 MotorPWM motorRB = MotorPWM("RB", 6, 7);
-MotorPWM motorCC = MotorPWM("CC", 45, 47);
 #elif ROBOT_HAS_MOTOR_ENCODER
 MotorEncoder motorLF = MotorEncoder("LF", 1, 2);
 MotorEncoder motorRF = MotorEncoder("RF", 5, 4);
 MotorEncoder motorLB = MotorEncoder("LB", 42, 41);
 MotorEncoder motorRB = MotorEncoder("RB", 6, 7);
-Motor motorCC = Motor("CC");
 #else
 Motor motorLF = Motor("LF");
 Motor motorRF = Motor("RF");
 Motor motorLB = Motor("LB");
 Motor motorRB = Motor("RB");
+#endif
+
+#if ROBOT_HAS_MOTOR_CC_MCPWM
+MotorMCPWM motorCC = MotorMCPWM("CC", 45, 47);
+#elif ROBOT_HAS_MOTOR_CC_PWM
+MotorPWM motorCC = MotorPWM("CC", 45, 47);
+#else
 Motor motorCC = Motor("CC");
 #endif
 

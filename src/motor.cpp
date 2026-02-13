@@ -1,26 +1,16 @@
 
 #include "motor.h"
 
-#if ROBOT_HAS_MOTOR_MCPWM && ROBOT_ROLE_MAKER
-MotorMCPWM motorLF = MotorMCPWM("LF", 13, 27);
-MotorMCPWM motorRF = MotorMCPWM("RF", 2, 4);
-MotorMCPWM motorLB = MotorMCPWM("LB", 12, 17);
-MotorMCPWM motorRB = MotorMCPWM("RB", 14, 15);
-#elif ROBOT_HAS_MOTOR_MCPWM
-MotorMCPWM motorLF = MotorMCPWM("LF", 1, 2);
-MotorMCPWM motorRF = MotorMCPWM("RF", 5, 4);
-MotorMCPWM motorLB = MotorMCPWM("LB", 42, 41);
-MotorMCPWM motorRB = MotorMCPWM("RB", 6, 7);
+#if ROBOT_HAS_MOTOR_MCPWM
+MotorMCPWM motorLF = MotorMCPWM("LF", ROBOT_MOTOR_LF_PIN1, ROBOT_MOTOR_LF_PIN2);
+MotorMCPWM motorRF = MotorMCPWM("RF", ROBOT_MOTOR_RF_PIN1, ROBOT_MOTOR_RF_PIN2);
+MotorMCPWM motorLB = MotorMCPWM("LB", ROBOT_MOTOR_LB_PIN1, ROBOT_MOTOR_LB_PIN2);
+MotorMCPWM motorRB = MotorMCPWM("RB", ROBOT_MOTOR_RB_PIN1, ROBOT_MOTOR_RB_PIN2);
 #elif ROBOT_HAS_MOTOR_PWM
-MotorPWM motorLF = MotorPWM("LF", 1, 2);
-MotorPWM motorRF = MotorPWM("RF", 5, 4);
-MotorPWM motorLB = MotorPWM("LB", 42, 41);
-MotorPWM motorRB = MotorPWM("RB", 6, 7);
-#elif ROBOT_HAS_MOTOR_ENCODER
-MotorEncoder motorLF = MotorEncoder("LF", 1, 2);
-MotorEncoder motorRF = MotorEncoder("RF", 5, 4);
-MotorEncoder motorLB = MotorEncoder("LB", 42, 41);
-MotorEncoder motorRB = MotorEncoder("RB", 6, 7);
+MotorPWM motorLF = MotorPWM("LF", ROBOT_MOTOR_LF_PIN1, ROBOT_MOTOR_LF_PIN2);
+MotorPWM motorRF = MotorPWM("RF", ROBOT_MOTOR_RF_PIN1, ROBOT_MOTOR_RF_PIN2);
+MotorPWM motorLB = MotorPWM("LB", ROBOT_MOTOR_LB_PIN1, ROBOT_MOTOR_LB_PIN2);
+MotorPWM motorRB = MotorPWM("RB", ROBOT_MOTOR_RB_PIN1, ROBOT_MOTOR_RB_PIN2);
 #else
 Motor motorLF = Motor("LF");
 Motor motorRF = Motor("RF");
@@ -29,11 +19,33 @@ Motor motorRB = Motor("RB");
 #endif
 
 #if ROBOT_HAS_MOTOR_CC_MCPWM
-MotorMCPWM motorCC = MotorMCPWM("CC", 45, 47);
+MotorMCPWM motorCC = MotorMCPWM("CC", ROBOT_MOTOR_CC_PIN1, ROBOT_MOTOR_CC_PIN2);
 #elif ROBOT_HAS_MOTOR_CC_PWM
-MotorPWM motorCC = MotorPWM("CC", 45, 47);
+MotorPWM motorCC = MotorPWM("CC", ROBOT_MOTOR_CC_PIN1, ROBOT_MOTOR_CC_PIN2);
 #else
 Motor motorCC = Motor("CC");
+#endif
+
+#if ROBOT_HAS_MOTOR_1_MCPWM
+MotorMCPWM motor1 = MotorMCPWM("1", ROBOT_MOTOR_1_PIN1, ROBOT_MOTOR_1_PIN2);
+#elif ROBOT_HAS_MOTOR_1_PWM
+MotorPWM motor1 = MotorPWM("1", ROBOT_MOTOR_1_PIN1, ROBOT_MOTOR_1_PIN2);
+#else
+Motor motor1 = Motor("1");
+#endif
+#if ROBOT_HAS_MOTOR_2_MCPWM
+MotorMCPWM motor2 = MotorMCPWM("2", ROBOT_MOTOR_2_PIN1, ROBOT_MOTOR_2_PIN2);
+#elif ROBOT_HAS_MOTOR_2_PWM
+MotorPWM motor2 = MotorPWM("2", ROBOT_MOTOR_2_PIN1, ROBOT_MOTOR_2_PIN2);
+#else
+Motor motor2 = Motor("2");
+#endif
+#if ROBOT_HAS_MOTOR_3_MCPWM
+MotorMCPWM motor3 = MotorMCPWM("3", ROBOT_MOTOR_3_PIN1, ROBOT_MOTOR_3_PIN2);
+#elif ROBOT_HAS_MOTOR_3_PWM
+MotorPWM motor3 = MotorPWM("3", ROBOT_MOTOR_3_PIN1, ROBOT_MOTOR_3_PIN2);
+#else
+Motor motor3 = Motor("3");
 #endif
 
 Motor::Motor(const char* _name) {
@@ -74,15 +86,6 @@ void Motor::setSpeed(int value) {
         log_i("Motor %s: %d", name, speed);
     }
 }
-
-MotorEncoder::MotorEncoder(const char* _name, uint8_t _encoderPin1, uint8_t _encoderPin2) : Motor(_name) {
-    encoderPin1 = _encoderPin1;
-    encoderPin2 = _encoderPin2;
-}
-
-MotorEncoder::~MotorEncoder() {}
-
-void MotorEncoder::begin() {}
 
 MotorPWM::MotorPWM(const char* _name, uint8_t _pwmPin1, uint8_t _pwmPin2) : Motor(_name) {
     pwmPin1 = _pwmPin1;

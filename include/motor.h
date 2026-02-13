@@ -25,28 +25,6 @@ class Motor {
     int speed = 0;
 };
 
-class MotorEncoder : Motor {
-   public:
-    MotorEncoder(const char* name, uint8_t encoderPin1, uint8_t encoderPin2);
-    ~MotorEncoder();
-
-    void begin();
-
-    using Motor::getName;
-
-    using Motor::setMaxSpeed;
-    using Motor::setMinSpeed;
-    using Motor::setSpeed;
-
-   protected:
-    using Motor::maxSpeed;
-    using Motor::minSpeed;
-    using Motor::name;
-    using Motor::speed;
-    uint8_t encoderPin1 = 0;
-    uint8_t encoderPin2 = 0;
-};
-
 class MotorPWM : Motor {
    public:
     MotorPWM(const char* name, uint8_t pwmPin1, uint8_t pwmPin2);
@@ -106,6 +84,37 @@ class MotorMCPWM : MotorPWM {
     mcpwm_gen_handle_t mcpwmGenerator2 = nullptr;
 };
 
+#ifndef ROBOT_MOTOR_LF_PIN1
+#define ROBOT_MOTOR_LF_PIN1 1
+#endif
+#ifndef ROBOT_MOTOR_LF_PIN2
+#define ROBOT_MOTOR_LF_PIN2 2
+#endif
+#ifndef ROBOT_MOTOR_RF_PIN1
+#define ROBOT_MOTOR_RF_PIN1 5
+#endif
+#ifndef ROBOT_MOTOR_RF_PIN2
+#define ROBOT_MOTOR_RF_PIN2 4
+#endif
+#ifndef ROBOT_MOTOR_LB_PIN1
+#define ROBOT_MOTOR_LB_PIN1 42
+#endif
+#ifndef ROBOT_MOTOR_LB_PIN2
+#define ROBOT_MOTOR_LB_PIN2 41
+#endif
+#ifndef ROBOT_MOTOR_RB_PIN1
+#define ROBOT_MOTOR_RB_PIN1 6
+#endif
+#ifndef ROBOT_MOTOR_RB_PIN2
+#define ROBOT_MOTOR_RB_PIN2 7
+#endif
+#ifndef ROBOT_MOTOR_CC_PIN1
+#define ROBOT_MOTOR_CC_PIN1 45
+#endif
+#ifndef ROBOT_MOTOR_CC_PIN2
+#define ROBOT_MOTOR_CC_PIN2 47
+#endif
+
 #if ROBOT_HAS_MOTOR_MCPWM
 extern MotorMCPWM motorLF;
 extern MotorMCPWM motorRF;
@@ -116,11 +125,6 @@ extern MotorPWM motorLF;
 extern MotorPWM motorRF;
 extern MotorPWM motorLB;
 extern MotorPWM motorRB;
-#elif ROBOT_HAS_MOTOR_ENCODER
-extern MotorEncoder motorLF;
-extern MotorEncoder motorRF;
-extern MotorEncoder motorLB;
-extern MotorEncoder motorRB;
 #else
 extern Motor motorLF;
 extern Motor motorRF;
@@ -134,4 +138,26 @@ extern MotorMCPWM motorCC;
 extern MotorPWM motorCC;
 #else
 extern Motor motorCC;
+#endif
+
+#if ROBOT_HAS_MOTOR_1_MCPWM
+extern MotorMCPWM motor1;
+#elif ROBOT_HAS_MOTOR_1_PWM
+extern MotorPWM motor1;
+#else
+extern Motor motor1;
+#endif
+#if ROBOT_HAS_MOTOR_2_MCPWM
+extern MotorMCPWM motor2;
+#elif ROBOT_HAS_MOTOR_2_PWM
+extern MotorPWM motor2;
+#else
+extern Motor motor2;
+#endif
+#if ROBOT_HAS_MOTOR_3_MCPWM
+extern MotorMCPWM motor3;
+#elif ROBOT_HAS_MOTOR_3_PWM
+extern MotorPWM motor3;
+#else
+extern Motor motor3;
 #endif

@@ -3,12 +3,24 @@
 
 #include <Arduino.h>
 
-#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
-#if ROBOT_ROLE_MAKER
-#define ControllerSerial Serial
-#else
+#if ROBOT_HAS_CONTROLLER_SERIAL
+#ifndef ROBOT_CONTROLLER_SERIAL_RX
+#define ROBOT_CONTROLLER_SERIAL_RX 19
+#endif
+#ifndef ROBOT_CONTROLLER_SERIAL_TX
+#define ROBOT_CONTROLLER_SERIAL_TX 20
+#endif
 #define ControllerSerial Serial2
 #endif
+
+#if ROBOT_HAS_TRANSCEIVER_SERIAL
+#ifndef ROBOT_TRANSCEIVER_SERIAL_RX
+#define ROBOT_TRANSCEIVER_SERIAL_RX 19
+#endif
+#ifndef ROBOT_TRANSCEIVER_SERIAL_TX
+#define ROBOT_TRANSCEIVER_SERIAL_TX 20
+#endif
+#define ControllerSerial Serial2
 #endif
 
 typedef struct {

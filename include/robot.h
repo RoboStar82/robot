@@ -23,6 +23,8 @@ class Robot {
     void needUpdateSpeed();
     void needUpdateServo();
 
+    void updateCount();
+
     void task();
 
     static void task(void* arg);
@@ -30,7 +32,10 @@ class Robot {
    protected:
     bool started = false;
     QueueHandle_t needQueue = xQueueCreate(4, sizeof(robot_update_t));
-    int raise = 0;
+    int countX = 0;
+    int countY = 0;
+    int countLZ = 0;
+    int countRZ = 0;
 };
 
 extern Robot robot;

@@ -44,44 +44,23 @@ void Robot::updateSpeed() {
     }
 
     if (state.dy == 0) {
-        if (raise < 0) {
-            if (state.ly == 0) {
-                motorCC.setSpeed(0);
-            } else if (state.ly > 4) {
-                motorCC.setSpeed(255);
-            } else if (state.ly > 0) {
-                motorCC.setSpeed(state.ly * 36);
-            } else if (state.ly < -4) {
-                motorCC.setSpeed(-255);
-            } else if (state.ly < 0) {
-                motorCC.setSpeed(state.ly * 36);
-            }
-        } else {
-            motorCC.setSpeed(0);
-        }
+        motor1.setSpeed(0);
     } else if (state.dy > 0) {
-        motorCC.setSpeed(255);
+        motor1.setSpeed(255);
     } else if (state.dy < 0) {
-        motorCC.setSpeed(-255);
+        motor1.setSpeed(-255);
+    }
+    if (state.dx == 0) {
+        motor2.setSpeed(0);
+    } else if (state.dx > 0) {
+        motor2.setSpeed(255);
+    } else if (state.dx < 0) {
+        motor2.setSpeed(-255);
     }
 }
 
 void Robot::updateServo() {
-    controller_state_t state = controller.getState();
-    bool updateRaise = false;
-    if (state.lz > 0) {
-        raise--;
-        updateRaise = true;
-    } else if (state.lz < 0) {
-        raise++;
-        updateRaise = true;
-    }
-    if (updateRaise) {
-        servoLF.setAngle(90.0f + 2.0f * raise);
-        servoRF.setAngle(90.0f - 2.0f * raise);
-        servoLB.setAngle(90.0f + 2.0f * raise);
-        servoRB.setAngle(90.0f - 2.0f * raise);
-    }
+    updateCount();
 }
 
 void Robot::needUpdateSpeed() {
@@ -94,6 +73,59 @@ void Robot::needUpdateServo() {
     xQueueSend(needQueue, &value, 0);
 }
 
+void Robot::updateCount() {
+    controller_state_t state = controller.getState();
+    if (state.start || state.back) {
+        return;
+    }
+    bool updateCountX = false;
+    bool updateCountY = false;
+    bool updateCountLZ = false;
+    bool updateCountRZ = false;
+    if (state.a) {
+        countY = max(countY - 8, -256);
+        updateCountY = true;
+    }
+    if (state.b) {
+        countX = min(countX + 8, 256);
+        updateCountX = true;
+    }
+    if (state.x) {
+        countX = max(countX - 8, -256);
+        updateCountX = true;
+    }
+    if (state.y) {
+        countY = min(countY + 8, 256);
+        updateCountY = true;
+    }
+    if (state.lz > 0) {
+        countLZ = min(countLZ + 8, 256);
+        updateCountLZ = true;
+    } else if (state.lz < 0) {
+        countLZ = max(countLZ - 8, 256);
+        updateCountLZ = true;
+    }
+    if (state.rz > 0) {
+        countRZ = min(countRZ + 8, 256);
+        updateCountRZ = true;
+    } else if (state.rz < 0) {
+        countRZ = max(countRZ - 8, 256);
+        updateCountRZ = true;
+    }
+    if (updateCountX) {
+        servo1.setAngle(90.0f + 90.0f / 256.0f * countX);
+    }
+    if (updateCountY) {
+        servo2.setAngle(90.0f + 90.0f / 256.0f * countY);
+    }
+    if (updateCountLZ) {
+        servo3.setAngle(90.0f + 90.0f / 256.0f * countLZ);
+    }
+    if (updateCountRZ) {
+        servo4.setAngle(90.0f + 90.0f / 256.0f * countRZ);
+    }
+}
+
 void Robot::task() {
     vTaskDelay(1000);
     motorLF.begin();
@@ -101,14 +133,21 @@ void Robot::task() {
     motorLB.begin();
     motorRB.begin();
     motorCC.begin();
+    motor1.begin();
+    motor2.begin();
+    motor3.begin();
     servoLF.begin();
     servoRF.begin();
     servoLB.begin();
     servoRB.begin();
+    servo1.begin();
+    servo2.begin();
+    servo3.begin();
+    servo4.begin();
     vTaskDelay(1000);
     while (true) {
         robot_update_t update;
-        if (xQueueReceive(needQueue, &update, 1000)) {
+        if (xQueueReceive(needQueue, &update, 200)) {
             switch (update) {
                 case ROBOT_UPDATE_SPEED:
                     updateSpeed();
@@ -117,6 +156,8 @@ void Robot::task() {
                     updateServo();
                     break;
             }
+        } else {
+            updateCount();
         }
     }
 }

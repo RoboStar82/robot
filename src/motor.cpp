@@ -171,6 +171,8 @@ void MotorMCPWM::begin() {
     mcpwm_generator_set_action_on_compare_event(mcpwmGenerator2, MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwmComparator2, MCPWM_GEN_ACTION_LOW));
     mcpwm_timer_enable(mcpwmTimer);
     mcpwm_timer_start_stop(mcpwmTimer, MCPWM_TIMER_START_NO_STOP);
+    mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, 0, true);
+    mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, -1, true);
 }
 
 void MotorMCPWM::setSpeed(int value) {

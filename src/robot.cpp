@@ -4,6 +4,7 @@
 #include "controller.h"
 #include "motor.h"
 #include "servo.h"
+#include "encoder.h"
 
 Robot robot;
 
@@ -102,14 +103,14 @@ void Robot::updateCount() {
         countLZ = min(countLZ + 8, 256);
         updateCountLZ = true;
     } else if (state.lz < 0) {
-        countLZ = max(countLZ - 8, 256);
+        countLZ = max(countLZ - 8, -256);
         updateCountLZ = true;
     }
     if (state.rz > 0) {
         countRZ = min(countRZ + 8, 256);
         updateCountRZ = true;
     } else if (state.rz < 0) {
-        countRZ = max(countRZ - 8, 256);
+        countRZ = max(countRZ - 8, -256);
         updateCountRZ = true;
     }
     if (updateCountX) {
@@ -144,10 +145,13 @@ void Robot::task() {
     servo2.begin();
     servo3.begin();
     servo4.begin();
+#if ROBOT_HAS_MOTOR_ENCODER_I2C
+    encoder.begin();
+#endif
     vTaskDelay(1000);
     while (true) {
         robot_update_t update;
-        if (xQueueReceive(needQueue, &update, 200)) {
+        if (xQueueReceive(needQueue, &update, 50)) {
             switch (update) {
                 case ROBOT_UPDATE_SPEED:
                     updateSpeed();

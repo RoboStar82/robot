@@ -63,7 +63,7 @@ void Servo::setAngle(float value, bool force) {
     }
     if (angle != newAngle || force) {
         angle = newAngle;
-        log_i("Servo %s: %d", name, angle);
+        log_i("Servo %s: %d", name, (int)angle);
     }
 }
 
@@ -90,6 +90,6 @@ void ServoPWM::setAngle(float value, bool force) {
     if (angle != newAngle || force) {
         angle = newAngle;
         ledcWrite(pwmPin, map(newAngle, minAngle, maxAngle, 500, 2500) * 4096 / 20000);
-        log_i("Servo %s: %d", name, angle);
+        log_i("Servo %s: %d", name, (int)angle);
     }
 }

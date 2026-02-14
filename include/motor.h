@@ -16,10 +16,15 @@ class Motor {
     void setMinSpeed(uint value);
     void setMaxSpeed(uint value);
 
+    void setEncoderSpeed(int value);
+
     void setSpeed(int value);
 
    protected:
     const char* name = "";
+    int encoderSpeed = 0;
+    bool encoderWorks = false;
+    int increaseSpeed = 0;
     uint minSpeed = 0;
     uint maxSpeed = 255;
     int speed = 0;
@@ -34,6 +39,8 @@ class MotorPWM : Motor {
 
     using Motor::getName;
 
+    using Motor::setEncoderSpeed;
+
     using Motor::setMaxSpeed;
     using Motor::setMinSpeed;
 
@@ -42,6 +49,9 @@ class MotorPWM : Motor {
    protected:
     using Motor::maxSpeed;
     using Motor::minSpeed;
+    using Motor::encoderSpeed;
+    using Motor::encoderWorks;
+    using Motor::increaseSpeed;
     using Motor::name;
     using Motor::speed;
     uint8_t pwmPin1 = 0;
@@ -57,6 +67,8 @@ class MotorMCPWM : MotorPWM {
 
     using MotorPWM::getName;
 
+    using MotorPWM::setEncoderSpeed;
+
     using MotorPWM::setMaxSpeed;
     using MotorPWM::setMinSpeed;
 
@@ -65,6 +77,9 @@ class MotorMCPWM : MotorPWM {
    protected:
     using MotorPWM::maxSpeed;
     using MotorPWM::minSpeed;
+    using MotorPWM::encoderSpeed;
+    using MotorPWM::encoderWorks;
+    using MotorPWM::increaseSpeed;
     using MotorPWM::name;
     using MotorPWM::pwmPin1;
     using MotorPWM::pwmPin2;

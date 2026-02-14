@@ -68,6 +68,13 @@ void Motor::setMaxSpeed(uint value) {
     maxSpeed = value;
 }
 
+void Motor::setEncoderSpeed(int value) {
+    encoderSpeed = value;
+    if (value) {
+        encoderWorks = true;
+    }
+}
+
 void Motor::setSpeed(int value) {
     bool back = value < 0;
     uint absSpeed = back ? -value : value;
@@ -171,13 +178,12 @@ void MotorMCPWM::begin() {
     mcpwm_generator_set_action_on_compare_event(mcpwmGenerator2, MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, mcpwmComparator2, MCPWM_GEN_ACTION_LOW));
     mcpwm_timer_enable(mcpwmTimer);
     mcpwm_timer_start_stop(mcpwmTimer, MCPWM_TIMER_START_NO_STOP);
-    mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, 0, true);
-    mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, -1, true);
+    mcpwm_generator_set_force_level(mcpwmGenerator1, 0, true);
+    mcpwm_generator_set_force_level(mcpwmGenerator2, 0, true);
 }
 
 void MotorMCPWM::setSpeed(int value) {
-    bool back = value < 0;
-    uint absSpeed = back ? -value : value;
+    uint absSpeed = value < 0 ? -value : value;
     if (absSpeed) {
         if (minSpeed < maxSpeed) {
             if (absSpeed < 0xff) {
@@ -187,15 +193,50 @@ void MotorMCPWM::setSpeed(int value) {
             }
         }
     }
-    int newSpeed = back ? -absSpeed : absSpeed;
+    int newSpeed = value < 0 ? -absSpeed : absSpeed;
     if (speed != newSpeed) {
-        if (back != (speed < 0)) {
-            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, back ? -1 : 0, true);
-            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, back ? 0 : -1, true);
-        }
+        mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, value < 0 ? -1 : 0, true);
+        mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, value > 0 ? -1 : 0, true);
         speed = newSpeed;
         mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
         mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
         log_i("Motor %s: %d", name, speed);
+    } else if (speed && encoderWorks) {
+        int change = 0;
+        float ratio = 0;
+        if (!encoderSpeed) {
+            if (absSpeed + increaseSpeed < maxSpeed) {
+                increaseSpeed ++;
+                absSpeed += increaseSpeed;
+                newSpeed = value < 0 ? -absSpeed : absSpeed;
+                change = 1;
+            }
+        } else {
+            ratio = -(float)encoderSpeed / speed;
+            if (0.0 < ratio && ratio < 8.0) {
+                if (absSpeed + increaseSpeed < maxSpeed) {
+                    increaseSpeed ++;
+                    absSpeed += increaseSpeed;
+                    newSpeed = value < 0 ? -absSpeed : absSpeed;
+                    change = 2;
+                }
+            } else if (12.0 < ratio && ratio < 20.0) {
+                if (increaseSpeed > 0) {
+                    increaseSpeed --;
+                    if (increaseSpeed) {
+                        absSpeed += increaseSpeed;
+                        newSpeed = value < 0 ? -absSpeed : absSpeed;
+                        change = 3;
+                    }
+                }
+            }
+        }
+        if (change) {
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, value < 0 ? -1 : 0, true);
+            mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, value > 0 ? -1 : 0, true);
+            mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
+            mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
+            log_i("Motor %s: %d -> %d (encoder %d, ratio %d%%, reason %d)", name, speed, newSpeed, -encoderSpeed, (int)(ratio * 100), change);
+        }
     }
 }

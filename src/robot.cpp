@@ -47,9 +47,9 @@ void Robot::updateSpeed() {
     if (state.dy == 0) {
         motor1.setSpeed(0);
     } else if (state.dy > 0) {
-        motor1.setSpeed(255);
+        motor1.setSpeed(250);
     } else if (state.dy < 0) {
-        motor1.setSpeed(-255);
+        motor1.setSpeed(-250);
     }
     if (state.dx == 0) {
         motor2.setSpeed(0);

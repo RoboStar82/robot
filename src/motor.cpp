@@ -68,6 +68,10 @@ void Motor::setMaxSpeed(uint value) {
     maxSpeed = value;
 }
 
+int Motor::getEncoderSpeed() {
+    return encoderSpeed;
+}
+
 void Motor::setEncoderSpeed(int value) {
     encoderSpeed = value;
     if (value) {
@@ -154,7 +158,13 @@ void MotorMCPWM::begin() {
         .count_mode = MCPWM_TIMER_COUNT_MODE_UP,
         .period_ticks = 1000000 / 25000,
     };
-    maxSpeed = 0.8f * timerConfig.period_ticks;
+    if (strlen(name) == 1) {
+        // 1, 2, 3, 4
+        maxSpeed = timerConfig.period_ticks;
+    } else {
+        // LF, RF, LB, RB, CC
+        maxSpeed = 0.8f * timerConfig.period_ticks;
+    }
     minSpeed = 0.4f * timerConfig.period_ticks;
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);
     mcpwm_operator_config_t operatorConfig = {

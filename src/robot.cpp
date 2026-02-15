@@ -47,9 +47,9 @@ void Robot::updateSpeed() {
     if (state.dy == 0) {
         motor1.setSpeed(0);
     } else if (state.dy > 0) {
-        motor1.setSpeed(250);
+        motor1.setSpeed(255);
     } else if (state.dy < 0) {
-        motor1.setSpeed(-250);
+        motor1.setSpeed(-255);
     }
     if (state.dx == 0) {
         motor2.setSpeed(0);
@@ -113,6 +113,13 @@ void Robot::updateCount() {
         countRZ = max(countRZ - 8, -256);
         updateCountRZ = true;
     }
+    if (updateCountLZ) {
+        servo1.setAngle(90.0f + 20.0f / 256.0f * countLZ);
+    }
+    if (updateCountRZ) {
+        servo2.setAngle(90.0f - 20.0f / 256.0f * countRZ);
+    }
+    /*
     if (updateCountX) {
         servo1.setAngle(90.0f + 90.0f / 256.0f * countX);
     }
@@ -125,6 +132,7 @@ void Robot::updateCount() {
     if (updateCountRZ) {
         servo4.setAngle(90.0f + 90.0f / 256.0f * countRZ);
     }
+    */
 }
 
 void Robot::task() {

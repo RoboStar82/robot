@@ -16,6 +16,7 @@ class Motor {
     void setMinSpeed(uint value);
     void setMaxSpeed(uint value);
 
+    int getEncoderSpeed();
     void setEncoderSpeed(int value);
 
     void setSpeed(int value);
@@ -39,6 +40,7 @@ class MotorPWM : Motor {
 
     using Motor::getName;
 
+    using Motor::getEncoderSpeed;
     using Motor::setEncoderSpeed;
 
     using Motor::setMaxSpeed;
@@ -67,6 +69,7 @@ class MotorMCPWM : MotorPWM {
 
     using MotorPWM::getName;
 
+    using MotorPWM::getEncoderSpeed;
     using MotorPWM::setEncoderSpeed;
 
     using MotorPWM::setMaxSpeed;

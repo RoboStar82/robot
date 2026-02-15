@@ -23,7 +23,9 @@ void Encoder::begin() {
     attachInterrupt(interruptPin, interrupt, FALLING);
 #endif
     decoder->begin();
-    xTaskCreate(task, "encoder_task", 4096, NULL, 1, NULL);
+    if (decoder->isConnected()) {
+        xTaskCreate(task, "encoder_task", 4096, NULL, 1, NULL);
+    }
 #endif
 }
 
@@ -31,44 +33,52 @@ void Encoder::task() {
 #if ROBOT_HAS_MOTOR_ENCODER_I2C
     decoder->reset();
     int count = 0;
+    int debug = 0;
     while (true) {
         decoder->update();
         if (++count > 1024) {
             count = 0;
             bool updateSpeed = false;
-            int value;
-            value = decoder->getValue(0);
-            if (-4 < value && value < 4) {
-                value = 0;
-            } else {
+            int value1 = decoder->getValue(0);
+            if (-4 < value1 && value1 < 4) {
+                value1 = 0;
+            }
+            if (motorLF.getEncoderSpeed() != value1) {
+                motorLF.setEncoderSpeed(value1);
                 updateSpeed = true;
             }
-            motorLF.setEncoderSpeed(value);
-            value = decoder->getValue(1);
-            if (-4 < value && value < 4) {
-                value = 0;
-            } else {
+            int value2 = decoder->getValue(1);
+            if (-4 < value2 && value2 < 4) {
+                value2 = 0;
+            }
+            if (motorRF.getEncoderSpeed() != value2) {
+                motorRF.setEncoderSpeed(value2);
                 updateSpeed = true;
             }
-            motorRF.setEncoderSpeed(value);
-            value = decoder->getValue(2);
-            if (-4 < value && value < 4) {
-                value = 0;
-            } else {
+            int value3 = decoder->getValue(2);
+            if (-4 < value3 && value3 < 4) {
+                value3 = 0;
+            }
+            if (motorLB.getEncoderSpeed() != value3) {
+                motorLB.setEncoderSpeed(value3);
                 updateSpeed = true;
             }
-            motorLB.setEncoderSpeed(value);
-            value = decoder->getValue(3);
-            if (-4 < value && value < 4) {
-                value = 0;
-            } else {
+            int value4 = decoder->getValue(3);
+            if (-4 < value4 && value4 < 4) {
+                value4 = 0;
+            }
+            if (motorRB.getEncoderSpeed() != value4) {
+                motorRB.setEncoderSpeed(value4);
                 updateSpeed = true;
             }
-            motorRB.setEncoderSpeed(value);
             if (updateSpeed) {
                 robot.needUpdateSpeed();
             }
             decoder->reset();
+            if (++debug > 10) {
+                debug = 0;
+                log_i("Encoder: %d %d %d %d", value1, value2, value3, value4);
+            }
         }
     }
 #endif

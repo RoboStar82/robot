@@ -13,6 +13,28 @@ typedef struct {
 } usb_hid_host_device_event_t;
 
 typedef struct {
+    uint8_t lx;
+    uint8_t ly;
+    uint8_t rx;
+    uint8_t ry;
+    uint8_t dpad : 4;
+    uint8_t x : 1;
+    uint8_t a : 1;
+    uint8_t b : 1;
+    uint8_t y : 1;
+    uint8_t lzu : 1;
+    uint8_t rzu : 1;
+    uint8_t lzd : 1;
+    uint8_t rzd : 1;
+    uint8_t back : 1;
+    uint8_t start : 1;
+    uint8_t lt : 1;
+    uint8_t rt : 1;
+    uint8_t mode : 8;
+    uint8_t b8;
+} __attribute__((packed)) usb_hid_controller_0216_state_t;
+
+typedef struct {
     uint8_t b1;
     uint8_t lx;
     uint8_t ly;
@@ -32,7 +54,7 @@ typedef struct {
     uint8_t lt : 1;
     uint8_t rt : 1;
     uint8_t mode : 8;
-} __attribute__((packed)) usb_hid_controller_state_t;
+} __attribute__((packed)) usb_hid_controller_0219_state_t;
 
 class USB {
    public:

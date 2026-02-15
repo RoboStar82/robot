@@ -100,12 +100,40 @@ void USB::hidHostInterfaceInputReportEventHandler(hid_host_device_handle_t devic
     hid_iface_t* hid_iface = (hid_iface_t*)device_handle;
     usb_host_get_device_descriptor(hid_iface->parent->dev_hdl, &device_descriptor);
     if (device_descriptor->idVendor == 0x046d) {
-        if (device_descriptor->idProduct == 0xc216 || device_descriptor->idProduct == 0xc218 || device_descriptor->idProduct == 0xc219) {
+        if (device_descriptor->idProduct == 0xc219) {
             uint8_t data[8] = {0};
             size_t length = 0;
             hid_host_device_get_raw_input_report_data(device_handle, data, 8, &length);
             if (length == 8 && data[0] == 0x01) {
-                usb_hid_controller_state_t* state = (usb_hid_controller_state_t*)data;
+                usb_hid_controller_0219_state_t* state = (usb_hid_controller_0219_state_t*)data;
+                controller_state_t controller_state = {
+                    .lx = (int8_t)(state->lx < 0x70 ? -((0x7f - state->lx) >> 4) : (state->lx >= 0x90 ? (state->lx - 0x80) >> 4 : 0)),
+                    .ly = (int8_t)(state->ly < 0x70 ? (0x7f - state->ly) >> 4 : (state->ly >= 0x90 ? -((state->ly - 0x80) >> 4) : 0)),
+                    .rx = (int8_t)(state->rx < 0x70 ? -((0x7f - state->rx) >> 4) : (state->rx >= 0x90 ? (state->rx - 0x80) >> 4 : 0)),
+                    .ry = (int8_t)(state->ry < 0x70 ? (0x7f - state->ry) >> 4 : (state->ry >= 0x90 ? -((state->ry - 0x80) >> 4) : 0)),
+                    .dx = (int8_t)(state->dpad == 8 || state->dpad == 0 || state->dpad == 4 ? 0 : (state->dpad > 0 && state->dpad < 4 ? 1 : -1)),
+                    .dy = (int8_t)(state->dpad == 8 || state->dpad == 2 || state->dpad == 6 ? 0 : (state->dpad < 2 || state->dpad > 6 ? 1 : -1)),
+                    .lz = (int8_t)(state->lzd ? (state->lzu ? -2 : -1) : (state->lzu ? 1 : 0)),
+                    .rz = (int8_t)(state->rzd ? (state->rzu ? -2 : -1) : (state->rzu ? 1 : 0)),
+                    .lt = state->lt ? true : false,
+                    .rt = state->rt ? true : false,
+                    .a = state->a ? true : false,
+                    .b = state->b ? true : false,
+                    .x = state->x ? true : false,
+                    .y = state->y ? true : false,
+                    .start = state->start ? true : false,
+                    .back = state->back ? true : false,
+                    .mode = state->mode,
+                };
+                controller.setState(controller_state);
+            }
+        } else if (device_descriptor->idProduct == 0xc216) {
+            uint8_t data[8] = {0};
+            size_t length = 0;
+            hid_host_device_get_raw_input_report_data(device_handle, data, 8, &length);
+            if (length == 8) {
+                log_i("data=0x%02x%02x%02x%02x%02x%02x%02x%02x", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]);
+                usb_hid_controller_0216_state_t* state = (usb_hid_controller_0216_state_t*)data;
                 controller_state_t controller_state = {
                     .lx = (int8_t)(state->lx < 0x70 ? -((0x7f - state->lx) >> 4) : (state->lx >= 0x90 ? (state->lx - 0x80) >> 4 : 0)),
                     .ly = (int8_t)(state->ly < 0x70 ? (0x7f - state->ly) >> 4 : (state->ly >= 0x90 ? -((state->ly - 0x80) >> 4) : 0)),

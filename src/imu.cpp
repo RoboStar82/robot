@@ -5,7 +5,7 @@ IMU imu;
 
 IMU::IMU() {
 #if ROBOT_HAS_IMU
-    bmx = new iarduino_Position_BMX055(BMX);
+    bmx = new iarduino_Position_BMX055(BMG);
 #endif
 }
 
@@ -15,9 +15,12 @@ void IMU::begin() {
     if (bmx != nullptr) {
         started = bmx->begin(&Wire, true);
         if (started) {
+            log_i("Gyroscope: connected");
             bmx->setFastOffset();
             bmx->setFastOffset(coefficients);
             xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, NULL, 0);
+        } else {
+            log_i("Gyroscope: not connected");
         }
     }
 }
@@ -33,9 +36,16 @@ void IMU::calibrate(int time) {
 }
 
 void IMU::task() {
+    int count = 0;
+    int debug = 0;
     while (true) {
-        if (!bmx->read()) {
-            vTaskDelay(1000);
+        bmx->read();
+        if (++count > 1024) {
+            count = 0;
+            if (++debug > 1) {
+                debug = 0;
+                log_i("Gyroscope: %d", (int)bmx->axisZ);
+            }
         }
     }
 }

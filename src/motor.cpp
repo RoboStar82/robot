@@ -242,10 +242,12 @@ void MotorMCPWM::setSpeed(int value) {
             }
         }
         if (change) {
+            /*
             mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator1 : mcpwmGenerator2, value < 0 ? -1 : 0, true);
             mcpwm_generator_set_force_level(isLeft ? mcpwmGenerator2 : mcpwmGenerator1, value > 0 ? -1 : 0, true);
             mcpwm_comparator_set_compare_value(mcpwmComparator1, absSpeed);
             mcpwm_comparator_set_compare_value(mcpwmComparator2, absSpeed);
+            */
             log_i("Motor %s: %d -> %d (encoder %d, ratio %d%%, reason %d)", name, speed, newSpeed, -encoderSpeed, (int)(ratio * 100), change);
         }
     }

@@ -45,18 +45,50 @@ void Robot::updateSpeed() {
     }
 
     if (state.dy == 0) {
-        motor1.setSpeed(0);
+        if (state.ly != 0) {
+            if (countLZ < 0) {
+                motor1.setSpeed(ly + (rx >> 2));
+            } else {
+                motor1.setSpeed(0);
+            }
+            if (countRZ < 0) {
+                motor2.setSpeed(ly - (rx >> 2));
+            } else {
+                motor2.setSpeed(0);
+            }
+        } else {
+            motor1.setSpeed(0);
+            motor2.setSpeed(0);
+        }
+        if (state.dx == 0) {
+            motor3.setSpeed(0);
+        } else if (state.dx > 0) {
+            motor3.setSpeed(255);
+        } else if (state.dx < 0) {
+            motor3.setSpeed(-255);
+        }
     } else if (state.dy > 0) {
-        motor1.setSpeed(255);
+        if (state.dx == 0) {
+            motor1.setSpeed(255);
+            motor2.setSpeed(255);
+        } else if (state.dx > 0) {
+            motor1.setSpeed(255);
+            motor2.setSpeed(240);
+        } else if (state.dx < 0) {
+            motor1.setSpeed(240);
+            motor2.setSpeed(255);
+        }
     } else if (state.dy < 0) {
-        motor1.setSpeed(-255);
-    }
-    if (state.dx == 0) {
-        motor2.setSpeed(0);
-    } else if (state.dx > 0) {
-        motor2.setSpeed(255);
-    } else if (state.dx < 0) {
-        motor2.setSpeed(-255);
+        if (state.dx == 0) {
+            motor1.setSpeed(-255);
+            motor2.setSpeed(-255);
+        } else if (state.dx > 0) {
+            motor1.setSpeed(-255);
+            motor2.setSpeed(-240);
+        } else if (state.dx < 0) {
+            motor1.setSpeed(-240);
+            motor2.setSpeed(-255);
+        }
     }
 }
 
@@ -84,59 +116,50 @@ void Robot::updateCount() {
     bool updateCountLZ = false;
     bool updateCountRZ = false;
     if (state.a) {
-        countY = max(countY - 8, -256);
+        countY = max(countY - 1, -64);
         updateCountY = true;
     }
     if (state.b) {
-        countX = min(countX + 8, 256);
+        countX = min(countX + 1, 64);
         updateCountX = true;
     }
     if (state.x) {
-        countX = max(countX - 8, -256);
+        countX = max(countX - 1, -64);
         updateCountX = true;
     }
     if (state.y) {
-        countY = min(countY + 8, 256);
+        countY = min(countY + 1, 64);
         updateCountY = true;
     }
     if (state.lz > 0) {
-        countLZ = min(countLZ + 8, 256);
+        countLZ = min(countLZ + 1, 4);
         updateCountLZ = true;
     } else if (state.lz < 0) {
-        countLZ = max(countLZ - 8, -256);
+        countLZ = max(countLZ - 1, -4);
         updateCountLZ = true;
     }
     if (state.rz > 0) {
-        countRZ = min(countRZ + 8, 256);
+        countRZ = min(countRZ + 1, 4);
         updateCountRZ = true;
     } else if (state.rz < 0) {
-        countRZ = max(countRZ - 8, -256);
+        countRZ = max(countRZ - 1, -4);
         updateCountRZ = true;
     }
     if (updateCountLZ) {
-        servo1.setAngle(90.0f + 20.0f / 256.0f * countLZ);
+        servo1.setAngle(90.0f + 16.0f / 4.0f * countLZ);
     }
     if (updateCountRZ) {
-        servo2.setAngle(90.0f - 20.0f / 256.0f * countRZ);
+        servo2.setAngle(90.0f - 16.0f / 4.0f * countRZ);
     }
-    /*
     if (updateCountX) {
-        servo1.setAngle(90.0f + 90.0f / 256.0f * countX);
+        servo3.setAngle(90.0f + 90.0f / 64.0f * countX);
     }
     if (updateCountY) {
-        servo2.setAngle(90.0f + 90.0f / 256.0f * countY);
+        servo4.setAngle(90.0f + 90.0f / 64.0f * countY);
     }
-    if (updateCountLZ) {
-        servo3.setAngle(90.0f + 90.0f / 256.0f * countLZ);
-    }
-    if (updateCountRZ) {
-        servo4.setAngle(90.0f + 90.0f / 256.0f * countRZ);
-    }
-    */
 }
 
 void Robot::task() {
-    vTaskDelay(1000);
     motorLF.begin();
     motorRF.begin();
     motorLB.begin();
@@ -153,13 +176,9 @@ void Robot::task() {
     servo2.begin();
     servo3.begin();
     servo4.begin();
-#if ROBOT_HAS_MOTOR_ENCODER_I2C
-    encoder.begin();
-#endif
-    vTaskDelay(1000);
     while (true) {
         robot_update_t update;
-        if (xQueueReceive(needQueue, &update, 50)) {
+        if (xQueueReceive(needQueue, &update, 100)) {
             switch (update) {
                 case ROBOT_UPDATE_SPEED:
                     updateSpeed();

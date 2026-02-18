@@ -24,7 +24,10 @@ void Encoder::begin() {
 #endif
     decoder->begin();
     if (decoder->isConnected()) {
-        xTaskCreate(task, "encoder_task", 4096, NULL, 1, NULL);
+        log_i("Encoder: 0x%02x connected", i2cAddress);
+        xTaskCreatePinnedToCore(task, "encoder_task", 4096, NULL, 1, NULL, 0);
+    } else {
+        log_i("Encoder: not connected");
     }
 #endif
 }
@@ -35,6 +38,10 @@ void Encoder::task() {
     int count = 0;
     int debug = 0;
     while (true) {
+        if (needUpdate) {
+            log_i("Encoder: need update");
+            needUpdate = false;
+        }
         decoder->update();
         if (++count > 1024) {
             count = 0;
@@ -75,7 +82,7 @@ void Encoder::task() {
                 robot.needUpdateSpeed();
             }
             decoder->reset();
-            if (++debug > 10) {
+            if (++debug > 32) {
                 debug = 0;
                 log_i("Encoder: %d %d %d %d", value1, value2, value3, value4);
             }

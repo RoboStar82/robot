@@ -10,11 +10,18 @@
 #if ROBOT_HAS_CONTROLLER_USB
 #include "usb.h"
 #endif
+#if ROBOT_HAS_MOTOR_ENCODER_I2C
+#include "encoder.h"
+#endif
 #include "version.h"
 
 void setup() {
     Serial.begin(115200);
     log_i("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
+#if ROBOT_HAS_IMU || ROBOT_HAS_MOTOR_ENCODER_I2C
+    vTaskDelay(1000);
+    Wire.begin(-1, -1, 400000);
+#endif
     settings.begin();
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();
@@ -27,6 +34,9 @@ void setup() {
 #endif
 #if ROBOT_HAS_IMU
     imu.begin();
+#endif
+#if ROBOT_HAS_MOTOR_ENCODER_I2C
+    encoder.begin();
 #endif
 #if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
     navigation.begin();

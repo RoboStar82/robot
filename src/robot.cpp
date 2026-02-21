@@ -2,6 +2,7 @@
 #include "robot.h"
 
 #include "controller.h"
+#include "lidar.h"
 #include "motor.h"
 #include "servo.h"
 #include "encoder.h"
@@ -24,6 +25,14 @@ void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
     motorRF.setSpeed(speedRF);
     motorLB.setSpeed(speedLB);
     motorRB.setSpeed(speedRB);
+}
+
+void Robot::updateStart() {
+#if ROBOT_HAS_LIDAR
+    lidar.getDeviceInfo();
+    lidar.getDeviceHealth();
+    lidar.start();
+#endif
 }
 
 void Robot::updateSpeed() {
@@ -96,6 +105,11 @@ void Robot::updateServo() {
     updateCount();
 }
 
+void Robot::needUpdateStart() {
+    robot_update_t value = ROBOT_UPDATE_START;
+    xQueueSend(needQueue, &value, 0);
+}
+
 void Robot::needUpdateSpeed() {
     robot_update_t value = ROBOT_UPDATE_SPEED;
     xQueueSend(needQueue, &value, 0);
@@ -153,9 +167,11 @@ void Robot::updateCount() {
     }
     if (updateCountX) {
         servo3.setAngle(90.0f + 90.0f / 64.0f * countX);
+        servo4.setAngle(90.0f + 90.0f / 64.0f * countX);
     }
     if (updateCountY) {
-        servo4.setAngle(90.0f + 90.0f / 64.0f * countY);
+        servo5.setAngle(90.0f + 90.0f / 64.0f * countY);
+        servo6.setAngle(90.0f + 90.0f / 64.0f * countY);
     }
 }
 
@@ -176,10 +192,15 @@ void Robot::task() {
     servo2.begin();
     servo3.begin();
     servo4.begin();
+    servo5.begin();
+    servo6.begin();
     while (true) {
         robot_update_t update;
         if (xQueueReceive(needQueue, &update, 100)) {
             switch (update) {
+                case ROBOT_UPDATE_START:
+                    updateStart();
+                    break;
                 case ROBOT_UPDATE_SPEED:
                     updateSpeed();
                     break;

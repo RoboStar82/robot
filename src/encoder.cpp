@@ -18,6 +18,7 @@ Encoder::~Encoder() {}
 
 void Encoder::begin() {
 #if ROBOT_HAS_MOTOR_ENCODER_I2C
+    Wire.begin(-1, -1, 400000);
 #if ROBOT_MOTOR_ENCODER_INTERRUPT_PIN
     pinMode(interruptPin, INPUT_PULLUP);
     attachInterrupt(interruptPin, interrupt, FALLING);

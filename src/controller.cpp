@@ -14,11 +14,11 @@ Controller::~Controller() {}
 
 void Controller::begin() {
 #if ROBOT_HAS_CONTROLLER_SERIAL
-    ControllerSerial.begin(115200, SERIAL_8N1, ROBOT_CONTROLLER_SERIAL_RX, ROBOT_CONTROLLER_SERIAL_TX);
+    ControllerSerial.begin(115200, SERIAL_8N1, ROBOT_CONTROLLER_SERIAL_RX_PIN, ROBOT_CONTROLLER_SERIAL_TX_PIN);
     xTaskCreate(task, "controller_task", 4096, NULL, 1, NULL);
 #endif
 #if ROBOT_HAS_TRANSCEIVER_SERIAL
-    ControllerSerial.begin(115200, SERIAL_8N1, ROBOT_TRANSCEIVER_SERIAL_RX, ROBOT_TRANSCEIVER_SERIAL_TX);
+    ControllerSerial.begin(115200, SERIAL_8N1, ROBOT_TRANSCEIVER_SERIAL_RX_PIN, ROBOT_TRANSCEIVER_SERIAL_TX_PIN);
     xTaskCreate(task, "controller_task", 4096, NULL, 1, NULL);
 #endif
 }
@@ -52,6 +52,9 @@ void Controller::setState(uint8_t newState[]) {
 }
 
 void Controller::onChange(controller_state_t oldState) {
+    if (state.start) {
+        robot.needUpdateStart();
+    }
 #if ROBOT_ROLE_CHASSIS
     if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.dy != oldState.dy) {
         robot.needUpdateSpeed();

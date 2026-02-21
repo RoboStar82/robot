@@ -4,8 +4,9 @@
 #include <Arduino.h>
 
 typedef enum {
-    ROBOT_UPDATE_SPEED = 1,
-    ROBOT_UPDATE_SERVO = 2,
+    ROBOT_UPDATE_START = 1,
+    ROBOT_UPDATE_SPEED = 2,
+    ROBOT_UPDATE_SERVO = 3,
 } robot_update_t;
 
 class Robot {
@@ -17,9 +18,11 @@ class Robot {
 
     void setSpeed(int speedLF, int speedRF, int speedLB, int speedRB);
 
+    void updateStart();
     void updateSpeed();
     void updateServo();
 
+    void needUpdateStart();
     void needUpdateSpeed();
     void needUpdateServo();
 

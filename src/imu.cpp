@@ -5,7 +5,7 @@ IMU imu;
 
 IMU::IMU() {
 #if ROBOT_HAS_IMU
-    bmx = new iarduino_Position_BMX055(BMG);
+    bmx = new iarduino_Position_BMX055(BMX);
 #endif
 }
 
@@ -39,8 +39,11 @@ void IMU::task() {
     int count = 0;
     int debug = 0;
     while (true) {
-        bmx->read();
-        if (++count > 1024) {
+        if (!bmx->read()) {
+            vTaskDelay(1);
+            continue;
+        }
+        if (++count > 10) {
             count = 0;
             if (++debug > 1) {
                 debug = 0;

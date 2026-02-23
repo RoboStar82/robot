@@ -2,7 +2,6 @@
 #pragma once
 
 #include <Arduino.h>
-#include <freertos/task.h>
 
 #if ROBOT_HAS_LIDAR
 #ifndef ROBOT_LIDAR_RX_PIN
@@ -43,10 +42,10 @@ class Lidar {
     bool getLidarConf(uint32_t conf);
 
    protected:
-    // Начато ли сканирование и когда
-    unsigned long started = 0;
-    // Закончено ли сканирование и когда
-    unsigned long stopped = 1;
+    // Начато ли сканирование
+    TaskHandle_t startedTask = nullptr;
+    // Закончено ли сканирование
+    bool needStop = true;
 
     // Расстояния
     uint16_t distances[360];

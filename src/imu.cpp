@@ -12,13 +12,12 @@ IMU::IMU() {
 IMU::~IMU() {}
 
 void IMU::begin() {
-    if (bmx != nullptr) {
-        started = bmx->begin(&Wire, true);
-        if (started) {
+    if (bmx) {
+        if (bmx->begin(&Wire, true)) {
             log_i("Gyroscope: connected");
             bmx->setFastOffset();
             bmx->setFastOffset(coefficients);
-            xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, NULL, 0);
+            xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, &startedTask, 0);
         } else {
             log_i("Gyroscope: not connected");
         }

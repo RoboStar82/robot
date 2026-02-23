@@ -2,10 +2,10 @@
 #include "robot.h"
 
 #include "controller.h"
+#include "encoder.h"
 #include "lidar.h"
 #include "motor.h"
 #include "servo.h"
-#include "encoder.h"
 
 Robot robot;
 
@@ -14,9 +14,8 @@ Robot::Robot() {}
 Robot::~Robot() {}
 
 void Robot::begin() {
-    if (!started) {
-        xTaskCreate(task, "robot_task", 4096, NULL, 1, NULL);
-        started = true;
+    if (!startedTask) {
+        xTaskCreate(task, "robot_task", 4096, NULL, 1, &startedTask);
     }
 }
 
@@ -27,12 +26,19 @@ void Robot::setSpeed(int speedLF, int speedRF, int speedLB, int speedRB) {
     motorRB.setSpeed(speedRB);
 }
 
-void Robot::updateStart() {
-#if ROBOT_HAS_LIDAR
-    lidar.getDeviceInfo();
-    lidar.getDeviceHealth();
-    lidar.start();
-#endif
+void Robot::autoStart() {
+    if (!autoStartedTask) {
+        xTaskCreate(autoTask, "robot_auto_task", 4096, NULL, 1, &autoStartedTask);
+    }
+}
+
+void Robot::autoStop() {
+    if (autoStartedTask) {
+        log_i("Robot: auto stop");
+        vTaskDelete(autoStartedTask);
+        autoStartedTask = nullptr;
+        stop();
+    }
 }
 
 void Robot::updateSpeed() {
@@ -105,21 +111,6 @@ void Robot::updateServo() {
     updateCount();
 }
 
-void Robot::needUpdateStart() {
-    robot_update_t value = ROBOT_UPDATE_START;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void Robot::needUpdateSpeed() {
-    robot_update_t value = ROBOT_UPDATE_SPEED;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void Robot::needUpdateServo() {
-    robot_update_t value = ROBOT_UPDATE_SERVO;
-    xQueueSend(needQueue, &value, 0);
-}
-
 void Robot::updateCount() {
     controller_state_t state = controller.getState();
     if (state.start || state.back) {
@@ -175,6 +166,30 @@ void Robot::updateCount() {
     }
 }
 
+void Robot::needUpdateSpeed() {
+    robot_update_t value = ROBOT_UPDATE_SPEED;
+    xQueueSend(needQueue, &value, 0);
+}
+
+void Robot::needUpdateServo() {
+    robot_update_t value = ROBOT_UPDATE_SERVO;
+    xQueueSend(needQueue, &value, 0);
+}
+
+void Robot::needUpdateAutoStart() {
+    robot_update_t value = ROBOT_UPDATE_START;
+    xQueueSend(needQueue, &value, 0);
+}
+
+void Robot::needUpdateAutoStop() {
+    robot_update_t value = ROBOT_UPDATE_STOP;
+    xQueueSend(needQueue, &value, 0);
+}
+
+void Robot::stop() {
+    setSpeed(0, 0, 0, 0);
+}
+
 void Robot::task() {
     motorLF.begin();
     motorRF.begin();
@@ -193,8 +208,11 @@ void Robot::task() {
         robot_update_t update;
         if (xQueueReceive(needQueue, &update, 100)) {
             switch (update) {
+                case ROBOT_UPDATE_STOP:
+                    autoStop();
+                    break;
                 case ROBOT_UPDATE_START:
-                    updateStart();
+                    autoStart();
                     break;
                 case ROBOT_UPDATE_SPEED:
                     updateSpeed();
@@ -211,4 +229,21 @@ void Robot::task() {
 
 void Robot::task(void* arg) {
     robot.task();
+}
+
+void Robot::autoTask() {
+    log_i("Robot: auto start");
+#if ROBOT_HAS_LIDAR
+    lidar.getDeviceInfo();
+    lidar.getDeviceHealth();
+    lidar.start();
+#endif
+    log_i("Robot: auto end");
+    stop();
+    autoStartedTask = nullptr;
+    vTaskDelete(NULL);
+}
+
+void Robot::autoTask(void* arg) {
+    robot.autoTask();
 }

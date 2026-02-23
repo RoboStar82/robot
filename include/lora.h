@@ -28,6 +28,8 @@ class Lora {
     void task();
 
    protected:
+    TaskHandle_t startedTask = nullptr;
+
     SX1262* module = nullptr;
 
     int errors = 0;
@@ -38,8 +40,6 @@ class Lora {
     bool needRead = false;
     bool needSend = false;
     bool doneSend = false;
-
-    TaskHandle_t* taskHandle = nullptr;
 
     bool readControllerState();
     bool sendControllerState();

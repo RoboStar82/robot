@@ -52,8 +52,10 @@ void Controller::setState(uint8_t newState[]) {
 }
 
 void Controller::onChange(controller_state_t oldState) {
-    if (state.start) {
-        robot.needUpdateStart();
+    if (state.back) {
+        robot.needUpdateAutoStop();
+    } else if (state.start) {
+        robot.needUpdateAutoStart();
     }
 #if ROBOT_ROLE_CHASSIS
     if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.dy != oldState.dy) {
@@ -177,7 +179,7 @@ void Controller::print() {
         length += snprintf(message + length, 256 - length, "none");
     }
     message[length] = '\n';
-    length ++;
+    length++;
     message[length] = '\0';
     log_printf(message);
 }

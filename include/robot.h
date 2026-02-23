@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 typedef enum {
+    ROBOT_UPDATE_STOP = 0,
     ROBOT_UPDATE_START = 1,
     ROBOT_UPDATE_SPEED = 2,
     ROBOT_UPDATE_SERVO = 3,
@@ -18,22 +19,30 @@ class Robot {
 
     void setSpeed(int speedLF, int speedRF, int speedLB, int speedRB);
 
-    void updateStart();
+    void autoStart();
+    void autoStop();
     void updateSpeed();
     void updateServo();
+    void updateCount();
 
-    void needUpdateStart();
+    void needUpdateAutoStart();
+    void needUpdateAutoStop();
     void needUpdateSpeed();
     void needUpdateServo();
 
-    void updateCount();
+    void stop();
 
     void task();
 
     static void task(void* arg);
 
+    void autoTask();
+
+    static void autoTask(void* arg);
+
    protected:
-    bool started = false;
+    TaskHandle_t startedTask = nullptr;
+    TaskHandle_t autoStartedTask = nullptr;
     QueueHandle_t needQueue = xQueueCreate(4, sizeof(robot_update_t));
     int countX = 0;
     int countY = 0;

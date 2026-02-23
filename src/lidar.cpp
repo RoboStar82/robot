@@ -14,21 +14,19 @@ void Lidar::begin() {
 }
 
 bool Lidar::start() {
-    if (started) {
+    if (startedTask) {
         return false;
     }
-    stopped = 0;
-    started = millis();
-    xTaskCreatePinnedToCore(task, "lidar_task", 8192, NULL, 1, NULL, 0);
+    needStop = false;
+    xTaskCreatePinnedToCore(task, "lidar_task", 8192, NULL, 1, &startedTask, 0);
     return true;
 }
 
 bool Lidar::stop() {
-    if (stopped) {
+    if (needStop) {
         return false;
     }
-    started = 0;
-    stopped = millis();
+    needStop = true;
     return true;
 }
 
@@ -38,7 +36,7 @@ void Lidar::task() {
         vTaskDelay(1000);
     }
     zero();
-    while (!stopped) {
+    while (!needStop) {
         // 0..359
         uint16_t angle = 0;
         // 0..
@@ -60,14 +58,13 @@ void Lidar::task() {
         }
     }
     zero();
-    while (!sendStopCommand()) {
-        vTaskDelay(1000);
-    }
+    sendStopCommand();
+    startedTask = nullptr;
     vTaskDelete(NULL);
 }
 
 bool Lidar::scan(uint16_t& angle, uint16_t& distance, uint8_t& strength) {
-    if (!started) {
+    if (!startedTask) {
         return false;
     }
     int count = 0;
@@ -137,7 +134,7 @@ bool Lidar::sendStopCommand() {
 }
 
 bool Lidar::getDeviceInfo() {
-    if (started) {
+    if (startedTask) {
         return false;
     }
     if (!sendCommand(0x50)) {
@@ -187,7 +184,7 @@ bool Lidar::getDeviceInfo() {
 }
 
 bool Lidar::getDeviceHealth() {
-    if (started) {
+    if (startedTask) {
         return false;
     }
     if (!sendCommand(0x52)) {
@@ -225,7 +222,7 @@ bool Lidar::getDeviceHealth() {
 }
 
 bool Lidar::getLidarConf(uint32_t conf) {
-    if (started) {
+    if (startedTask) {
         return false;
     }
     if (!sendCommand(0x84, (uint8_t*)(&conf), 4)) {

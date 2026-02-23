@@ -14,11 +14,10 @@ OTA::~OTA() {}
 void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
-    if (!started) {
-        xTaskCreate(task, "ota_task", 16384, NULL, 1, NULL);
+    if (!startedTask) {
+        xTaskCreate(task, "ota_task", 16384, NULL, 1, &startedTask);
         int8_t value = settings.getOtaMode();
         xQueueSend(needQueue, &value, 0);
-        started = true;
     }
 }
 

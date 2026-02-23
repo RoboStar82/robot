@@ -34,8 +34,8 @@ void Lora::begin() {
     module->setPacketReceivedAction(packetReceivedCallback);
     module->startReceive();
 #endif
-    if (!taskHandle) {
-        xTaskCreate(task, "lora_task", 4096, NULL, 1, taskHandle);
+    if (!startedTask) {
+        xTaskCreate(task, "lora_task", 4096, NULL, 1, &startedTask);
     }
 }
 

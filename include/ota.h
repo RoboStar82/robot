@@ -41,7 +41,7 @@ class OTA {
     static void task(void* arg);
 
    protected:
-    bool started = false;
+    TaskHandle_t startedTask = nullptr;
     QueueHandle_t needQueue = xQueueCreate(4, sizeof(int8_t));
 
     ota_mode_t otaMode = OTA_OFF;

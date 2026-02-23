@@ -31,6 +31,9 @@ class Lidar {
     bool start();
     bool stop();
 
+    void print();
+    void printObject(int angle0, int angle1, int distance0, int distance1, int distanceMin);
+
     void task();
 
     static void task(void* arg);

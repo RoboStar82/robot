@@ -11,7 +11,11 @@ class IMU {
 
     void begin();
 
-    void calibrate(int time = 30000);
+    int getAxisX();
+    int getAxisY();
+    int getAxisZ();
+
+    void calibrate(int time = 10000);
 
     void task();
 
@@ -19,7 +23,6 @@ class IMU {
 
    protected:
     TaskHandle_t startedTask = nullptr;
-    float coefficients[3] = {135.00, 105.00, 0.00};
     iarduino_Position_BMX055* bmx = nullptr;
 };
 

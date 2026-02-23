@@ -21,6 +21,7 @@ class Robot {
 
     void autoStart();
     void autoStop();
+    void autoEnd();
     void updateSpeed();
     void updateServo();
     void updateCount();

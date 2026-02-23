@@ -30,6 +30,60 @@ bool Lidar::stop() {
     return true;
 }
 
+void Lidar::printObject(int angle0, int angle1, int distance0, int distance1, int distanceMin) {
+    int width = 0;
+    int angle = angle1 - angle0 + 1;
+    if (0 < angle && angle < 90) {
+        width = sqrt(distance0 * distance0 + distance1 * distance1 - ((distance0 * distance1 * cosines[angle]) >> 11));
+    }
+    if (10 < width && width < 30) {
+        log_i("Lidar: Line: angle=%d-%d, distance=%d-%d (%d), width=%d", angle0, angle1, distance0, distance1, distanceMin, width);
+    } else if (40 < width && width < 80) {
+        log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", angle0, angle1, distance0, distance1, distanceMin, width);
+    }
+}
+
+void Lidar::print() {
+    bool isObject = false;
+    int angle0 = 0;
+    int angle1 = 0;
+    int distance0 = 0;
+    int distance1 = 0;
+    int distanceMin = 0;
+    int distancePrev = 0;
+    bool hasObjects = false;
+    for (int n = 270; n <= 450; n++) {
+        int angle = n % 360;
+        int distance = distances[angle];
+        if (0 < distance && distance < 1000) {
+            if (isObject) {
+                if (abs(distancePrev - distance) < 100) {
+                    angle1 = n;
+                    distance1 = distance;
+                    distanceMin = min(distance, distanceMin);
+                } else {
+                    isObject = false;
+                    printObject(angle0, angle1, distance0, distance1, distanceMin);
+                }
+            } else {
+                isObject = true;
+                hasObjects = true;
+                angle0 = angle1 = n;
+                distance0 = distance1 = distanceMin = distance;
+            }
+        } else {
+            if (isObject) {
+                isObject = false;
+                printObject(angle0, angle1, distance0, distance1, distanceMin);
+            }
+        }
+        distancePrev = distance;
+    }
+    if (hasObjects) {
+        log_i("Lidar: Object: end");
+    }
+}
+
 void Lidar::task() {
     int errors = 0;
     while (!sendStartCommand()) {

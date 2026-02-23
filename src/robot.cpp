@@ -3,6 +3,7 @@
 
 #include "controller.h"
 #include "encoder.h"
+#include "imu.h"
 #include "lidar.h"
 #include "motor.h"
 #include "servo.h"
@@ -37,8 +38,21 @@ void Robot::autoStop() {
         log_i("Robot: auto stop");
         vTaskDelete(autoStartedTask);
         autoStartedTask = nullptr;
-        stop();
+        autoEnd();
     }
+}
+
+void Robot::autoEnd() {
+    log_i("Robot: auto end");
+#if ROBOT_HAS_LIDAR
+    lidar.stop();
+#endif
+    controller_state_t state = controller.getState();
+    state.lx = 0;
+    state.ly = 0;
+    state.rx = 0;
+    state.ry = 0;
+    controller.setState(state);
 }
 
 void Robot::updateSpeed() {
@@ -233,13 +247,33 @@ void Robot::task(void* arg) {
 
 void Robot::autoTask() {
     log_i("Robot: auto start");
+/*
 #if ROBOT_HAS_LIDAR
     lidar.getDeviceInfo();
     lidar.getDeviceHealth();
     lidar.start();
+    while (true) {
+        vTaskDelay(3000);
+        lidar.print();
+    }
 #endif
-    log_i("Robot: auto end");
-    stop();
+*/
+/*
+#if ROBOT_HAS_IMU
+    int startAxisX = imu.getAxisX();
+    int startAxisY = imu.getAxisY();
+    int startAxisZ = imu.getAxisZ();
+    while (true) {
+        vTaskDelay(3000);
+        log_i("Gyroscope: %d", (360 + imu.getAxisZ() - startAxisZ) % 360);
+    }
+#endif
+*/
+    controller_state_t state = controller.getState();
+    state.ly = 7;
+    controller.setState(state);
+    vTaskDelay(4000);
+    autoEnd();
     autoStartedTask = nullptr;
     vTaskDelete(NULL);
 }

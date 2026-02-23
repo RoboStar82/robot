@@ -52,12 +52,15 @@ void Controller::setState(uint8_t newState[]) {
 }
 
 void Controller::onChange(controller_state_t oldState) {
+#if ROBOT_HAS_AUTO_MODE
     if (state.back) {
         robot.needUpdateAutoStop();
-    } else if (state.start) {
+    }
+    if (!state.start && oldState.start) {
         robot.needUpdateAutoStart();
     }
-#if ROBOT_ROLE_CHASSIS
+#endif
+#if ROBOT_HAS_CHASSIS
     if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.dy != oldState.dy) {
         robot.needUpdateSpeed();
     }

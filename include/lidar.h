@@ -21,6 +21,16 @@
 #endif
 #endif
 
+typedef struct {
+    int angle = 0;
+    int angle0 = 0;
+    int angle1 = 0;
+    int distance = 0;
+    int distance0 = 0;
+    int distance1 = 0;
+    int width = 0;
+} road_object_t;
+
 class Lidar {
    public:
     Lidar();
@@ -31,8 +41,8 @@ class Lidar {
     bool start();
     bool stop();
 
-    void print();
-    void printObject(int angle0, int angle1, int distance0, int distance1, int distanceMin);
+    void scanRoadObjects(road_object_t* objects, int& objectCount, int objectCountMax);
+    void addRoadObject(road_object_t object, road_object_t* objects, int& objectCount, int objectCountMax);
 
     void task();
 

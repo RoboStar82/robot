@@ -30,57 +30,72 @@ bool Lidar::stop() {
     return true;
 }
 
-void Lidar::printObject(int angle0, int angle1, int distance0, int distance1, int distanceMin) {
-    int width = 0;
-    int angle = angle1 - angle0 + 1;
-    if (0 < angle && angle < 90) {
-        width = sqrt(distance0 * distance0 + distance1 * distance1 - ((distance0 * distance1 * cosines[angle]) >> 11));
+void Lidar::addRoadObject(road_object_t object, road_object_t* objects, int& objectCount, int objectCountMax) {
+    int index = -1;
+    for (int n = 0; n < objectCount; n++) {
+        if (objects[n].angle0 <= object.angle0 && object.angle1 <= objects[n].angle1) {
+            return;
+        } else if (object.angle0 <= objects[n].angle0 && objects[n].angle1 <= object.angle1) {
+            index = n;
+            break;
+        } else if (objects[n].angle0 <= object.angle0 && object.angle0 <= objects[n].angle1) {
+            object.angle0 = objects[n].angle0;
+            object.distance0 = objects[n].distance0;
+            object.distance = min(objects[n].distance, object.distance);
+            index = n;
+        } else if (objects[n].angle0 <= object.angle1 && object.angle1 <= objects[n].angle1) {
+            object.angle1 = objects[n].angle1;
+            object.distance1 = objects[n].distance1;
+            object.distance = min(objects[n].distance, object.distance);
+            index = n;
+        }
     }
-    if (10 < width && width < 30) {
-        log_i("Lidar: Line: angle=%d-%d, distance=%d-%d (%d), width=%d", angle0, angle1, distance0, distance1, distanceMin, width);
-    } else if (40 < width && width < 80) {
-        log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", angle0, angle1, distance0, distance1, distanceMin, width);
+    object.angle = object.angle1 - object.angle0 + 1;
+    if (0 < object.angle && object.angle < 90) {
+        object.width = sqrt(object.distance0 * object.distance0 + object.distance1 * object.distance1 - ((object.distance0 * object.distance1 * cosines[object.angle]) >> 11));
+        if (10 < object.width && object.width < 90) {
+            if (index < 0) {
+                if (objectCount < objectCountMax) {
+                    index = objectCount;
+                    objectCount++;
+                } else {
+                    return;
+                }
+            }
+            objects[index] = object;
+        }
     }
 }
 
-void Lidar::print() {
-    bool isObject = false;
-    int angle0 = 0;
-    int angle1 = 0;
-    int distance0 = 0;
-    int distance1 = 0;
-    int distanceMin = 0;
+void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int objectCountMax) {
+    road_object_t object;
     int distancePrev = 0;
-    bool hasObjects = false;
+    bool isObject = false;
     for (int n = 270; n <= 450; n++) {
         int angle = n % 360;
         int distance = distances[angle];
         if (0 < distance && distance < 1000) {
             if (isObject) {
                 if (abs(distancePrev - distance) < 100) {
-                    angle1 = n;
-                    distance1 = distance;
-                    distanceMin = min(distance, distanceMin);
+                    object.angle1 = n;
+                    object.distance1 = distance;
+                    object.distance = min(distance, object.distance);
                 } else {
                     isObject = false;
-                    printObject(angle0, angle1, distance0, distance1, distanceMin);
+                    addRoadObject(object, objects, objectCount, objectCountMax);
                 }
             } else {
                 isObject = true;
-                hasObjects = true;
-                angle0 = angle1 = n;
-                distance0 = distance1 = distanceMin = distance;
+                object.angle0 = object.angle1 = n;
+                object.distance0 = object.distance1 = object.distance = distance;
             }
         } else {
             if (isObject) {
                 isObject = false;
-                printObject(angle0, angle1, distance0, distance1, distanceMin);
+                addRoadObject(object, objects, objectCount, objectCountMax);
             }
         }
         distancePrev = distance;
-    }
-    if (hasObjects) {
-        log_i("Lidar: Object: end");
     }
 }
 

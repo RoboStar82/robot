@@ -218,6 +218,9 @@ void Robot::task() {
     servo4.begin();
     servo5.begin();
     servo6.begin();
+#if ROBOT_HAS_LIDAR
+    lidar.start();
+#endif
     while (true) {
         robot_update_t update;
         if (xQueueReceive(needQueue, &update, 100)) {
@@ -247,32 +250,43 @@ void Robot::task(void* arg) {
 
 void Robot::autoTask() {
     log_i("Robot: auto start");
-/*
+    road_object_t objects[4];
+    int objectCount = 0;
+    int signWidth = -1;
+    int signIndex = -1;
 #if ROBOT_HAS_LIDAR
-    lidar.getDeviceInfo();
-    lidar.getDeviceHealth();
-    lidar.start();
-    while (true) {
-        vTaskDelay(3000);
-        lidar.print();
+    for (int n = 0; n < 10; n++) {
+        lidar.scanRoadObjects(objects, objectCount, 4);
+        vTaskDelay(100);
+    }
+    for (int n = 0; n < objectCount; n++) {
+        road_object_t object = objects[n];
+        if (signWidth < object.width) {
+            signWidth = object.width;
+            signIndex = n;
+        }
+    }
+    if (signIndex >= 0) {
+        road_object_t object = objects[signIndex];
+        log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
+    }
+    for (int n = 0; n < objectCount; n ++) {
+        if (n != signIndex) {
+            road_object_t object = objects[n];
+            log_i("Lidar: Pillar: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
+        }
     }
 #endif
-*/
-/*
 #if ROBOT_HAS_IMU
     int startAxisX = imu.getAxisX();
     int startAxisY = imu.getAxisY();
     int startAxisZ = imu.getAxisZ();
-    while (true) {
-        vTaskDelay(3000);
-        log_i("Gyroscope: %d", (360 + imu.getAxisZ() - startAxisZ) % 360);
-    }
+    log_i("Gyroscope: x=%d, y=%d, z=%d", startAxisX, startAxisY, startAxisZ);
 #endif
-*/
     controller_state_t state = controller.getState();
     state.ly = 7;
     controller.setState(state);
-    vTaskDelay(4000);
+    vTaskDelay(1000);
     autoEnd();
     autoStartedTask = nullptr;
     vTaskDelete(NULL);

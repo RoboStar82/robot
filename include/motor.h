@@ -150,14 +150,6 @@ extern Motor motorLB;
 extern Motor motorRB;
 #endif
 
-#if ROBOT_HAS_MOTOR_CC_MCPWM
-extern MotorMCPWM motorCC;
-#elif ROBOT_HAS_MOTOR_CC_PWM
-extern MotorPWM motorCC;
-#else
-extern Motor motorCC;
-#endif
-
 #if ROBOT_HAS_MOTOR_1_MCPWM
 extern MotorMCPWM motor1;
 #elif ROBOT_HAS_MOTOR_1_PWM

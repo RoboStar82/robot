@@ -1,18 +1,6 @@
 
 #include "servo.h"
 
-#if ROBOT_HAS_SERVO_PWM
-ServoPWM servoLF = ServoPWM("LF", ROBOT_SERVO_LF_PIN);
-ServoPWM servoRF = ServoPWM("RF", ROBOT_SERVO_RF_PIN);
-ServoPWM servoLB = ServoPWM("LB", ROBOT_SERVO_LB_PIN);
-ServoPWM servoRB = ServoPWM("RB", ROBOT_SERVO_RB_PIN);
-#else
-Servo servoLF = Servo("LF");
-Servo servoRF = Servo("RF");
-Servo servoLB = Servo("LB");
-Servo servoRB = Servo("RB");
-#endif
-
 #if ROBOT_HAS_SERVO_1
 ServoPWM servo1 = ServoPWM("1", ROBOT_SERVO_1_PIN);
 #else

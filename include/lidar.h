@@ -36,6 +36,12 @@ class Lidar {
 
     static void task(void* arg);
 
+    bool getDeviceInfo();
+
+    bool getDeviceHealth();
+
+    bool getLidarConf(uint32_t conf);
+
    protected:
     // Начато ли сканирование и когда
     unsigned long started = 0;
@@ -56,12 +62,6 @@ class Lidar {
     bool sendStartCommand();
     bool sendResetCommand();
     bool sendStopCommand();
-
-    bool getDeviceInfo();
-
-    bool getDeviceHealth();
-
-    bool getLidarConf(uint32_t conf);
 
     bool sendCommand(uint8_t command, uint8_t* payload = nullptr, uint8_t size = 0);
 

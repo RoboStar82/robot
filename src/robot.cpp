@@ -180,14 +180,9 @@ void Robot::task() {
     motorRF.begin();
     motorLB.begin();
     motorRB.begin();
-    motorCC.begin();
     motor1.begin();
     motor2.begin();
     motor3.begin();
-    servoLF.begin();
-    servoRF.begin();
-    servoLB.begin();
-    servoRB.begin();
     servo1.begin();
     servo2.begin();
     servo3.begin();

@@ -18,14 +18,6 @@ Motor motorLB = Motor("LB");
 Motor motorRB = Motor("RB");
 #endif
 
-#if ROBOT_HAS_MOTOR_CC_MCPWM
-MotorMCPWM motorCC = MotorMCPWM("CC", ROBOT_MOTOR_CC_PIN1, ROBOT_MOTOR_CC_PIN2);
-#elif ROBOT_HAS_MOTOR_CC_PWM
-MotorPWM motorCC = MotorPWM("CC", ROBOT_MOTOR_CC_PIN1, ROBOT_MOTOR_CC_PIN2);
-#else
-Motor motorCC = Motor("CC");
-#endif
-
 #if ROBOT_HAS_MOTOR_1_MCPWM
 MotorMCPWM motor1 = MotorMCPWM("1", ROBOT_MOTOR_1_PIN1, ROBOT_MOTOR_1_PIN2);
 #elif ROBOT_HAS_MOTOR_1_PWM

@@ -3,22 +3,21 @@
 
 #include <Arduino.h>
 
-#if ROBOT_HAS_LIDAR
+#ifndef LidarSerial
+#define LidarSerial Serial1
+#endif
+
 #ifndef ROBOT_LIDAR_RX_PIN
 #define ROBOT_LIDAR_RX_PIN 15
 #endif
 #ifndef ROBOT_LIDAR_TX_PIN
 #define ROBOT_LIDAR_TX_PIN 16
 #endif
-#ifndef LidarSerial
-#define LidarSerial Serial1
-#endif
 #ifndef LIDAR_DEBUG_TX
 #define LIDAR_DEBUG_TX 0
 #endif
 #ifndef LIDAR_DEBUG_RX
 #define LIDAR_DEBUG_RX 0
-#endif
 #endif
 
 typedef struct {

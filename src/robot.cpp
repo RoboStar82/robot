@@ -173,10 +173,12 @@ void Robot::updateCount() {
     if (updateCountX) {
         servo3.setAngle(90.0f + 90.0f / 64.0f * countX);
         servo4.setAngle(90.0f + 90.0f / 64.0f * countX);
+        servo7.setAngle(90.0f + 90.0f / 64.0f * countX);
     }
     if (updateCountY) {
         servo5.setAngle(90.0f + 90.0f / 64.0f * countY);
         servo6.setAngle(90.0f + 90.0f / 64.0f * countY);
+        servo8.setAngle(90.0f + 90.0f / 64.0f * countY);
     }
 }
 
@@ -218,6 +220,8 @@ void Robot::task() {
     servo4.begin();
     servo5.begin();
     servo6.begin();
+    servo7.begin();
+    servo8.begin();
 #if ROBOT_HAS_LIDAR
     lidar.start();
 #endif

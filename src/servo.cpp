@@ -31,6 +31,16 @@ ServoPWM servo6 = ServoPWM("6", ROBOT_SERVO_6_PIN);
 #else
 Servo servo6 = Servo("6");
 #endif
+#if ROBOT_HAS_SERVO_7
+ServoPWM servo7 = ServoPWM("7", ROBOT_SERVO_7_PIN);
+#else
+Servo servo7 = Servo("7");
+#endif
+#if ROBOT_HAS_SERVO_8
+ServoPWM servo8 = ServoPWM("8", ROBOT_SERVO_8_PIN);
+#else
+Servo servo8 = Servo("8");
+#endif
 
 Servo::Servo(const char* _name) {
     name = _name;

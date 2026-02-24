@@ -76,3 +76,13 @@ extern ServoPWM servo6;
 #else
 extern Servo servo6;
 #endif
+#if ROBOT_HAS_SERVO_7
+extern ServoPWM servo7;
+#else
+extern Servo servo7;
+#endif
+#if ROBOT_HAS_SERVO_8
+extern ServoPWM servo8;
+#else
+extern Servo servo8;
+#endif

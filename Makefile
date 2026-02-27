@@ -10,5 +10,8 @@ build:
 	~/.platformio/penv/bin/pio run -e navigation
 	~/.platformio/penv/bin/pio run -e transceiver
 
+source:
+	bash source.sh
+
 clean:
 	rm -f ../robot_2026.zip

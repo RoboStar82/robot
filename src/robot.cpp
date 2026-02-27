@@ -102,7 +102,7 @@ void Robot::updateServo() {
     }
     if (state.dx > 0) {
         if (state.x || state.y) {
-            servo8.setAngle(90);
+            servo8.setAngle(135);
         } else if (state.a || state.b) {
             servo8.setAngle(180);
         }
@@ -159,7 +159,7 @@ void Robot::updateCount() {
         servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
     }
     if (updateCountRZ2) {
-        servo7.setAngle(90.0f - 180.0f / 50.0f * countRZ2);
+        servo7.setAngle(180.0f - 180.0f / 50.0f * countRZ2);
     }
 }
 
@@ -202,8 +202,8 @@ void Robot::task() {
     servo4.begin(91);
     servo5.begin(180);
     servo6.begin();
-    servo7.begin();
-    servo8.begin();
+    servo7.begin(180);
+    servo8.begin(135);
 #if ROBOT_HAS_LIDAR
     lidar.start();
 #endif

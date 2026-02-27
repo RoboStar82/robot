@@ -42,6 +42,7 @@ class Lidar {
 
     void scanRoadObjects(road_object_t* objects, int& objectCount, int objectCountMax);
     void addRoadObject(road_object_t object, road_object_t* objects, int& objectCount, int objectCountMax);
+    void scanRamp(int& distance0, int& distance1);
 
     void task();
 

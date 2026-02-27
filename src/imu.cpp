@@ -13,6 +13,7 @@ IMU::~IMU() {}
 
 void IMU::begin() {
     if (bmx) {
+        vTaskDelay(1000);
         if (bmx->begin(&Wire)) {
             log_i("Gyroscope: connected");
             xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, &startedTask, 0);
@@ -71,7 +72,8 @@ void IMU::task() {
     bmx->setFastOffset(BMA);
     bmx->setFastOffset(BMG);
     // calibrate();
-    float coefficients[3] = { -179.375000, -116.875000, -81.875000 };
+    // float coefficients[3] = { -179.375000, -116.875000, -81.875000 };
+    float coefficients[3] = { -700.000000, -581.875000, -307.500000 };
     bmx->setFastOffset(coefficients);
     int count = 0;
     int debug = 0;

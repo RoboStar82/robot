@@ -99,6 +99,11 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
     }
 }
 
+void Lidar::scanRamp(int& distance0, int& distance1) {
+    distance0 = distances[350];
+    distance1 = distances[10];
+}
+
 void Lidar::task() {
     int errors = 0;
     while (!sendStartCommand()) {

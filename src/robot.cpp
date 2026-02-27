@@ -241,10 +241,12 @@ void Robot::autoTask() {
     int signWidth = -1;
     int signIndex = -1;
 #if ROBOT_HAS_LIDAR
+    // Сканируем объекты перед роботом
     for (int n = 0; n < 10; n++) {
         lidar.scanRoadObjects(objects, objectCount, 4);
         vTaskDelay(100);
     }
+    // Самый широкий объект знак
     for (int n = 0; n < objectCount; n++) {
         road_object_t object = objects[n];
         if (signWidth < object.width) {
@@ -253,27 +255,111 @@ void Robot::autoTask() {
         }
     }
     if (signIndex >= 0) {
+        // Нашли знак
         road_object_t object = objects[signIndex];
         log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
     }
     for (int n = 0; n < objectCount; n++) {
         if (n != signIndex) {
+            // Нашли столбы
             road_object_t object = objects[n];
             log_i("Lidar: Pillar: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
         }
     }
 #endif
+    int startAxisX = 0;
+    int startAxisY = 0;
+    int startAxisZ = 0;
 #if ROBOT_HAS_IMU
-    int startAxisX = imu.getAxisX();
-    int startAxisY = imu.getAxisY();
-    int startAxisZ = imu.getAxisZ();
+    // Начальные позиции гироскопа
+    startAxisX = imu.getAxisX();
+    startAxisY = imu.getAxisY();
+    startAxisZ = imu.getAxisZ();
     log_i("Gyroscope: x=%d, y=%d, z=%d", startAxisX, startAxisY, startAxisZ);
 #endif
+    // Имитация нажатий на кнопки
     controller_state_t state = controller.getState();
+    // Едем вперед и рога вниз
+    state.ly = 5;
+    state.lz = 1;
+    state.rz = 1;
+    controller.setState(state);
+    vTaskDelay(2000);
+    // Рога опущены но мы едем дальше
+    state.lz = 0;
+    state.rz = 0;
+    controller.setState(state);
+    vTaskDelay(600);
+    // Остановка и кидаем палки
+    state.ly = 0;
+    state.x = 1;
+    state.y = 1;
+    controller.setState(state);
+    vTaskDelay(400);
+    // Едем назад и рога вверх
+    state.ly = -5;
+    state.lz = -1;
+    state.rz = -1;
+    controller.setState(state);
+    vTaskDelay(200);
+    // Рога подняты но мы едем дальше
+    state.lz = 0;
+    state.rz = 0;
+    vTaskDelay(2200);
+    // Остановка
+    state.ly = 0;
+    controller.setState(state);
+    // vTaskDelay(1000);
+    startAxisZ = imu.getAxisZ();
+    log_i("Gyroscope: start z=%d", startAxisZ);
+    // Поворачиваем направо
+    state.rx = 4;
+    controller.setState(state);
+    vTaskDelay(3000);
+    state.rx = 0;
+    controller.setState(state);
+    // vTaskDelay(2000);
+    log_i("Gyroscope: deltaZ=%d", imu.getAxisZ() - startAxisZ);
+    int distance0 = 0;
+    int distance1 = 0;
+    // Смотрим где горка
+    lidar.scanRamp(distance0, distance1);
+    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+    for (int n = 0; n < 10; n ++) {
+        if (abs(distance1 - distance0) > 10) {
+            if (distance1 < distance0) {
+                state.rx = 3;
+            } else {
+                state.rx = -3;
+            }
+            // Поворачиваем параллельно горке
+            controller.setState(state);
+            vTaskDelay(1000 - 50 * n);
+            lidar.scanRamp(distance0, distance1);
+            log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+        } else {
+            break;
+        }
+    }
+    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+    // Прекращаем вертеться и опускаем колеса
+    state.rx = 0;
+    state.dy = -1;
+    controller.setState(state);
+    vTaskDelay(100);
+    // Поехали на горку
+    state.dy = 0;
     state.ly = 7;
     controller.setState(state);
     vTaskDelay(1000);
+    state.ly = 0;
+    controller.setState(state);
+    // Приехали
     autoEnd();
+    vTaskDelay(200);
+    // Фиксируемся
+    motor1.setSpeed(10);
+    motor2.setSpeed(10);
     autoStartedTask = nullptr;
     vTaskDelete(NULL);
 }

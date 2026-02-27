@@ -8,7 +8,7 @@ class Servo {
     Servo(const char* name);
     ~Servo();
 
-    void begin();
+    void begin(float angle = 90);
 
     const char* getName();
 
@@ -29,7 +29,7 @@ class ServoPWM : Servo {
     ServoPWM(const char* name, uint8_t pin);
     ~ServoPWM();
 
-    void begin();
+    void begin(float angle = 90);
 
     using Servo::getName;
 

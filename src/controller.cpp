@@ -61,10 +61,10 @@ void Controller::onChange(controller_state_t oldState) {
     }
 #endif
 #if ROBOT_HAS_CHASSIS
-    if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.dy != oldState.dy) {
+    if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx) {
         robot.needUpdateSpeed();
     }
-    if (state.lz != oldState.lz || state.rz != oldState.rz) {
+    if (state.dy != oldState.dy || state.a != oldState.a || state.b != oldState.b || state.x != oldState.x || state.y != oldState.y) {
         robot.needUpdateServo();
     }
 #endif

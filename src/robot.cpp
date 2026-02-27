@@ -110,7 +110,7 @@ void Robot::updateServo() {
         if (state.x) {
             servo4.setAngle(60);
         } else if (state.a) {
-            servo4.setAngle(90);
+            servo4.setAngle(92);
         }
         if (state.y) {
             servo6.setAngle(60);
@@ -199,7 +199,7 @@ void Robot::task() {
     servo2.begin(86);
     servo3.setMaxAngle(360);
     servo3.begin(180);
-    servo4.begin();
+    servo4.begin(91);
     servo5.begin(180);
     servo6.begin();
     servo7.begin();

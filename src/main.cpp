@@ -47,6 +47,7 @@ void setup() {
     navigation.begin();
 #endif
 #if ROBOT_HAS_IMU
+    vTaskDelay(1000);
     imu.begin();
 #endif
 #ifdef RGB_BUILTIN

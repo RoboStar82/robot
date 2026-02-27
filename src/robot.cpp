@@ -73,54 +73,24 @@ void Robot::updateSpeed() {
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
 
-    // (state.dy == 0) {
-        if (state.ly != 0) {
-            if (wheelDown) {
-                motor1.setSpeed(ly + (rx >> 2));
-                motor2.setSpeed(ly - (rx >> 2));
-            } else {
-                motor1.setSpeed(0);
-                motor2.setSpeed(0);
-            }
-        } else {
-            motor1.setSpeed(0);
-            motor2.setSpeed(0);
-        }
-    //     if (state.dx == 0) {
-    //         motor3.setSpeed(0);
-    //     } else if (state.dx > 0) {
-    //         motor3.setSpeed(255);
-    //     } else if (state.dx < 0) {
-    //         motor3.setSpeed(-255);
-    //     }
-    // } else if (state.dy > 0) {
-    //     if (state.dx == 0) {
-    //         motor1.setSpeed(255);
-    //         motor2.setSpeed(255);
-    //     } else if (state.dx > 0) {
-    //         motor1.setSpeed(255);
-    //         motor2.setSpeed(240);
-    //     } else if (state.dx < 0) {
-    //         motor1.setSpeed(240);
-    //         motor2.setSpeed(255);
-    //     }
-    // } else if (state.dy < 0) {
-    //     if (state.dx == 0) {
-    //         motor1.setSpeed(-255);
-    //         motor2.setSpeed(-255);
-    //     } else if (state.dx > 0) {
-    //         motor1.setSpeed(-255);
-    //         motor2.setSpeed(-240);
-    //     } else if (state.dx < 0) {
-    //         motor1.setSpeed(-240);
-    //         motor2.setSpeed(-255);
-    //     }
-    // }
+    if (state.ly == 0) {
+        motor1.setSpeed(0);
+        motor2.setSpeed(0);
+    } else if (wheelDown) {
+        motor1.setSpeed(ly + (rx >> 2));
+        motor2.setSpeed(ly - (rx >> 2));
+    } else {
+        motor1.setSpeed(0);
+        motor2.setSpeed(0);
+    }
 }
 
 void Robot::updateServo() {
     updateCount();
     controller_state_t state = controller.getState();
+    if (state.start || state.back) {
+        return;
+    }
     if (state.dy > 0) {
         servo1.setAngle(96);
         servo2.setAngle(86);
@@ -130,15 +100,23 @@ void Robot::updateServo() {
         servo2.setAngle(96);
         wheelDown = true;
     }
-    if (state.x) {
-        servo4.setAngle(75);
-    } else if (state.a) {
-        servo4.setAngle(90);
-    }
-    if (state.y) {
-        servo6.setAngle(75);
-    } else if (state.b) {
-        servo6.setAngle(90);
+    if (state.dx > 0) {
+        if (state.x || state.y) {
+            servo8.setAngle(90);
+        } else if (state.a || state.b) {
+            servo8.setAngle(180);
+        }
+    } else {
+        if (state.x) {
+            servo4.setAngle(60);
+        } else if (state.a) {
+            servo4.setAngle(90);
+        }
+        if (state.y) {
+            servo6.setAngle(60);
+        } else if (state.b) {
+            servo6.setAngle(90);
+        }
     }
 }
 
@@ -149,6 +127,7 @@ void Robot::updateCount() {
     }
     bool updateCountLZ = false;
     bool updateCountRZ = false;
+    bool updateCountRZ2 = false;
     if (state.lz > 0) {
         countLZ = min(countLZ + 1, 50);
         updateCountLZ = true;
@@ -156,18 +135,31 @@ void Robot::updateCount() {
         countLZ = max(countLZ - 1, 0);
         updateCountLZ = true;
     }
-    if (state.rz > 0) {
-        countRZ = min(countRZ + 1, 50);
-        updateCountRZ = true;
-    } else if (state.rz < 0) {
-        countRZ = max(countRZ - 1, 0);
-        updateCountRZ = true;
+    if (state.dx > 0) {
+        if (state.rz > 0) {
+            countRZ2 = min(countRZ2 + 1, 50);
+            updateCountRZ2 = true;
+        } else if (state.rz < 0) {
+            countRZ2 = max(countRZ2 - 1, 0);
+            updateCountRZ2 = true;
+        }
+    } else {
+        if (state.rz > 0) {
+            countRZ = min(countRZ + 1, 50);
+            updateCountRZ = true;
+        } else if (state.rz < 0) {
+            countRZ = max(countRZ - 1, 0);
+            updateCountRZ = true;
+        }
     }
     if (updateCountLZ) {
         servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
     }
     if (updateCountRZ) {
         servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
+    }
+    if (updateCountRZ2) {
+        servo7.setAngle(90.0f - 180.0f / 50.0f * countRZ2);
     }
 }
 
@@ -264,7 +256,7 @@ void Robot::autoTask() {
         road_object_t object = objects[signIndex];
         log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
     }
-    for (int n = 0; n < objectCount; n ++) {
+    for (int n = 0; n < objectCount; n++) {
         if (n != signIndex) {
             road_object_t object = objects[n];
             log_i("Lidar: Pillar: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);

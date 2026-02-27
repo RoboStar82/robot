@@ -45,11 +45,9 @@ class Robot {
     TaskHandle_t startedTask = nullptr;
     TaskHandle_t autoStartedTask = nullptr;
     QueueHandle_t needQueue = xQueueCreate(4, sizeof(robot_update_t));
-    int countX = 0;
-    int countY = 0;
     int countLZ = 0;
     int countRZ = 0;
-    int countDX = 0;
+    int countRZ2 = 0;
     bool wheelDown = false;
 };
 

@@ -92,12 +92,12 @@ void Robot::updateServo() {
         return;
     }
     if (state.dy > 0) {
-        servo1.setAngle(96);
+        servo1.setAngle(98);
         servo2.setAngle(86);
         wheelDown = false;
     } else if (state.dy < 0) {
-        servo1.setAngle(86);
-        servo2.setAngle(96);
+        servo1.setAngle(84);
+        servo2.setAngle(100);
         wheelDown = true;
     }
     if (state.dx > 0) {
@@ -195,12 +195,12 @@ void Robot::task() {
     motor1.begin();
     motor2.begin();
     motor3.begin();
-    servo1.begin(96);
+    servo1.begin(98);
     servo2.begin(86);
     servo3.setMaxAngle(360);
-    servo3.begin(180);
+    servo3.begin(162);
     servo4.begin(91);
-    servo5.begin(180);
+    servo5.begin(162);
     servo6.begin();
     servo7.begin(180);
     servo8.begin(135);
@@ -284,16 +284,22 @@ void Robot::autoTask() {
     state.lz = 1;
     state.rz = 1;
     controller.setState(state);
-    vTaskDelay(2000);
+    vTaskDelay(1500);
+    state.rz = 0;
+    controller.setState(state);
+    vTaskDelay(500);
     // Рога опущены но мы едем дальше
     state.lz = 0;
     state.rz = 0;
     controller.setState(state);
-    vTaskDelay(600);
+    vTaskDelay(200);
+    // кидаем знак
+    state.y = 1;
+    controller.setState(state);
+    vTaskDelay(300);
     // Остановка и кидаем палки
     state.ly = 0;
     state.x = 1;
-    state.y = 1;
     controller.setState(state);
     vTaskDelay(400);
     // Едем назад и рога вверх
@@ -301,11 +307,16 @@ void Robot::autoTask() {
     state.lz = -1;
     state.rz = -1;
     controller.setState(state);
-    vTaskDelay(200);
+    vTaskDelay(400);
     // Рога подняты но мы едем дальше
+    state.x = 0;
+    state.y = 0;
+    state.a = 1;
+    state.b = 1;
     state.lz = 0;
     state.rz = 0;
-    vTaskDelay(2200);
+    controller.setState(state);
+    vTaskDelay(1600);
     // Остановка
     state.ly = 0;
     controller.setState(state);
@@ -315,7 +326,7 @@ void Robot::autoTask() {
     // Поворачиваем направо
     state.rx = 4;
     controller.setState(state);
-    vTaskDelay(3000);
+    vTaskDelay(4000);
     state.rx = 0;
     controller.setState(state);
     // vTaskDelay(2000);
@@ -325,8 +336,8 @@ void Robot::autoTask() {
     // Смотрим где горка
     lidar.scanRamp(distance0, distance1);
     log_i("Lidar: Ramp: %d-%d", distance0, distance1);
-    for (int n = 0; n < 10; n ++) {
-        if (abs(distance1 - distance0) > 10) {
+    for (int n = 0; n < 5; n ++) {
+        if (abs(distance1 - distance0) > 20) {
             if (distance1 < distance0) {
                 state.rx = 3;
             } else {
@@ -344,17 +355,18 @@ void Robot::autoTask() {
     log_i("Lidar: Ramp: %d-%d", distance0, distance1);
     // Прекращаем вертеться и опускаем колеса
     state.rx = 0;
-    state.dy = -1;
     controller.setState(state);
     vTaskDelay(100);
     // Поехали на горку
-    state.dy = 0;
+    state.dy = -1;
     state.ly = 7;
     controller.setState(state);
-    vTaskDelay(1000);
+    vTaskDelay(2000);
+    state.dy = 0;
     state.ly = 0;
     controller.setState(state);
     // Приехали
+    vTaskDelay(200);
     autoEnd();
     vTaskDelay(200);
     // Фиксируемся

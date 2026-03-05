@@ -73,10 +73,7 @@ void Robot::updateSpeed() {
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
 
-    if (state.ly == 0) {
-        motor1.setSpeed(0);
-        motor2.setSpeed(0);
-    } else if (wheelDown) {
+    if (wheelDown) {
         motor1.setSpeed(ly + (rx >> 2));
         motor2.setSpeed(ly - (rx >> 2));
     } else {
@@ -115,7 +112,7 @@ void Robot::updateServo() {
         if (state.y) {
             servo6.setAngle(60);
         } else if (state.b) {
-            servo6.setAngle(90);
+            servo6.setAngle(92);
         }
     }
 }
@@ -128,35 +125,53 @@ void Robot::updateCount() {
     bool updateCountLZ = false;
     bool updateCountRZ = false;
     bool updateCountRZ2 = false;
-    if (state.lz > 0) {
+    if (state.lz == -2 || state.rz == -2 && state.dx <= 0) {
+        if (countLZ > 38) {
+            countLZ--;
+        } else if (countLZ < 38) {
+            countLZ++;
+        }
+        if (countRZ > 31) {
+            countRZ--;
+        } else if (countRZ < 31) {
+            countRZ++;
+        }
+        servo4.setAngle(60);
+        servo6.setAngle(60);
+        updateCountLZ = true;
+        updateCountRZ = true;
+    }
+    if (state.lz == 1) {
         countLZ = min(countLZ + 1, 50);
         updateCountLZ = true;
-    } else if (state.lz < 0) {
+    } else if (state.lz == -1) {
         countLZ = max(countLZ - 1, 0);
         updateCountLZ = true;
     }
     if (state.dx > 0) {
-        if (state.rz > 0) {
+        if (state.rz == 1) {
             countRZ2 = min(countRZ2 + 1, 50);
             updateCountRZ2 = true;
-        } else if (state.rz < 0) {
+        } else if (state.rz == -1) {
             countRZ2 = max(countRZ2 - 1, 0);
             updateCountRZ2 = true;
         }
     } else {
-        if (state.rz > 0) {
+        if (state.rz == 1) {
             countRZ = min(countRZ + 1, 50);
             updateCountRZ = true;
-        } else if (state.rz < 0) {
+        } else if (state.rz == -1) {
             countRZ = max(countRZ - 1, 0);
             updateCountRZ = true;
         }
     }
     if (updateCountLZ) {
         servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
+        log_i("3: %d", countLZ);
     }
     if (updateCountRZ) {
         servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
+        log_i("5: %d", countRZ);
     }
     if (updateCountRZ2) {
         servo7.setAngle(180.0f - 180.0f / 50.0f * countRZ2);
@@ -199,9 +214,9 @@ void Robot::task() {
     servo2.begin(86);
     servo3.setMaxAngle(360);
     servo3.begin(162);
-    servo4.begin(91);
+    servo4.begin(92);
     servo5.begin(162);
-    servo6.begin();
+    servo6.begin(92);
     servo7.begin(180);
     servo8.begin(135);
 #if ROBOT_HAS_LIDAR
@@ -316,7 +331,7 @@ void Robot::autoTask() {
     state.lz = 0;
     state.rz = 0;
     controller.setState(state);
-    vTaskDelay(1600);
+    vTaskDelay(1650);
     // Остановка
     state.ly = 0;
     controller.setState(state);
@@ -324,9 +339,9 @@ void Robot::autoTask() {
     startAxisZ = imu.getAxisZ();
     log_i("Gyroscope: start z=%d", startAxisZ);
     // Поворачиваем направо
-    state.rx = 4;
+    state.rx = 5;
     controller.setState(state);
-    vTaskDelay(4000);
+    vTaskDelay(2500);
     state.rx = 0;
     controller.setState(state);
     // vTaskDelay(2000);
@@ -337,7 +352,7 @@ void Robot::autoTask() {
     lidar.scanRamp(distance0, distance1);
     log_i("Lidar: Ramp: %d-%d", distance0, distance1);
     for (int n = 0; n < 5; n ++) {
-        if (abs(distance1 - distance0) > 20) {
+        if (abs(distance1 - distance0) > 7) {
             if (distance1 < distance0) {
                 state.rx = 3;
             } else {
@@ -355,23 +370,29 @@ void Robot::autoTask() {
     log_i("Lidar: Ramp: %d-%d", distance0, distance1);
     // Прекращаем вертеться и опускаем колеса
     state.rx = 0;
+    state.dy = -1;
     controller.setState(state);
     vTaskDelay(100);
     // Поехали на горку
-    state.dy = -1;
     state.ly = 7;
     controller.setState(state);
-    vTaskDelay(2000);
-    state.dy = 0;
+    vTaskDelay(3000);
+    vTaskDelay(3000);
     state.ly = 0;
+    // state.rx = -7;
+    // controller.setState(state);
+    // vTaskDelay(100);
+    // state.rx = 0;
     controller.setState(state);
     // Приехали
+    motor1.setSpeed(70);
+    motor2.setSpeed(70);
     vTaskDelay(200);
     autoEnd();
-    vTaskDelay(200);
     // Фиксируемся
-    motor1.setSpeed(10);
-    motor2.setSpeed(10);
+    motor1.setSpeed(70);
+    motor2.setSpeed(70);
+    vTaskDelay(200);
     autoStartedTask = nullptr;
     vTaskDelete(NULL);
 }

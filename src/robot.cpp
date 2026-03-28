@@ -74,8 +74,13 @@ void Robot::updateSpeed() {
     }
 
     if (wheelDown) {
-        motor1.setSpeed(ly + (rx >> 2));
-        motor2.setSpeed(ly - (rx >> 2));
+        if (ly < 3) {
+            motor1.setSpeed(ly + (rx >> 2));
+            motor2.setSpeed(ly - (rx >> 2));
+        } else {
+            motor1.setSpeed(70);
+            motor2.setSpeed(70);
+        }
     } else {
         motor1.setSpeed(0);
         motor2.setSpeed(0);
@@ -307,7 +312,7 @@ void Robot::autoTask() {
     state.lz = 0;
     state.rz = 0;
     controller.setState(state);
-    vTaskDelay(200);
+    vTaskDelay(600);
     // кидаем знак
     state.y = 1;
     controller.setState(state);
@@ -331,7 +336,7 @@ void Robot::autoTask() {
     state.lz = 0;
     state.rz = 0;
     controller.setState(state);
-    vTaskDelay(1650);
+    vTaskDelay(1750);
     // Остановка
     state.ly = 0;
     controller.setState(state);
@@ -341,7 +346,7 @@ void Robot::autoTask() {
     // Поворачиваем направо
     state.rx = 5;
     controller.setState(state);
-    vTaskDelay(2500);
+    vTaskDelay(3000);
     state.rx = 0;
     controller.setState(state);
     // vTaskDelay(2000);
@@ -375,14 +380,11 @@ void Robot::autoTask() {
     vTaskDelay(100);
     // Поехали на горку
     state.ly = 7;
+    state.rx = -1;
     controller.setState(state);
-    vTaskDelay(3000);
-    vTaskDelay(3000);
+    vTaskDelay(6000);
     state.ly = 0;
-    // state.rx = -7;
-    // controller.setState(state);
-    // vTaskDelay(100);
-    // state.rx = 0;
+    state.rx = 0;
     controller.setState(state);
     // Приехали
     motor1.setSpeed(70);

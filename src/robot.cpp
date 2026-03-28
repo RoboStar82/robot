@@ -62,6 +62,7 @@ void Robot::updateSpeed() {
     int lx = (int)36 * state.lx;
     int ry = (int)30 * state.ry;
     int rx = (int)30 * state.rx;
+    int lz = (int)100 * state.lz;
 
     if (abs(ry) > abs(rx) && ((ry > 0 && ly < 0) || (ry < 0 && ly > 0))) {
         // Разворот
@@ -72,6 +73,7 @@ void Robot::updateSpeed() {
         // Обычное
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
+    motor3.setSpeed(lz);
 
     if (wheelDown) {
         if (ly < 3) {

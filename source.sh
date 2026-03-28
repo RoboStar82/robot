@@ -2,7 +2,16 @@
 
 echo -n > source.cpp
 
+for f in src/main.cpp; do
+  echo "# 1 \"`basename $f`\"" >> source.cpp
+  cat $f >> source.cpp
+  echo >> source.cpp
+done
+
 for f in include/*.h src/*.cpp; do
+  if [ "$f" == "src/main.cpp" ]; then
+    continue
+  fi
   if [ "$f" == "include/hid.h" ]; then
     continue
   fi

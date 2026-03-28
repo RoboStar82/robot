@@ -1,3 +1,70 @@
+# 1 "main.cpp"
+
+#include "controller.h"
+#include "led.h"
+#include "ota.h"
+#include "robot.h"
+#include "settings.h"
+#include "version.h"
+#if ROBOT_HAS_CONTROLLER_USB
+#include "usb.h"
+#endif
+#if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
+#include "lora.h"
+#endif
+#if ROBOT_HAS_LIDAR
+#include "lidar.h"
+#endif
+#if ROBOT_HAS_MOTOR_ENCODER_I2C
+#include "encoder.h"
+#endif
+#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
+#include "navigation.h"
+#endif
+#if ROBOT_HAS_IMU
+#include "imu.h"
+#endif
+
+void setup() {
+    Serial.begin(115200);
+    log_i("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
+    settings.begin();
+#if ROBOT_HAS_CONTROLLER_USB
+    usb.begin();
+#endif
+#if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
+    lora.begin();
+#endif
+#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
+    controller.begin();
+#endif
+#if ROBOT_HAS_LIDAR
+    lidar.begin();
+#endif
+#if ROBOT_HAS_MOTOR_ENCODER_I2C
+    encoder.begin();
+#endif
+#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
+    navigation.begin();
+#endif
+#if ROBOT_HAS_IMU
+    imu.begin();
+#endif
+#ifdef RGB_BUILTIN
+    led.begin();
+#else
+#ifdef LED_BUILTIN
+    led.begin();
+#endif
+#endif
+    ota.begin();
+    robot.begin();
+}
+
+void loop() {
+    vTaskDelay(1000);
+}
+
 # 1 "ble_battery.h"
 
 #pragma once
@@ -53,6 +120,44 @@ class BLEBattery {
    protected:
     BLEUUID serviceUuid = BLEUUID((uint16_t)0x180f);
 };
+
+# 1 "ble.h"
+
+#pragma once
+
+#include <NimBLEDevice.h>
+
+#include "ble_battery.h"
+#include "ble_robot.h"
+#include "ble_uart.h"
+
+class BLE : BLEServerCallbacks {
+   public:
+    BLE();
+    ~BLE();
+
+    BLEServer* server = nullptr;
+    BLEAdvertising* advertising = nullptr;
+
+    BLEBattery battery;
+    BLERobot robot;
+    BLEUart uart;
+
+    void begin();
+    void startAdvertising();
+    void stopAdvertising();
+    void end();
+
+    void onConnect(BLEServer* bleServer, BLEConnInfo& connInfo);
+    void onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason);
+
+   protected:
+    bool started = false;
+    bool connected = false;
+    uint32_t advertisingDuration = 9999;
+};
+
+extern BLE ble;
 
 # 1 "ble_robot.h"
 
@@ -258,44 +363,6 @@ class BLEUart : public BLECharacteristicCallbacks {
    protected:
     BLEUUID serviceUuid = BLEUUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
 };
-
-# 1 "ble.h"
-
-#pragma once
-
-#include <NimBLEDevice.h>
-
-#include "ble_battery.h"
-#include "ble_robot.h"
-#include "ble_uart.h"
-
-class BLE : BLEServerCallbacks {
-   public:
-    BLE();
-    ~BLE();
-
-    BLEServer* server = nullptr;
-    BLEAdvertising* advertising = nullptr;
-
-    BLEBattery battery;
-    BLERobot robot;
-    BLEUart uart;
-
-    void begin();
-    void startAdvertising();
-    void stopAdvertising();
-    void end();
-
-    void onConnect(BLEServer* bleServer, BLEConnInfo& connInfo);
-    void onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason);
-
-   protected:
-    bool started = false;
-    bool connected = false;
-    uint32_t advertisingDuration = 9999;
-};
-
-extern BLE ble;
 
 # 1 "controller.h"
 
@@ -591,6 +658,7 @@ class Lidar {
 
     void scanRoadObjects(road_object_t* objects, int& objectCount, int objectCountMax);
     void addRoadObject(road_object_t object, road_object_t* objects, int& objectCount, int objectCountMax);
+    void scanRamp(int& distance0, int& distance1);
 
     void task();
 
@@ -996,11 +1064,9 @@ class Robot {
     TaskHandle_t startedTask = nullptr;
     TaskHandle_t autoStartedTask = nullptr;
     QueueHandle_t needQueue = xQueueCreate(4, sizeof(robot_update_t));
-    int countX = 0;
-    int countY = 0;
     int countLZ = 0;
     int countRZ = 0;
-    int countDX = 0;
+    int countRZ2 = 0;
     bool wheelDown = false;
 };
 
@@ -1292,11 +1358,6 @@ class USB {
 
 extern USB usb;
 
-# 1 "version.h"
-
-#define BUILD_DATETIME "2026-02-27 13:09:48"
-#define BUILD_TIMESTAMP 1772186988
-
 # 1 "ble_battery.cpp"
 
 #include "ble.h"
@@ -1419,6 +1480,73 @@ void BLEBattery::begin() {
 void BLEBattery::end() {
     level.end();
     service = nullptr;
+}
+
+# 1 "ble.cpp"
+
+#include "ble.h"
+
+BLE ble;
+
+BLE::BLE() {}
+
+BLE::~BLE() {}
+
+void BLE::begin() {
+    if (!started) {
+        started = true;
+        log_i("BLE: Init");
+        BLEDevice::init("");
+#if BLE_SECURITY_PASSKEY
+        BLEDevice::setSecurityAuth(true, true, true);
+        BLEDevice::setSecurityPasskey(BLE_SECURITY_PASSKEY);
+        BLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
+#endif
+        server = BLEDevice::createServer();
+        server->setCallbacks(this);
+        advertising = BLEDevice::getAdvertising();
+        advertising->setName(BLE_DEVICE_NAME);
+        battery.begin();
+        robot.begin();
+        uart.begin();
+    }
+    if (!connected) {
+        startAdvertising();
+    }
+}
+
+void BLE::startAdvertising() {
+    if (!ble_gap_adv_active()) {
+        log_i("BLE: Advertising start...");
+        advertising->start(advertisingDuration);
+    }
+}
+
+void BLE::stopAdvertising() {
+    log_i("BLE: Advertising stop");
+    advertising->stop();
+}
+
+void BLE::end() {
+    log_i("BLE: Deinit");
+    battery.end();
+    robot.end();
+    uart.end();
+    BLEDevice::deinit();
+    advertising = nullptr;
+    server = nullptr;
+    started = false;
+}
+
+void BLE::onConnect(BLEServer* bleServer, BLEConnInfo& connInfo) {
+    log_i("BLE: Connected");
+    stopAdvertising();
+    connected = true;
+}
+
+void BLE::onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason) {
+    log_i("BLE: Disconnected");
+    connected = false;
 }
 
 # 1 "ble_robot.cpp"
@@ -1700,73 +1828,6 @@ void BLEUart::end() {
     rx.end();
     tx.end();
     service = nullptr;
-}
-
-# 1 "ble.cpp"
-
-#include "ble.h"
-
-BLE ble;
-
-BLE::BLE() {}
-
-BLE::~BLE() {}
-
-void BLE::begin() {
-    if (!started) {
-        started = true;
-        log_i("BLE: Init");
-        BLEDevice::init("");
-#if BLE_SECURITY_PASSKEY
-        BLEDevice::setSecurityAuth(true, true, true);
-        BLEDevice::setSecurityPasskey(BLE_SECURITY_PASSKEY);
-        BLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
-#endif
-        server = BLEDevice::createServer();
-        server->setCallbacks(this);
-        advertising = BLEDevice::getAdvertising();
-        advertising->setName(BLE_DEVICE_NAME);
-        battery.begin();
-        robot.begin();
-        uart.begin();
-    }
-    if (!connected) {
-        startAdvertising();
-    }
-}
-
-void BLE::startAdvertising() {
-    if (!ble_gap_adv_active()) {
-        log_i("BLE: Advertising start...");
-        advertising->start(advertisingDuration);
-    }
-}
-
-void BLE::stopAdvertising() {
-    log_i("BLE: Advertising stop");
-    advertising->stop();
-}
-
-void BLE::end() {
-    log_i("BLE: Deinit");
-    battery.end();
-    robot.end();
-    uart.end();
-    BLEDevice::deinit();
-    advertising = nullptr;
-    server = nullptr;
-    started = false;
-}
-
-void BLE::onConnect(BLEServer* bleServer, BLEConnInfo& connInfo) {
-    log_i("BLE: Connected");
-    stopAdvertising();
-    connected = true;
-}
-
-void BLE::onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason) {
-    log_i("BLE: Disconnected");
-    connected = false;
 }
 
 # 1 "controller.cpp"
@@ -2128,6 +2189,7 @@ IMU::~IMU() {}
 
 void IMU::begin() {
     if (bmx) {
+        vTaskDelay(1000);
         if (bmx->begin(&Wire)) {
             log_i("Gyroscope: connected");
             xTaskCreatePinnedToCore(task, "imu_task", 4096, NULL, 1, &startedTask, 0);
@@ -2186,7 +2248,8 @@ void IMU::task() {
     bmx->setFastOffset(BMA);
     bmx->setFastOffset(BMG);
     // calibrate();
-    float coefficients[3] = { -179.375000, -116.875000, -81.875000 };
+    // float coefficients[3] = { -179.375000, -116.875000, -81.875000 };
+    float coefficients[3] = { -700.000000, -581.875000, -307.500000 };
     bmx->setFastOffset(coefficients);
     int count = 0;
     int debug = 0;
@@ -2517,6 +2580,11 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
         }
         distancePrev = distance;
     }
+}
+
+void Lidar::scanRamp(int& distance0, int& distance1) {
+    distance0 = distances[350];
+    distance1 = distances[10];
 }
 
 void Lidar::task() {
@@ -2995,73 +3063,6 @@ void Lora::packetReceivedCallback() {
 
 void Lora::task(void* arg) {
     lora.task();
-}
-
-# 1 "main.cpp"
-
-#include "controller.h"
-#include "led.h"
-#include "ota.h"
-#include "robot.h"
-#include "settings.h"
-#include "version.h"
-#if ROBOT_HAS_CONTROLLER_USB
-#include "usb.h"
-#endif
-#if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
-#include "lora.h"
-#endif
-#if ROBOT_HAS_LIDAR
-#include "lidar.h"
-#endif
-#if ROBOT_HAS_MOTOR_ENCODER_I2C
-#include "encoder.h"
-#endif
-#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
-#include "navigation.h"
-#endif
-#if ROBOT_HAS_IMU
-#include "imu.h"
-#endif
-
-void setup() {
-    Serial.begin(115200);
-    log_i("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
-    settings.begin();
-#if ROBOT_HAS_CONTROLLER_USB
-    usb.begin();
-#endif
-#if ROBOT_HAS_CONTROLLER_LORA || ROBOT_HAS_TRANSCEIVER_LORA
-    lora.begin();
-#endif
-#if ROBOT_HAS_CONTROLLER_SERIAL || ROBOT_HAS_TRANSCEIVER_SERIAL
-    controller.begin();
-#endif
-#if ROBOT_HAS_LIDAR
-    lidar.begin();
-#endif
-#if ROBOT_HAS_MOTOR_ENCODER_I2C
-    encoder.begin();
-#endif
-#if ROBOT_HAS_NAVIGATION_SENDER || ROBOT_HAS_NAVIGATION_SERIAL
-    navigation.begin();
-#endif
-#if ROBOT_HAS_IMU
-    imu.begin();
-#endif
-#ifdef RGB_BUILTIN
-    led.begin();
-#else
-#ifdef LED_BUILTIN
-    led.begin();
-#endif
-#endif
-    ota.begin();
-    robot.begin();
-}
-
-void loop() {
-    vTaskDelay(1000);
 }
 
 # 1 "motor.cpp"
@@ -3638,54 +3639,24 @@ void Robot::updateSpeed() {
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
 
-    // (state.dy == 0) {
-        if (state.ly != 0) {
-            if (wheelDown) {
-                motor1.setSpeed(ly + (rx >> 2));
-                motor2.setSpeed(ly - (rx >> 2));
-            } else {
-                motor1.setSpeed(0);
-                motor2.setSpeed(0);
-            }
-        } else {
-            motor1.setSpeed(0);
-            motor2.setSpeed(0);
-        }
-    //     if (state.dx == 0) {
-    //         motor3.setSpeed(0);
-    //     } else if (state.dx > 0) {
-    //         motor3.setSpeed(255);
-    //     } else if (state.dx < 0) {
-    //         motor3.setSpeed(-255);
-    //     }
-    // } else if (state.dy > 0) {
-    //     if (state.dx == 0) {
-    //         motor1.setSpeed(255);
-    //         motor2.setSpeed(255);
-    //     } else if (state.dx > 0) {
-    //         motor1.setSpeed(255);
-    //         motor2.setSpeed(240);
-    //     } else if (state.dx < 0) {
-    //         motor1.setSpeed(240);
-    //         motor2.setSpeed(255);
-    //     }
-    // } else if (state.dy < 0) {
-    //     if (state.dx == 0) {
-    //         motor1.setSpeed(-255);
-    //         motor2.setSpeed(-255);
-    //     } else if (state.dx > 0) {
-    //         motor1.setSpeed(-255);
-    //         motor2.setSpeed(-240);
-    //     } else if (state.dx < 0) {
-    //         motor1.setSpeed(-240);
-    //         motor2.setSpeed(-255);
-    //     }
-    // }
+    if (state.ly == 0) {
+        motor1.setSpeed(0);
+        motor2.setSpeed(0);
+    } else if (wheelDown) {
+        motor1.setSpeed(ly + (rx >> 2));
+        motor2.setSpeed(ly - (rx >> 2));
+    } else {
+        motor1.setSpeed(0);
+        motor2.setSpeed(0);
+    }
 }
 
 void Robot::updateServo() {
     updateCount();
     controller_state_t state = controller.getState();
+    if (state.start || state.back) {
+        return;
+    }
     if (state.dy > 0) {
         servo1.setAngle(96);
         servo2.setAngle(86);
@@ -3695,15 +3666,23 @@ void Robot::updateServo() {
         servo2.setAngle(96);
         wheelDown = true;
     }
-    if (state.x) {
-        servo4.setAngle(75);
-    } else if (state.a) {
-        servo4.setAngle(90);
-    }
-    if (state.y) {
-        servo6.setAngle(75);
-    } else if (state.b) {
-        servo6.setAngle(90);
+    if (state.dx > 0) {
+        if (state.x || state.y) {
+            servo8.setAngle(135);
+        } else if (state.a || state.b) {
+            servo8.setAngle(180);
+        }
+    } else {
+        if (state.x) {
+            servo4.setAngle(60);
+        } else if (state.a) {
+            servo4.setAngle(92);
+        }
+        if (state.y) {
+            servo6.setAngle(60);
+        } else if (state.b) {
+            servo6.setAngle(90);
+        }
     }
 }
 
@@ -3714,6 +3693,7 @@ void Robot::updateCount() {
     }
     bool updateCountLZ = false;
     bool updateCountRZ = false;
+    bool updateCountRZ2 = false;
     if (state.lz > 0) {
         countLZ = min(countLZ + 1, 50);
         updateCountLZ = true;
@@ -3721,18 +3701,31 @@ void Robot::updateCount() {
         countLZ = max(countLZ - 1, 0);
         updateCountLZ = true;
     }
-    if (state.rz > 0) {
-        countRZ = min(countRZ + 1, 50);
-        updateCountRZ = true;
-    } else if (state.rz < 0) {
-        countRZ = max(countRZ - 1, 0);
-        updateCountRZ = true;
+    if (state.dx > 0) {
+        if (state.rz > 0) {
+            countRZ2 = min(countRZ2 + 1, 50);
+            updateCountRZ2 = true;
+        } else if (state.rz < 0) {
+            countRZ2 = max(countRZ2 - 1, 0);
+            updateCountRZ2 = true;
+        }
+    } else {
+        if (state.rz > 0) {
+            countRZ = min(countRZ + 1, 50);
+            updateCountRZ = true;
+        } else if (state.rz < 0) {
+            countRZ = max(countRZ - 1, 0);
+            updateCountRZ = true;
+        }
     }
     if (updateCountLZ) {
         servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
     }
     if (updateCountRZ) {
         servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
+    }
+    if (updateCountRZ2) {
+        servo7.setAngle(180.0f - 180.0f / 50.0f * countRZ2);
     }
 }
 
@@ -3772,11 +3765,11 @@ void Robot::task() {
     servo2.begin(86);
     servo3.setMaxAngle(360);
     servo3.begin(180);
-    servo4.begin();
+    servo4.begin(91);
     servo5.begin(180);
     servo6.begin();
-    servo7.begin();
-    servo8.begin();
+    servo7.begin(180);
+    servo8.begin(135);
 #if ROBOT_HAS_LIDAR
     lidar.start();
 #endif
@@ -3814,10 +3807,12 @@ void Robot::autoTask() {
     int signWidth = -1;
     int signIndex = -1;
 #if ROBOT_HAS_LIDAR
+    // Сканируем объекты перед роботом
     for (int n = 0; n < 10; n++) {
         lidar.scanRoadObjects(objects, objectCount, 4);
         vTaskDelay(100);
     }
+    // Самый широкий объект знак
     for (int n = 0; n < objectCount; n++) {
         road_object_t object = objects[n];
         if (signWidth < object.width) {
@@ -3826,27 +3821,111 @@ void Robot::autoTask() {
         }
     }
     if (signIndex >= 0) {
+        // Нашли знак
         road_object_t object = objects[signIndex];
         log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
     }
-    for (int n = 0; n < objectCount; n ++) {
+    for (int n = 0; n < objectCount; n++) {
         if (n != signIndex) {
+            // Нашли столбы
             road_object_t object = objects[n];
             log_i("Lidar: Pillar: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
         }
     }
 #endif
+    int startAxisX = 0;
+    int startAxisY = 0;
+    int startAxisZ = 0;
 #if ROBOT_HAS_IMU
-    int startAxisX = imu.getAxisX();
-    int startAxisY = imu.getAxisY();
-    int startAxisZ = imu.getAxisZ();
+    // Начальные позиции гироскопа
+    startAxisX = imu.getAxisX();
+    startAxisY = imu.getAxisY();
+    startAxisZ = imu.getAxisZ();
     log_i("Gyroscope: x=%d, y=%d, z=%d", startAxisX, startAxisY, startAxisZ);
 #endif
+    // Имитация нажатий на кнопки
     controller_state_t state = controller.getState();
+    // Едем вперед и рога вниз
+    state.ly = 5;
+    state.lz = 1;
+    state.rz = 1;
+    controller.setState(state);
+    vTaskDelay(2000);
+    // Рога опущены но мы едем дальше
+    state.lz = 0;
+    state.rz = 0;
+    controller.setState(state);
+    vTaskDelay(600);
+    // Остановка и кидаем палки
+    state.ly = 0;
+    state.x = 1;
+    state.y = 1;
+    controller.setState(state);
+    vTaskDelay(400);
+    // Едем назад и рога вверх
+    state.ly = -5;
+    state.lz = -1;
+    state.rz = -1;
+    controller.setState(state);
+    vTaskDelay(200);
+    // Рога подняты но мы едем дальше
+    state.lz = 0;
+    state.rz = 0;
+    vTaskDelay(2200);
+    // Остановка
+    state.ly = 0;
+    controller.setState(state);
+    // vTaskDelay(1000);
+    startAxisZ = imu.getAxisZ();
+    log_i("Gyroscope: start z=%d", startAxisZ);
+    // Поворачиваем направо
+    state.rx = 4;
+    controller.setState(state);
+    vTaskDelay(3000);
+    state.rx = 0;
+    controller.setState(state);
+    // vTaskDelay(2000);
+    log_i("Gyroscope: deltaZ=%d", imu.getAxisZ() - startAxisZ);
+    int distance0 = 0;
+    int distance1 = 0;
+    // Смотрим где горка
+    lidar.scanRamp(distance0, distance1);
+    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+    for (int n = 0; n < 10; n ++) {
+        if (abs(distance1 - distance0) > 10) {
+            if (distance1 < distance0) {
+                state.rx = 3;
+            } else {
+                state.rx = -3;
+            }
+            // Поворачиваем параллельно горке
+            controller.setState(state);
+            vTaskDelay(1000 - 50 * n);
+            lidar.scanRamp(distance0, distance1);
+            log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+        } else {
+            break;
+        }
+    }
+    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
+    // Прекращаем вертеться и опускаем колеса
+    state.rx = 0;
+    state.dy = -1;
+    controller.setState(state);
+    vTaskDelay(100);
+    // Поехали на горку
+    state.dy = 0;
     state.ly = 7;
     controller.setState(state);
     vTaskDelay(1000);
+    state.ly = 0;
+    controller.setState(state);
+    // Приехали
     autoEnd();
+    vTaskDelay(200);
+    // Фиксируемся
+    motor1.setSpeed(10);
+    motor2.setSpeed(10);
     autoStartedTask = nullptr;
     vTaskDelete(NULL);
 }

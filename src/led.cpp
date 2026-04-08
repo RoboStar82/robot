@@ -57,7 +57,7 @@ void Led::onChange() {
     } else if (state.lora.sleeping) {
         c = timers.lora.sleeping.value ? 1 : 0;
     }
-    ledcWrite(ledPin, c);
+    ledcWrite(ledPin, 0 < c && c < 0x11 ? 0 : 0xff);
 #endif
 #endif
 }

@@ -45,13 +45,13 @@ void OTA::beginWiFi() {
         WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
-        WiFi.setTxPower(WIFI_POWER_8_5dBm);
+        WiFi.setTxPower(WIFI_POWER_20dBm);
         led.setOtaWiFi(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         log_i("Wi-Fi: AP %s", ssid.c_str());
         WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
-        WiFi.setTxPower(WIFI_POWER_8_5dBm);
+        WiFi.setTxPower(WIFI_POWER_20dBm);
         led.setOtaWiFi(true);
         log_i("Wi-Fi: Enabled: %s", WiFi.softAPIP().toString().c_str());
     }

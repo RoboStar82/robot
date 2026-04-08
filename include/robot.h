@@ -48,6 +48,7 @@ class Robot {
     int countLZ = 5;
     int countRZ = 5;
     int countRZ2 = 0;
+    int countDX = 0;
     bool wheelDown = false;
 };
 

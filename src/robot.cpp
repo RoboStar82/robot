@@ -109,6 +109,7 @@ void Robot::updateServo() {
         servo2.setAngle(100);
         wheelDown = true;
     }
+#if false
     if (state.dx > 0) {
         if (state.x || state.y) {
             servo8.setAngle(135);
@@ -116,17 +117,20 @@ void Robot::updateServo() {
             servo8.setAngle(180);
         }
     } else {
+#endif
         if (state.x) {
             servo4.setAngle(60);
         } else if (state.a) {
             servo4.setAngle(92);
         }
+#if false
         if (state.y) {
             servo6.setAngle(60);
         } else if (state.b) {
             servo6.setAngle(92);
         }
     }
+#endif
 }
 
 void Robot::updateCount() {
@@ -137,6 +141,7 @@ void Robot::updateCount() {
     bool updateCountLZ = false;
     bool updateCountRZ = false;
     bool updateCountRZ2 = false;
+    bool updateCountDX = false;
     if (state.lz == -2 || state.rz == -2 && state.dx <= 0) {
         if (countLZ > 38) {
             countLZ--;
@@ -177,16 +182,29 @@ void Robot::updateCount() {
             updateCountRZ = true;
         }
     }
-    if (updateCountLZ) {
-        servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
-        log_i("3: %d", countLZ);
+    if (state.dx > 0) {
+        countDX = countDX + 1;
+        updateCountDX = true;
+    } else if (state.dx < 0) {
+        countDX = countDX - 1;
+        updateCountDX = true;
     }
+#if false
     if (updateCountRZ) {
         servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
         log_i("5: %d", countRZ);
     }
     if (updateCountRZ2) {
         servo7.setAngle(180.0f - 180.0f / 50.0f * countRZ2);
+        log_i("7: %d", countRZ2);
+    }
+#endif
+    if (updateCountLZ) {
+        servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
+        log_i("3: %d", countLZ);
+    }
+    if (updateCountDX) {
+        servo5.setAngle(180.0f - 180.0f / 50.0f * countDX);
     }
 }
 
@@ -224,9 +242,9 @@ void Robot::task() {
     motor3.begin();
     servo1.begin(98);
     servo2.begin(86);
-    servo3.setMaxAngle(360);
     servo3.begin(162);
     servo4.begin(92);
+    servo5.setMaxAngle(360);
     servo5.begin(162);
     servo6.begin(92);
     servo7.begin(180);

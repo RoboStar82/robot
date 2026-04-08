@@ -59,7 +59,7 @@ void Robot::updateSpeed() {
     controller_state_t state = controller.getState();
 
     int ly = (int)36 * state.ly;
-    int lx = (int)36 * state.lx;
+    int lx = (int)36 * (state.lx && wheelDown);
     int ry = (int)30 * state.ry;
     int rx = (int)30 * state.rx;
 
@@ -81,7 +81,7 @@ void Robot::updateSpeed() {
     }
 
     if (wheelDown) {
-        if (ly < 3) {
+        if (state.ly < 3 || state.rx != 0) {
             motor1.setSpeed(ly + (rx >> 2));
             motor2.setSpeed(ly - (rx >> 2));
         } else {

@@ -109,28 +109,11 @@ void Robot::updateServo() {
         servo2.setAngle(100);
         wheelDown = true;
     }
-#if false
-    if (state.dx > 0) {
-        if (state.x || state.y) {
-            servo8.setAngle(135);
-        } else if (state.a || state.b) {
-            servo8.setAngle(180);
-        }
-    } else {
-#endif
         if (state.x) {
             servo4.setAngle(60);
         } else if (state.a) {
             servo4.setAngle(92);
         }
-#if false
-        if (state.y) {
-            servo6.setAngle(60);
-        } else if (state.b) {
-            servo6.setAngle(92);
-        }
-    }
-#endif
 }
 
 void Robot::updateCount() {
@@ -138,74 +121,31 @@ void Robot::updateCount() {
     if (state.start || state.back) {
         return;
     }
-    bool updateCountLZ = false;
+
     bool updateCountRZ = false;
-    bool updateCountRZ2 = false;
     bool updateCountDX = false;
-    if (state.lz == -2 || state.rz == -2 && state.dx <= 0) {
-        if (countLZ > 38) {
-            countLZ--;
-        } else if (countLZ < 38) {
-            countLZ++;
-        }
-        if (countRZ > 31) {
-            countRZ--;
-        } else if (countRZ < 31) {
-            countRZ++;
-        }
-        servo4.setAngle(60);
-        servo6.setAngle(60);
-        updateCountLZ = true;
+
+    if (state.dx == 1) {
+        countDX++;
+        updateCountDX = true;
+    } else if (state.dx == -1) {
+        countDX--;
+        updateCountDX = true;
+    }
+    if (state.rz == 1) {
+        countRZ++;
+        updateCountRZ = true;
+    } else if (state.rz == -1) {
+        countRZ--;
         updateCountRZ = true;
     }
-    if (state.lz == 1) {
-        countLZ = min(countLZ + 1, 50);
-        updateCountLZ = true;
-    } else if (state.lz == -1) {
-        countLZ = max(countLZ - 1, 0);
-        updateCountLZ = true;
-    }
-    if (state.dx > 0) {
-        if (state.rz == 1) {
-            countRZ2 = min(countRZ2 + 1, 50);
-            updateCountRZ2 = true;
-        } else if (state.rz == -1) {
-            countRZ2 = max(countRZ2 - 1, 0);
-            updateCountRZ2 = true;
-        }
-    } else {
-        if (state.rz == 1) {
-            countRZ = min(countRZ + 1, 50);
-            updateCountRZ = true;
-        } else if (state.rz == -1) {
-            countRZ = max(countRZ - 1, 0);
-            updateCountRZ = true;
-        }
-    }
-    if (state.dx > 0) {
-        countDX = countDX + 1;
-        updateCountDX = true;
-    } else if (state.dx < 0) {
-        countDX = countDX - 1;
-        updateCountDX = true;
-    }
-#if false
-    if (updateCountRZ) {
-        servo5.setAngle(180.0f - 180.0f / 50.0f * countRZ);
-        log_i("5: %d", countRZ);
-    }
-    if (updateCountRZ2) {
-        servo7.setAngle(180.0f - 180.0f / 50.0f * countRZ2);
-        log_i("7: %d", countRZ2);
-    }
-#endif
-    if (updateCountLZ) {
-        servo3.setAngle(180.0f - 180.0f / 50.0f * countLZ);
-        log_i("3: %d", countLZ);
-    }
     if (updateCountDX) {
-        servo5.setAngle(180.0f - 180.0f / 50.0f * countDX);
+        servo1.setAngle(180.0f - 180.0f / 50.0f * countDX);
     }
+    if (updateCountRZ) {
+        servo1.setAngle(180.0f - 180.0f / 50.0f * countRZ);
+    }
+
 }
 
 void Robot::needUpdateSpeed() {

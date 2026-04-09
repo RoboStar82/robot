@@ -109,11 +109,13 @@ void Robot::updateServo() {
         servo2.setAngle(100);
         wheelDown = true;
     }
-        if (state.x) {
-            servo4.setAngle(60);
-        } else if (state.a) {
-            servo4.setAngle(92);
-        }
+    if (state.x) {
+        servo5.setAngle(95);
+    } else if (state.a) {
+        servo5.setAngle(120);
+    } else if (state.y) {
+        servo5.setAngle(90);
+    }
 }
 
 void Robot::updateCount() {
@@ -122,8 +124,8 @@ void Robot::updateCount() {
         return;
     }
 
-    bool updateCountRZ = false;
     bool updateCountDX = false;
+    bool updateCountLZ = false;
 
     if (state.dx == 1) {
         countDX++;
@@ -132,20 +134,19 @@ void Robot::updateCount() {
         countDX--;
         updateCountDX = true;
     }
-    if (state.rz == 1) {
-        countRZ++;
-        updateCountRZ = true;
-    } else if (state.rz == -1) {
-        countRZ--;
-        updateCountRZ = true;
+    if (state.lz == 1) {
+        countLZ++;
+        updateCountLZ = true;
+    } else if (state.lz == -1) {
+        countLZ--;
+        updateCountLZ = true;
     }
     if (updateCountDX) {
-        servo1.setAngle(180.0f - 180.0f / 50.0f * countDX);
+        servo3.setAngle(180.0f - 180.0f / 50.0f * countDX);
     }
-    if (updateCountRZ) {
-        servo1.setAngle(180.0f - 180.0f / 50.0f * countRZ);
+    if (updateCountLZ) {
+        servo4.setAngle(180.0f - 180.0f / 50.0f * countLZ);
     }
-
 }
 
 void Robot::needUpdateSpeed() {
@@ -182,13 +183,13 @@ void Robot::task() {
     motor3.begin();
     servo1.begin(98);
     servo2.begin(86);
-    servo3.begin(162);
-    servo4.begin(92);
-    servo5.setMaxAngle(360);
-    servo5.begin(162);
-    servo6.begin(92);
-    servo7.begin(180);
-    servo8.begin(135);
+    servo3.setMaxAngle(360);
+    servo3.begin();
+    servo4.begin();
+    servo5.begin();
+    servo6.begin();
+    servo7.begin();
+    servo8.begin();
 #if ROBOT_HAS_LIDAR
     lidar.start();
 #endif

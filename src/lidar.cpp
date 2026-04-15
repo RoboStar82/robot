@@ -53,6 +53,8 @@ void Lidar::addRoadObject(road_object_t object, road_object_t* objects, int& obj
     object.angle = object.angle1 - object.angle0 + 1;
     if (0 < object.angle && object.angle < 90) {
         object.width = sqrt((u32_t)object.distance0 * object.distance0 + (u32_t)object.distance1 * object.distance1 - (u32_t)(((u64_t)object.distance0 * object.distance1 * cosines[object.angle]) >> 11));
+        object.angle0 = object.angle0 % 360;
+        object.angle1 = object.angle1 % 360;
         if (10 < object.width && object.width < 90) {
             if (index < 0) {
                 if (objectCount < objectCountMax) {
@@ -71,9 +73,8 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
     road_object_t object;
     int distancePrev = 0;
     bool isObject = false;
-    for (int n = 270; n <= 450; n++) {
-        int angle = n % 360;
-        int distance = distances[angle];
+    for (int angle = 270; angle <= 450; angle++) {
+        int distance = distances[angle % 360];
         if (300 < distance && distance < 1500) {
             if (isObject) {
                 if (abs(distancePrev - distance) < 100) {

@@ -155,7 +155,7 @@ void MotorMCPWM::begin() {
         maxSpeed = timerConfig.period_ticks;
     } else {
         // LF, RF, LB, RB, CC
-        maxSpeed = 0.8f * timerConfig.period_ticks;
+        maxSpeed = 1.0f * timerConfig.period_ticks;
     }
     minSpeed = 0.4f * timerConfig.period_ticks;
     mcpwm_new_timer(&timerConfig, &mcpwmTimer);

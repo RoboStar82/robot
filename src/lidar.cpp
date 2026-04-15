@@ -52,7 +52,7 @@ void Lidar::addRoadObject(road_object_t object, road_object_t* objects, int& obj
     }
     object.angle = object.angle1 - object.angle0 + 1;
     if (0 < object.angle && object.angle < 90) {
-        object.width = sqrt(object.distance0 * object.distance0 + object.distance1 * object.distance1 - ((object.distance0 * object.distance1 * cosines[object.angle]) >> 11));
+        object.width = sqrt((u32_t)object.distance0 * object.distance0 + (u32_t)object.distance1 * object.distance1 - (u32_t)(((u64_t)object.distance0 * object.distance1 * cosines[object.angle]) >> 11));
         if (10 < object.width && object.width < 90) {
             if (index < 0) {
                 if (objectCount < objectCountMax) {
@@ -74,7 +74,7 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
     for (int n = 270; n <= 450; n++) {
         int angle = n % 360;
         int distance = distances[angle];
-        if (0 < distance && distance < 1000) {
+        if (300 < distance && distance < 1500) {
             if (isObject) {
                 if (abs(distancePrev - distance) < 100) {
                     object.angle1 = n;
@@ -148,7 +148,7 @@ bool Lidar::scan(uint16_t& angle, uint16_t& distance, uint8_t& strength) {
             log_e("Lidar: read bytes (5)");
             return false;
         }
-        delay(1);
+        vTaskDelay(1);
     }
     uint8_t data[5];
     if (LidarSerial.readBytes(data, 5) < 5) {

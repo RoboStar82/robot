@@ -7,6 +7,7 @@
 #include "lidar.h"
 #include "motor.h"
 #include "servo.h"
+#include "led.h" // Не забудь убрать
 
 Robot robot;
 
@@ -58,10 +59,10 @@ void Robot::autoEnd() {
 void Robot::updateSpeed() {
     controller_state_t state = controller.getState();
 
-    int ly = (int)36 * state.ly;
-    int lx = (int)36 * (state.lx && wheelDown);
-    int ry = (int)30 * state.ry;
-    int rx = (int)30 * state.rx;
+    int ly = (int)-36 * state.ly;
+    int lx = (int)-36 * state.lx;
+    int ry = (int)-30 * state.ry;
+    int rx = (int)-30 * state.rx;
 
     if (abs(ry) > abs(rx) && ((ry > 0 && ly < 0) || (ry < 0 && ly > 0))) {
         // Разворот
@@ -81,13 +82,8 @@ void Robot::updateSpeed() {
     }
 
     if (wheelDown) {
-        if (state.ly < 3 || state.rx != 0) {
-            motor1.setSpeed(ly + (rx >> 2));
-            motor2.setSpeed(ly - (rx >> 2));
-        } else {
-            motor1.setSpeed(70);
-            motor2.setSpeed(70);
-        }
+        motor1.setSpeed(ly + (rx >> 2));
+        motor2.setSpeed(ly - (rx >> 2));
     } else {
         motor1.setSpeed(0);
         motor2.setSpeed(0);
@@ -109,12 +105,10 @@ void Robot::updateServo() {
         servo2.setAngle(100);
         wheelDown = true;
     }
-    if (state.x) {
-        servo5.setAngle(95);
-    } else if (state.a) {
-        servo5.setAngle(120);
-    } else if (state.y) {
-        servo5.setAngle(90);
+    if (state.a) {
+        servo5.setAngle(110);
+    } else if (state.x) {
+        servo5.setAngle(45);
     }
 }
 
@@ -135,17 +129,17 @@ void Robot::updateCount() {
         updateCountDX = true;
     }
     if (state.lz == 1) {
-        countLZ++;
+        countLZ = min(countLZ + 2, 42);
         updateCountLZ = true;
     } else if (state.lz == -1) {
-        countLZ--;
+        countLZ = max(countLZ + 2, 42);
         updateCountLZ = true;
     }
     if (updateCountDX) {
-        servo3.setAngle(180.0f - 180.0f / 50.0f * countDX);
+        servo3.setAngle(90.0f - 180.0f / 90.0f * countDX);
     }
     if (updateCountLZ) {
-        servo4.setAngle(180.0f - 180.0f / 50.0f * countLZ);
+        servo4.setAngle(90.0f - 180.0f / 90.0f * countLZ);
     }
 }
 
@@ -186,7 +180,7 @@ void Robot::task() {
     servo3.setMaxAngle(360);
     servo3.begin();
     servo4.begin();
-    servo5.begin();
+    servo5.begin(45);
     servo6.begin();
     servo7.begin();
     servo8.begin();
@@ -222,13 +216,15 @@ void Robot::task(void* arg) {
 
 void Robot::autoTask() {
     log_i("Robot: auto start");
+    #if ROBOT_HAS_LIDAR
+    // Сканируем объекты перед роботом
     road_object_t objects[4];
-    int objectCount = 0;
     int signWidth = -1;
     int signIndex = -1;
-#if ROBOT_HAS_LIDAR
-    // Сканируем объекты перед роботом
+    int randomiseState = -1;
+    int objectCount = 0;
     for (int n = 0; n < 10; n++) {
+        objectCount = 0;
         lidar.scanRoadObjects(objects, objectCount, 4);
         vTaskDelay(100);
     }
@@ -243,16 +239,44 @@ void Robot::autoTask() {
     if (signIndex >= 0) {
         // Нашли знак
         road_object_t object = objects[signIndex];
-        log_i("Lidar: Sign: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
+        log_i("Sign: ang=%d-%d, disе=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
     }
     for (int n = 0; n < objectCount; n++) {
         if (n != signIndex) {
             // Нашли столбы
             road_object_t object = objects[n];
-            log_i("Lidar: Pillar: angle=%d-%d, distance=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
+            log_i("Pillar: ang=%d-%d, dist=%d-%d (%d), width=%d", object.angle0, object.angle1, object.distance0, object.distance1, object.distance, object.width);
         }
     }
+    if (objectCount == 3 || signIndex == 0) {
+        randomiseState = signIndex;
+    } else if (signIndex == 3) {
+        randomiseState = 2;
+    } else {
+        if (objects[signIndex].angle0 - objects[signIndex - 1].angle1 > objects[signIndex + 1].angle0 - objects[signIndex].angle1) {
+            randomiseState = signIndex;
+        } else {
+            randomiseState = --signIndex;
+        }
+    }
+    controller_state_t state = controller.getState();
+    switch (randomiseState) {
+    case 0:
+        state.x = 1;
+        break;
+    case 1:
+        state.y = 1;
+        break;
+    case 2:
+        state.b = 1;
+        break;
+    default:
+        state.a = 1;
+        break;
+    }
+    controller.setState(state);
 #endif
+
     int startAxisX = 0;
     int startAxisY = 0;
     int startAxisZ = 0;
@@ -263,7 +287,8 @@ void Robot::autoTask() {
     startAxisZ = imu.getAxisZ();
     log_i("Gyroscope: x=%d, y=%d, z=%d", startAxisX, startAxisY, startAxisZ);
 #endif
-    // Имитация нажатий на кнопки
+
+    /*/ Имитация нажатий на кнопки
     controller_state_t state = controller.getState();
     // Едем вперед и рога вниз
     state.ly = 5;
@@ -354,12 +379,12 @@ void Robot::autoTask() {
     controller.setState(state);
     // Приехали
     motor1.setSpeed(70);
-    motor2.setSpeed(70);
+    motor2.setSpeed(70);*/
     vTaskDelay(200);
     autoEnd();
     // Фиксируемся
-    motor1.setSpeed(70);
-    motor2.setSpeed(70);
+    // motor1.setSpeed(70);
+    // motor2.setSpeed(70);
     vTaskDelay(200);
     autoStartedTask = nullptr;
     vTaskDelete(NULL);

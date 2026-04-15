@@ -78,7 +78,7 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
         if (300 < distance && distance < 1500) {
             if (isObject) {
                 if (abs(distancePrev - distance) < 100) {
-                    object.angle1 = n;
+                    object.angle1 = angle;
                     object.distance1 = distance;
                     object.distance = min(distance, object.distance);
                 } else {
@@ -87,7 +87,7 @@ void Lidar::scanRoadObjects(road_object_t* objects, int& objectCount, int object
                 }
             } else {
                 isObject = true;
-                object.angle0 = object.angle1 = n;
+                object.angle0 = object.angle1 = angle;
                 object.distance0 = object.distance1 = object.distance = distance;
             }
         } else {

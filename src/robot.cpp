@@ -216,7 +216,7 @@ void Robot::task(void* arg) {
 
 void Robot::autoTask() {
     log_i("Robot: auto start");
-    #if ROBOT_HAS_LIDAR
+#if ROBOT_HAS_LIDAR
     // Сканируем объекты перед роботом
     road_object_t objects[4];
     int signWidth = -1;
@@ -277,11 +277,11 @@ void Robot::autoTask() {
     controller.setState(state);
 #endif
 
-    int startAxisX = 0;
-    int startAxisY = 0;
-    int startAxisZ = 0;
 #if ROBOT_HAS_IMU
-    // Начальные позиции гироскопа
+// Начальные позиции гироскопа
+int startAxisX = 0;
+int startAxisY = 0;
+int startAxisZ = 0;
     startAxisX = imu.getAxisX();
     startAxisY = imu.getAxisY();
     startAxisZ = imu.getAxisZ();

@@ -5,6 +5,7 @@
 #include "lora.h"
 #include "ota.h"
 #include "robot.h"
+#include "settings.h" // Не забудь убрать
 
 Controller controller;
 
@@ -84,6 +85,9 @@ void Controller::onChange(controller_state_t oldState) {
         led.setControllerButton('X');
     } else if (state.y && !oldState.y) {
         led.setControllerButton('Y');
+        log_i("resets reasons:\n");
+        log_i("%s", settings.getResetsReasons().c_str());
+        settings.setResetReason("");
     } else {
         led.setControllerButton(0);
     }

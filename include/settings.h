@@ -36,6 +36,10 @@ class Settings : Preferences {
     String getRobotSettings();
     bool setRobotSettings(String value);
 
+    bool setResetReason(String value);
+    bool addResetReason(String value);
+    String getResetsReasons();
+
    protected:
     bool started = false;
 
@@ -46,9 +50,6 @@ class Settings : Preferences {
     String wifiPassword = "";
 
     String resetReason = "";
-    bool setResetReason(String value);
-    bool addResetReason(String value);
-    String getResetsReasons();
 
     String robotSettings = "";
 

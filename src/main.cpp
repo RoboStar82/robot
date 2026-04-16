@@ -28,6 +28,32 @@ void setup() {
     Serial.begin(115200);
     log_i("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
     settings.begin();
+    esp_reset_reason_t resetReason = esp_reset_reason();
+    log_i("Reset cod: %d\r\n", resetReason);
+
+    switch (resetReason) {
+    case ESP_RST_POWERON:
+        settings.addResetReason("Power on");
+        break;
+    case ESP_RST_BROWNOUT:
+        settings.addResetReason("Brown out");
+        break;
+    case ESP_RST_SW:
+        settings.addResetReason("Software reset");
+        break;
+    case ESP_RST_PANIC:
+        settings.addResetReason("Panic reset");
+        break;
+    case ESP_RST_INT_WDT:
+        settings.addResetReason("INT WDT reset");
+        break;
+    case ESP_RST_TASK_WDT:
+        settings.addResetReason("Task WDT reset");
+        break;
+    default:
+        settings.addResetReason("other reset: " + resetReason);
+        break;
+    }
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();
 #endif

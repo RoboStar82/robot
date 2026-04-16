@@ -26,6 +26,9 @@ void Settings::read() {
     if (isKey("wifi.password")) {
         wifiPassword = getString("wifi.password");
     }
+    if (isKey("reset.reason")) {
+        resetReason = getString("reset.reason");
+    }
     if (isKey("robot.settings")) {
         robotSettings = getString("robot.settings");
     }
@@ -116,7 +119,7 @@ bool Settings::setWiFiPassword(String value) {
 
 bool Settings::setResetReason(String value) {
     resetReason = value;
-    log_i("reset reason: %s", value.c_str());
+    log_i("reset.reason: %s", value.c_str());
     putString("reset.reason", value);
     return true;
 }

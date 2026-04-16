@@ -216,7 +216,6 @@ void Robot::task(void* arg) {
 
 void Robot::autoTask() {
     log_i("Robot: auto start");
-#if ROBOT_HAS_LIDAR
     // Сканируем объекты перед роботом
     road_object_t objects[4];
     int signWidth = -1;
@@ -225,6 +224,8 @@ void Robot::autoTask() {
     int countRoadWorkAngle;
     int randomiseState = -1;
     int objectCount = 0;
+    controller_state_t state;
+#if ROBOT_HAS_LIDAR
     for (int n = 0; n < 10; n++) {
         objectCount = 0;
         lidar.scanRoadObjects(objects, objectCount, 4);
@@ -261,7 +262,7 @@ void Robot::autoTask() {
             randomiseState = --signIndex;
         }
     }
-    controller_state_t state = controller.getState();
+    state = controller.getState();
     switch (randomiseState) {
     case 0:
         state.x = 1;

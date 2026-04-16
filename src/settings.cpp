@@ -114,6 +114,22 @@ bool Settings::setWiFiPassword(String value) {
     return true;
 }
 
+bool Settings::setResetReason(String value) {
+    resetReason = value;
+    log_i("reset reason: %s", value.c_str());
+    putString("reset.reason", value);
+    return true;
+}
+
+bool Settings::addResetReason(String value) {
+    setResetReason(resetReason + '\n' + value);
+    return true;
+}
+
+String Settings::getResetsReasons() {
+    return resetReason;
+}
+
 String Settings::getRobotSettings() {
     return robotSettings;
 }

@@ -82,8 +82,8 @@ void Robot::updateSpeed() {
     }
 
     if (wheelDown) {
-        motor1.setSpeed(ly + (rx >> 2));
-        motor2.setSpeed(ly - (rx >> 2));
+        motor1.setSpeed(-ly + (rx >> 2));
+        motor2.setSpeed(-ly - (rx >> 2));
     } else {
         motor1.setSpeed(0);
         motor2.setSpeed(0);
@@ -97,8 +97,8 @@ void Robot::updateServo() {
         return;
     }
     if (state.dy > 0) {
-        servo1.setAngle(98);
-        servo2.setAngle(86);
+        servo1.setAngle(102);
+        servo2.setAngle(82);
         wheelDown = false;
     } else if (state.dy < 0) {
         servo1.setAngle(84);
@@ -108,7 +108,7 @@ void Robot::updateServo() {
     if (state.a) {
         servo5.setAngle(110);
     } else if (state.x) {
-        servo5.setAngle(45);
+        servo5.setAngle(43);
     }
 }
 
@@ -132,11 +132,11 @@ void Robot::updateCount() {
         countLZ = min(countLZ + 2, 42);
         updateCountLZ = true;
     } else if (state.lz == -1) {
-        countLZ = max(countLZ + 2, 42);
+        countLZ = max(countLZ - 2, -42);
         updateCountLZ = true;
     }
     if (updateCountDX) {
-        servo3.setAngle(90.0f - 180.0f / 90.0f * countDX);
+        servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
     }
     if (updateCountLZ) {
         servo4.setAngle(90.0f - 180.0f / 90.0f * countLZ);
@@ -175,12 +175,12 @@ void Robot::task() {
     motor1.begin();
     motor2.begin();
     motor3.begin();
-    servo1.begin(98);
-    servo2.begin(86);
+    servo1.begin(102);
+    servo2.begin(82);
     servo3.setMaxAngle(360);
-    servo3.begin();
+    servo3.begin(98);
     servo4.begin();
-    servo5.begin(45);
+    servo5.begin(43);
     servo6.begin();
     servo7.begin();
     servo8.begin();
@@ -221,6 +221,8 @@ void Robot::autoTask() {
     road_object_t objects[4];
     int signWidth = -1;
     int signIndex = -1;
+    float roadWorkAngle;
+    int countRoadWorkAngle;
     int randomiseState = -1;
     int objectCount = 0;
     for (int n = 0; n < 10; n++) {
@@ -277,114 +279,46 @@ void Robot::autoTask() {
     controller.setState(state);
 #endif
 
-#if ROBOT_HAS_IMU
-// Начальные позиции гироскопа
-int startAxisX = 0;
-int startAxisY = 0;
-int startAxisZ = 0;
-    startAxisX = imu.getAxisX();
-    startAxisY = imu.getAxisY();
-    startAxisZ = imu.getAxisZ();
-    log_i("Gyroscope: x=%d, y=%d, z=%d", startAxisX, startAxisY, startAxisZ);
-#endif
+    if (randomiseState == 2) {
+        roadWorkAngle = (float)(objects[1].angle0 + objects[1].angle1) / 2; // работает как для 3 так и 4 объектов
+    } else {
+        roadWorkAngle = (float)(objects[-1].angle0 + objects[-1].angle1) / 2; // работает как для 3 так и 4 объектов
+    }
+    countRoadWorkAngle = (100.0f - roadWorkAngle) * 90.0f / 180.0f;
 
-    /*/ Имитация нажатий на кнопки
-    controller_state_t state = controller.getState();
-    // Едем вперед и рога вниз
-    state.ly = 5;
-    state.lz = 1;
-    state.rz = 1;
-    controller.setState(state);
-    vTaskDelay(1500);
-    state.rz = 0;
-    controller.setState(state);
-    vTaskDelay(500);
-    // Рога опущены но мы едем дальше
-    state.lz = 0;
-    state.rz = 0;
-    controller.setState(state);
-    vTaskDelay(600);
-    // кидаем знак
-    state.y = 1;
-    controller.setState(state);
-    vTaskDelay(300);
-    // Остановка и кидаем палки
-    state.ly = 0;
-    state.x = 1;
-    controller.setState(state);
-    vTaskDelay(400);
-    // Едем назад и рога вверх
-    state.ly = -5;
-    state.lz = -1;
-    state.rz = -1;
-    controller.setState(state);
-    vTaskDelay(400);
-    // Рога подняты но мы едем дальше
-    state.x = 0;
-    state.y = 0;
-    state.a = 1;
-    state.b = 1;
-    state.lz = 0;
-    state.rz = 0;
-    controller.setState(state);
-    vTaskDelay(1750);
-    // Остановка
-    state.ly = 0;
-    controller.setState(state);
-    // vTaskDelay(1000);
-    startAxisZ = imu.getAxisZ();
-    log_i("Gyroscope: start z=%d", startAxisZ);
-    // Поворачиваем направо
-    state.rx = 5;
-    controller.setState(state);
-    vTaskDelay(3000);
-    state.rx = 0;
-    controller.setState(state);
-    // vTaskDelay(2000);
-    log_i("Gyroscope: deltaZ=%d", imu.getAxisZ() - startAxisZ);
-    int distance0 = 0;
-    int distance1 = 0;
-    // Смотрим где горка
-    lidar.scanRamp(distance0, distance1);
-    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
-    for (int n = 0; n < 5; n ++) {
-        if (abs(distance1 - distance0) > 7) {
-            if (distance1 < distance0) {
-                state.rx = 3;
-            } else {
-                state.rx = -3;
-            }
-            // Поворачиваем параллельно горке
-            controller.setState(state);
-            vTaskDelay(1000 - 50 * n);
-            lidar.scanRamp(distance0, distance1);
-            log_i("Lidar: Ramp: %d-%d", distance0, distance1);
-        } else {
-            break;
+    if (countDX < countRoadWorkAngle) {
+        for (countDX; countDX >= countRoadWorkAngle; countDX++) {
+            servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
+            vTaskDelay(50);
+        }
+    }  else if (countDX > countRoadWorkAngle) {
+        for (countDX; countDX <= countRoadWorkAngle; countDX--) {
+            servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
+            vTaskDelay(50);
         }
     }
-    log_i("Lidar: Ramp: %d-%d", distance0, distance1);
-    // Прекращаем вертеться и опускаем колеса
-    state.rx = 0;
-    state.dy = -1;
+    state.rz = 1;
     controller.setState(state);
-    vTaskDelay(100);
+    vTaskDelay(objects[signIndex].distance / 50);
+    state.rz = -1;
+    state.x = 1;
+    controller.setState(state);
+    vTaskDelay(objects[signIndex].distance / 50);
     // Поехали на горку
+    state.rz = 0;
     state.ly = 7;
-    state.rx = -1;
     controller.setState(state);
     vTaskDelay(6000);
     state.ly = 0;
-    state.rx = 0;
     controller.setState(state);
     // Приехали
     motor1.setSpeed(70);
-    motor2.setSpeed(70);*/
+    motor2.setSpeed(70);
     vTaskDelay(200);
     autoEnd();
     // Фиксируемся
-    // motor1.setSpeed(70);
-    // motor2.setSpeed(70);
+    motor1.setSpeed(70);
+    motor2.setSpeed(70);
     vTaskDelay(200);
     autoStartedTask = nullptr;
     vTaskDelete(NULL);

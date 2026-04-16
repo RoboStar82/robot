@@ -45,6 +45,11 @@ class Settings : Preferences {
     String wifiSSID = "";
     String wifiPassword = "";
 
+    String resetReason = "";
+    bool setResetReason(String value);
+    bool addResetReason(String value);
+    String getResetsReasons();
+
     String robotSettings = "";
 
     using Preferences::begin;

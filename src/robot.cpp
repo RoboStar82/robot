@@ -59,10 +59,10 @@ void Robot::autoEnd() {
 void Robot::updateSpeed() {
     controller_state_t state = controller.getState();
 
-    int ly = (int)-36 * state.ly;
-    int lx = (int)-36 * state.lx;
+    int ly = (int)36 * state.ly;
+    int lx = (int)36 * state.lx;
     int ry = (int)-30 * state.ry;
-    int rx = (int)-30 * state.rx;
+    int rx = (int)30 * state.rx;
 
     if (abs(ry) > abs(rx) && ((ry > 0 && ly < 0) || (ry < 0 && ly > 0))) {
         // Разворот
@@ -74,16 +74,18 @@ void Robot::updateSpeed() {
         setSpeed(ly + lx + rx, ly - lx - rx, ly - lx + rx, ly + lx - rx);
     }
     if (state.rz == 1) {
-        motor3.setSpeed(255);
+        motor3.setSpeed(254);
+        mastBakc = true;
     } else if(state.rz == -1) {
-        motor3.setSpeed(-255 );
+        motor3.setSpeed(-254);
+        mastBakc = false;
     } else {
         motor3.setSpeed(0);
     }
 
     if (wheelDown) {
-        motor1.setSpeed(-ly + (rx >> 2));
-        motor2.setSpeed(-ly - (rx >> 2));
+        motor1.setSpeed(ly + (rx >> 2));
+        motor2.setSpeed(ly - (rx >> 2));
     } else {
         motor1.setSpeed(0);
         motor2.setSpeed(0);
@@ -122,10 +124,10 @@ void Robot::updateCount() {
     bool updateCountLZ = false;
 
     if (state.dx == 1) {
-        countDX++;
+        countDX = min(countDX + 2 * mastBakc + 1, 116);
         updateCountDX = true;
     } else if (state.dx == -1) {
-        countDX--;
+        countDX = max(countDX - 2 * mastBakc + 1, -64);
         updateCountDX = true;
     }
     if (state.lz == 1) {
@@ -136,7 +138,7 @@ void Robot::updateCount() {
         updateCountLZ = true;
     }
     if (updateCountDX) {
-        servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
+        servo3.setAngle(232.0f - 180.0f / 90.0f * countDX);
     }
     if (updateCountLZ) {
         servo4.setAngle(90.0f - 180.0f / 90.0f * countLZ);
@@ -178,7 +180,7 @@ void Robot::task() {
     servo1.begin(102);
     servo2.begin(82);
     servo3.setMaxAngle(360);
-    servo3.begin(98);
+    servo3.begin(232);
     servo4.begin();
     servo5.begin(43);
     servo6.begin();
@@ -285,29 +287,29 @@ void Robot::autoTask() {
     } else {
         roadWorkAngle = (float)(objects[-1].angle0 + objects[-1].angle1) / 2; // работает как для 3 так и 4 объектов
     }
-    countRoadWorkAngle = (100.0f - roadWorkAngle) * 90.0f / 180.0f;
+    countRoadWorkAngle = (232.0f - roadWorkAngle) * 90.0f / 180.0f;
 
     if (countDX < countRoadWorkAngle) {
-        for (countDX; countDX >= countRoadWorkAngle; countDX++) {
-            servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
+        for (countDX; countDX <= countRoadWorkAngle; countDX++) {
+            servo3.setAngle(232.0f - 180.0f / 90.0f * countDX);
             vTaskDelay(50);
         }
     }  else if (countDX > countRoadWorkAngle) {
-        for (countDX; countDX <= countRoadWorkAngle; countDX--) {
-            servo3.setAngle(100.0f - 180.0f / 90.0f * countDX);
+        for (countDX; countDX >= countRoadWorkAngle; countDX--) {
+            servo3.setAngle(232.0f - 180.0f / 90.0f * countDX);
             vTaskDelay(50);
         }
     }
-    state.rz = 1;
-    controller.setState(state);
-    vTaskDelay(objects[signIndex].distance / 50);
     state.rz = -1;
+    controller.setState(state);
+    vTaskDelay(objects[signIndex].distance * 20);
+    state.rz = 1;
     state.x = 1;
     controller.setState(state);
-    vTaskDelay(objects[signIndex].distance / 50);
+    vTaskDelay(objects[signIndex].distance * 20);
     // Поехали на горку
     state.rz = 0;
-    state.ly = 7;
+    state.ly = -7;
     controller.setState(state);
     vTaskDelay(6000);
     state.ly = 0;

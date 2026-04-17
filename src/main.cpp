@@ -5,6 +5,7 @@
 #include "robot.h"
 #include "settings.h"
 #include "version.h"
+#include "esp_task_wdt.h"
 #if ROBOT_HAS_CONTROLLER_USB
 #include "usb.h"
 #endif
@@ -54,6 +55,7 @@ void setup() {
         settings.addResetReason("other reset: " + resetReason);
         break;
     }
+    log_i("WDT deinit: %d", esp_task_wdt_deinit());
 #if ROBOT_HAS_CONTROLLER_USB
     usb.begin();
 #endif

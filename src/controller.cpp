@@ -62,10 +62,10 @@ void Controller::onChange(controller_state_t oldState) {
     }
 #endif
 #if ROBOT_HAS_CHASSIS
-    if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dx != oldState.dx || state.lz != oldState.lz) {
+    if (state.lx != oldState.lx || state.ly != oldState.ly || state.rx != oldState.rx || state.ry != oldState.ry || state.dy != oldState.dy || state.rz != oldState.rz) {
         robot.needUpdateSpeed();
     }
-    if (state.dy != oldState.dy || state.a != oldState.a || state.b != oldState.b || state.x != oldState.x || state.y != oldState.y) {
+    if (state.dx != oldState.dx || state.dy != oldState.dy || state.a != oldState.a || state.b != oldState.b || state.x != oldState.x || state.y != oldState.y || state.lz != oldState.lz) {
         robot.needUpdateServo();
     }
 #endif
@@ -85,14 +85,16 @@ void Controller::onChange(controller_state_t oldState) {
         led.setControllerButton('X');
     } else if (state.y && !oldState.y) {
         led.setControllerButton('Y');
-        log_i("resets reasons:\n");
-        log_i("%s", settings.getResetsReasons().c_str());
-        settings.setResetReason("");
     } else {
         led.setControllerButton(0);
     }
-#endif
+    #endif
     if (state.back) {
+        if (state.y) {
+            log_i("resets reasons:\n");
+            log_i("%s", settings.getResetsReasons().c_str());
+            settings.setResetReason("");
+        }
         if (state.a) {
             if (state.b) {
                 ota.needEnableBLE();

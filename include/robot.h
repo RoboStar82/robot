@@ -48,6 +48,7 @@ class Robot {
     int countDX = 0;
     int countLZ = 0;
     bool wheelDown = false;
+    bool mastBakc = true;
 };
 
 extern Robot robot;

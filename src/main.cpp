@@ -6,7 +6,7 @@
 
 void setup() {
     Serial.begin(115200);
-    Serial.printf("%s (%s.local) Firmware: %u (%s)", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
+    Serial.printf("[main] %s (%s.local) Firmware: %u (%s)\n", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
     display.begin();
 }
 

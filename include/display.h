@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <Arduino.h>
 
 #if ROBOT_HAS_DISPLAY_ST7735

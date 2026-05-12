@@ -28,6 +28,7 @@
     "ethernet"
   ],
   "debug": {
+    "default_tool": "stlink",
     "jlink_device": "STM32H743VI",
     "openocd_target": "stm32h7x",
     "svd_path": "STM32H743.svd"

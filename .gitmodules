@@ -13,3 +13,6 @@
 [submodule "lib/heltec-eink-modules"]
 	path = lib/heltec-eink-modules
 	url = https://github.com/todd-herbert/heltec-eink-modules
+[submodule "lib/STM32FreeRTOS"]
+	path = lib/STM32FreeRTOS
+	url = https://github.com/stm32duino/STM32FreeRTOS

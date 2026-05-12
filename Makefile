@@ -1,10 +1,17 @@
 
-.PHONY: all robot_weact_mini_stm32h743vit6 station_heltec_vision_master_e213
+.PHONY: all version
 
-all: robot_weact_mini_stm32h743vit6 station_heltec_vision_master_e213
+SRC_LIST := $(wildcard src/**/*.cpp src/**/*.c)
+INCLUDE_LIST := $(wildcard include/**/*.h)
+INCLUDE_LIST := $(filter-out include/version.h, $(INCLUDE_LIST))
 
-robot_weact_mini_stm32h743vit6:
-	~/.platformio/penv/bin/platformio run --environment robot_weact_mini_stm32h743vit6
+all: .pio/build/robot_stm32h743vit6/firmware.bin .pio/build/station_e213/firmware.bin
 
-station_heltec_vision_master_e213:
-	~/.platformio/penv/bin/platformio run --environment station_heltec_vision_master_e213
+include/version.h: platformio.ini $(SRC_LIST) $(INCLUDE_LIST)
+	python3 version.py
+
+.pio/build/robot_stm32h743vit6/firmware.bin: include/version.h
+	~/.platformio/penv/bin/platformio run --environment robot_stm32h743vit6
+
+.pio/build/station_e213/firmware.bin: include/version.h
+	~/.platformio/penv/bin/platformio run --environment station_e213

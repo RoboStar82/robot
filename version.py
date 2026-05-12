@@ -27,8 +27,10 @@ if timestamp > 0:
 else:
     version = datetime.datetime.now()
 
-with open(os.path.join('include', 'version.h'), 'w') as F:
-    F.write('\n')
-    F.write('#define BUILD_DATETIME "{:%Y-%m-%d %H:%M:%S}"\n'.format(version))
-    F.write('#define BUILD_TIMESTAMP ' + str(int(timestamp)) + '\n')
-    F.close()
+versionText = '\n#define BUILD_DATETIME "{:%Y-%m-%d %H:%M:%S}"\n'.format(version) + '#define BUILD_TIMESTAMP ' + str(int(timestamp)) + '\n'
+
+with open(os.path.join('include', 'version.h'), 'r') as F:
+    currentText = F.read()
+    if versionText != currentText:
+        with open(os.path.join('include', 'version.h'), 'w') as F:
+            F.write(versionText)

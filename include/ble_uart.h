@@ -3,6 +3,8 @@
 
 #include <NimBLEDevice.h>
 
+#include "config.h"
+
 // client write server read
 class BLEUartRx : BLECharacteristicCallbacks {
    public:

@@ -1,0 +1,4 @@
+
+#ifdef ARDUINO_HELTEC_WIRELESS_STICK_LITE_V3
+
+#endif

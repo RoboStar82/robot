@@ -3,6 +3,8 @@
 
 #include <NimBLEDevice.h>
 
+#include "config.h"
+
 // server write client read
 // client write server read
 class BLERobotSettings : BLECharacteristicCallbacks {
@@ -22,27 +24,6 @@ class BLERobotSettings : BLECharacteristicCallbacks {
     BLEUUID characteristicUuid = BLEUUID("b0b0c7ab-0004-4000-8000-000000000000");
     const char* characteristicDescription = "Settings";
     uint8_t characteristicFormat = BLE2904::FORMAT_UTF8;
-};
-
-// server write client read
-// client write server read
-class BLERobotOtaMode : BLECharacteristicCallbacks {
-   public:
-    BLERobotOtaMode();
-    ~BLERobotOtaMode();
-
-    BLECharacteristic* characteristic = nullptr;
-
-    void begin(BLEService* service);
-
-    void onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo);
-
-    void end();
-
-   protected:
-    BLEUUID characteristicUuid = BLEUUID("b0b0c7ab-0009-4000-8000-000000000000");
-    const char* characteristicDescription = "OTA Mode";
-    uint8_t characteristicFormat = BLE2904::FORMAT_UINT8;
 };
 
 // server write client read
@@ -118,9 +99,6 @@ class BLERobot {
     // server write client read
     // client write server read
     BLERobotSettings settings;
-    // server write client read
-    // client write server read
-    BLERobotOtaMode otaMode;
     // server write client read
     // client write server read
     BLERobotWiFiMode wifiMode;

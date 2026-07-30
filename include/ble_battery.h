@@ -3,6 +3,8 @@
 
 #include <NimBLEDevice.h>
 
+#include "config.h"
+
 // server write client read
 class BLEBatteryLevel {
    public:
@@ -26,9 +28,9 @@ class BLEBatteryLevel {
     const char* characteristicDescription = "Battery Level";
     uint8_t characteristicFormat = BLE2904::FORMAT_UINT8;
 
-    bool taskCreated = false;
+    TaskHandle_t startedTask = nullptr;
     uint8_t value = 0;
-#if ROBOT_HAS_TRANSCEIVER_LORA
+#ifdef ROBOT_HAS_TRANSCEIVER_LORA
     uint8_t batteryPin = 2;
     uint32_t minVoltage = 1500;
     uint32_t maxVoltage = 2000;

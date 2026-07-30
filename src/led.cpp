@@ -1,4 +1,8 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_LED
+
 #include "led.h"
 
 Led led;
@@ -8,7 +12,7 @@ Led::Led() {}
 Led::~Led() {}
 
 void Led::begin() {
-    setPowerOn(true);
+    setPower(true);
 #ifdef RGB_BUILTIN
     rgbPin = RGB_BUILTIN;
     rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
@@ -24,11 +28,11 @@ void Led::begin() {
 void Led::onChange() {
 #ifdef RGB_BUILTIN
     uint8_t r = 0x00, g = 0x00, b = 0x00;
-    if (timers.power.on.value) {
+    if (timers.power.state.value) {
         r = g = b = 0x33;
-    } else if (timers.ota.ble.value) {
+    } else if (timers.ble.state.value) {
         g = b = 0x11;
-    } else if (timers.ota.wifi.value) {
+    } else if (timers.wifi.state.value) {
         g = b = 0x11;
     } else if (state.controller.button == 'A') {
         g = 0x11;
@@ -43,13 +47,13 @@ void Led::onChange() {
 #else
 #ifdef LED_BUILTIN
     uint8_t c = 0x00;
-    if (timers.power.on.value) {
+    if (timers.power.state.value) {
         c = 0x11;
+    } else if (timers.ble.state.value) {
+        c = 0x01;
+    } else if (timers.wifi.state.value) {
+        c = 0x01;
     } else if (timers.lora.errors.value) {
-        c = 0x01;
-    } else if (timers.ota.ble.value) {
-        c = 0x01;
-    } else if (timers.ota.wifi.value) {
         c = 0x01;
     }
     if (state.lora.sending) {
@@ -62,18 +66,33 @@ void Led::onChange() {
 #endif
 }
 
-void Led::setPowerOn(bool value) {
-    if (state.power.on != value) {
-        timers.power.on.counter = 0;
-        timers.power.on.value = false;
-        state.power.on = value;
+void Led::setPower(bool value) {
+    if (state.power.value != value) {
+        timers.power.state.counter = 0;
+        timers.power.state.value = false;
+        state.power.value = value;
         changed = true;
     }
 }
 
-void Led::setControllerButton(char value) {
-    if (state.controller.button != value) {
-        state.controller.button = value;
+void Led::setBLE(bool value) {
+    if (state.ble.value != value) {
+        timers.ble.state.counter = 0;
+        timers.ble.state.value = false;
+        timers.wifi.state.counter = 0;
+        timers.wifi.state.value = false;
+        state.ble.value = value;
+        changed = true;
+    }
+}
+
+void Led::setWiFi(bool value) {
+    if (state.wifi.value != value) {
+        timers.wifi.state.counter = 0;
+        timers.wifi.state.value = false;
+        timers.ble.state.counter = 0;
+        timers.ble.state.value = false;
+        state.wifi.value = value;
         changed = true;
     }
 }
@@ -102,48 +121,59 @@ void Led::setLoraSleeping(bool value) {
     if (state.lora.sleeping != value) {
         timers.lora.errors.counter = 0;
         timers.lora.errors.value = false;
-        timers.ota.ble.counter = 0;
-        timers.ota.ble.value = false;
-        timers.ota.wifi.counter = 0;
-        timers.ota.wifi.value = false;
+        timers.ble.state.counter = 0;
+        timers.ble.state.value = false;
+        timers.wifi.state.counter = 0;
+        timers.wifi.state.value = false;
         state.lora.sleeping = value;
         changed = true;
     }
 }
 
-void Led::setOtaBLE(bool value) {
-    if (state.ota.ble != value) {
-        timers.ota.ble.counter = 0;
-        timers.ota.ble.value = false;
-        timers.ota.wifi.counter = 0;
-        timers.ota.wifi.value = false;
-        state.ota.ble = value;
-        changed = true;
-    }
-}
-
-void Led::setOtaWiFi(bool value) {
-    if (state.ota.wifi != value) {
-        timers.ota.wifi.counter = 0;
-        timers.ota.wifi.value = false;
-        timers.ota.ble.counter = 0;
-        timers.ota.ble.value = false;
-        state.ota.wifi = value;
+void Led::setControllerButton(char value) {
+    if (state.controller.button != value) {
+        state.controller.button = value;
         changed = true;
     }
 }
 
 void Led::task() {
     while (true) {
-        if (state.power.on) {
-            switch (++timers.power.on.counter % timers.power.on.period) {
+        if (state.power.value) {
+            switch (++timers.power.state.counter % timers.power.state.period) {
                 case 1:
-                    timers.power.on.value = true;
+                    timers.power.state.value = true;
                     changed = true;
                     break;
                 case 0:
-                    timers.power.on.value = false;
-                    state.power.on = false;
+                    timers.power.state.value = false;
+                    state.power.value = false;
+                    changed = true;
+                    break;
+            }
+        }
+        if (state.ble.value) {
+            switch (++timers.ble.state.counter % timers.ble.state.period) {
+                case 1:
+                    timers.ble.state.value = true;
+                    changed = true;
+                    break;
+                case 11:
+                    timers.ble.state.value = false;
+                    changed = true;
+                    break;
+            }
+        }
+        if (state.wifi.value) {
+            switch (++timers.wifi.state.counter % timers.wifi.state.period) {
+                case 21:
+                case 41:
+                    timers.wifi.state.value = true;
+                    changed = true;
+                    break;
+                case 31:
+                case 51:
+                    timers.wifi.state.value = false;
                     changed = true;
                     break;
             }
@@ -164,32 +194,6 @@ void Led::task() {
                     break;
             }
         }
-        if (state.ota.ble) {
-            switch (++timers.ota.ble.counter % timers.ota.ble.period) {
-                case 1:
-                    timers.ota.ble.value = true;
-                    changed = true;
-                    break;
-                case 11:
-                    timers.ota.ble.value = false;
-                    changed = true;
-                    break;
-            }
-        }
-        if (state.ota.wifi) {
-            switch (++timers.ota.wifi.counter % timers.ota.wifi.period) {
-                case 21:
-                case 41:
-                    timers.ota.wifi.value = true;
-                    changed = true;
-                    break;
-                case 31:
-                case 51:
-                    timers.ota.wifi.value = false;
-                    changed = true;
-                    break;
-            }
-        }
         if (changed) {
             changed = false;
             onChange();
@@ -202,3 +206,5 @@ void Led::task() {
 void Led::task(void* arg) {
     led.task();
 }
+
+#endif

@@ -1,9 +1,17 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_OTA
+
 #include "ota.h"
 
-#include "ble.h"
+#ifdef ROBOT_HAS_LED
 #include "led.h"
+#endif
+
+#ifdef ROBOT_HAS_SETTINGS
 #include "settings.h"
+#endif
 
 OTA ota;
 
@@ -16,172 +24,110 @@ void OTA::begin() {
     ArduinoOTA.setPassword(OTA_PASSWORD);
     if (!startedTask) {
         xTaskCreate(task, "ota_task", 16384, NULL, 1, &startedTask);
-        int8_t value = settings.getOtaMode();
-        xQueueSend(needQueue, &value, 0);
+#ifdef ROBOT_HAS_SETTINGS
+        setWiFiMode(settings.getWiFiMode());
+#else
+#ifdef WIFI_MODE
+        setWiFiMode(WIFI_MODE);
+#endif
+#endif
+    } else {
+        setWiFiMode(wifiMode);
     }
 }
 
-void OTA::beginBLE() {
-    if (otaMode & OTA_WIFI) {
-        otaMode = OTA_ALL;
-    } else {
-        otaMode = OTA_BLE;
-    }
-    ble.begin();
-    led.setOtaBLE(true);
+void OTA::setWiFiMode(wifi_mode_t value) {
+    xQueueSend(modeQueue, &value, 0);
 }
 
 void OTA::beginWiFi() {
-    if (otaMode & OTA_BLE) {
-        otaMode = OTA_ALL;
-    } else {
-        otaMode = OTA_WIFI;
-    }
-    wifiMode = settings.getWiFiMode();
+#ifdef ROBOT_HAS_SETTINGS
     String ssid = settings.getWiFiSSID();
+#else
+#ifdef WIFI_SSID
+    String ssid = WIFI_SSID;
+#else
+    String ssid = "";
+#endif
+#endif
+#ifdef ROBOT_HAS_SETTINGS
     String password = settings.getWiFiPassword();
+#else
+#ifdef WIFI_PASSWORD
+    String password = WIFI_PASSWORD;
+#else
+    String password = "";
+#endif
+#endif
     if (wifiMode == WIFI_MODE_STA) {
-        log_i("Wi-Fi: STA %s", ssid.c_str());
+        print("[Wi-Fi] STA %s\n", ssid.c_str());
         WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
         WiFi.setTxPower(WIFI_POWER_20dBm);
-        led.setOtaWiFi(true);
+#ifdef ROBOT_HAS_LED
+        led.setWiFi(true);
+#endif
     } else if (wifiMode == WIFI_MODE_AP) {
-        log_i("Wi-Fi: AP %s", ssid.c_str());
+        print("[Wi-Fi] AP %s\n", ssid.c_str());
         WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_20dBm);
-        led.setOtaWiFi(true);
-        log_i("Wi-Fi: Enabled: %s", WiFi.softAPIP().toString().c_str());
-    }
-}
-
-void OTA::enableBLE() {
-    settings.addOtaBLE();
-    beginBLE();
-}
-
-void OTA::enableWiFi() {
-    settings.addOtaWiFi();
-    beginWiFi();
-}
-
-void OTA::disableBLE() {
-    settings.removeOtaBLE();
-    endBLE();
-}
-
-void OTA::disableWiFi() {
-    settings.removeOtaWiFi();
-    endWiFi();
-}
-
-void OTA::needEnableBLE() {
-    int8_t value = OTA_BLE;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void OTA::needEnableWiFi() {
-    int8_t value = OTA_WIFI;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void OTA::needDisableBLE() {
-    int8_t value = -OTA_BLE;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void OTA::needDisableWiFi() {
-    int8_t value = -OTA_WIFI;
-    xQueueSend(needQueue, &value, 0);
-}
-
-void OTA::endBLE() {
-    ble.end();
-    led.setOtaBLE(false);
-    if (otaMode & OTA_WIFI) {
-        otaMode = OTA_WIFI;
-    } else {
-        otaMode = OTA_OFF;
+#ifdef ROBOT_HAS_LED
+        led.setWiFi(true);
+#endif
+        print("[Wi-Fi] Enabled: %s\n", WiFi.softAPIP().toString().c_str());
+        ArduinoOTA.begin();
+#ifdef ROBOT_HAS_OTA_UART
+        otaUart.begin();
+#endif
     }
 }
 
 void OTA::endWiFi() {
-    log_i("Wi-Fi: Disconnect");
+    print("[Wi-Fi] Disconnect\n");
     if (wifiMode == WIFI_MODE_STA) {
         WiFi.setAutoReconnect(false);
         WiFi.disconnect(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         WiFi.softAPdisconnect(true);
     }
-    wifiMode = WIFI_MODE_NULL;
-    led.setOtaWiFi(false);
-    if (otaMode & OTA_BLE) {
-        otaMode = OTA_BLE;
-    } else {
-        otaMode = OTA_OFF;
-    }
+#ifdef ROBOT_HAS_LED
+    led.setWiFi(false);
+#endif
 }
 
 void OTA::task() {
-    if (xQueueReceive(needQueue, &otaMode, 1000)) {
-        switch (otaMode) {
-            case OTA_OFF:
-                vTaskDelay(1000);
-                break;
-            case OTA_BLE:
-                vTaskDelay(1000);
-                beginBLE();
-                vTaskDelay(1000);
-                break;
-            case OTA_WIFI:
-                vTaskDelay(1000);
-                beginWiFi();
-                vTaskDelay(1000);
-                break;
-            case OTA_ALL:
-                vTaskDelay(1000);
-                beginBLE();
-                vTaskDelay(1000);
-                beginWiFi();
-                vTaskDelay(1000);
-                break;
-        }
-    }
+    WiFi.onEvent(onWiFiEvent);
     while (true) {
-        int8_t action;
-        if (xQueueReceive(needQueue, &action, 1000)) {
-            if (!action) {
-            } else if (action == OTA_BLE) {
-                enableBLE();
-                vTaskDelay(1000);
-            } else if (action == -OTA_BLE) {
-                disableBLE();
-                vTaskDelay(1000);
-            } else if (action == OTA_WIFI) {
-                enableWiFi();
-                vTaskDelay(1000);
-            } else if (action == -OTA_WIFI) {
-                disableWiFi();
-                vTaskDelay(1000);
+        wifi_mode_t value;
+        if (xQueueReceive(modeQueue, &value, 1000)) {
+            if (wifiMode != WIFI_MODE_NULL) {
+                endWiFi();
             }
-            if (ble.robot.otaMode.characteristic) {
-                ble.robot.otaMode.characteristic->setValue(otaMode);
+            wifiMode = value;
+            if (wifiMode != WIFI_MODE_NULL) {
+                beginWiFi();
             }
         }
         if (wifiMode == WIFI_MODE_STA) {
             if (wifiStatus != WiFi.status()) {
                 wifiStatus = WiFi.status();
                 if (wifiStatus == WL_CONNECTED) {
-                    log_i("Wi-Fi: Connected: %s", WiFi.localIP().toString().c_str());
+                    print("[Wi-Fi] Connected: %s\n", WiFi.localIP().toString().c_str());
                     wifiConnected = true;
                     ArduinoOTA.begin();
+#ifdef ROBOT_HAS_OTA_UART
+                    otaUart.begin();
+#endif
                 } else {
                     if (wifiConnected) {
-                        log_i("Wi-Fi: Disconnected");
+                        print("[Wi-Fi] Disconnected\n");
                         wifiConnected = false;
                         ArduinoOTA.end();
+#ifdef ROBOT_HAS_OTA_UART
+                        otaUart.end();
+#endif
                     }
                 }
             }
@@ -201,3 +147,68 @@ void OTA::task() {
 void OTA::task(void* arg) {
     ota.task();
 }
+
+void OTA::onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+    switch (event) {
+        case ARDUINO_EVENT_WIFI_OFF:
+            print("[Wi-Fi] Event: off\n");
+            break;
+        case ARDUINO_EVENT_WIFI_READY:
+            print("[Wi-Fi] Event: ready\n");
+            break;
+        case ARDUINO_EVENT_WIFI_SCAN_DONE:
+            print("[Wi-Fi] Event: scan done\n");
+            break;
+        case ARDUINO_EVENT_WIFI_FTM_REPORT:
+            print("[Wi-Fi] Event: FTM report\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_START:
+            print("[Wi-Fi] Event: STA start\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_STOP:
+            print("[Wi-Fi] Event: STA stop\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+            print("[Wi-Fi] Event: STA connected\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+            print("[Wi-Fi] Event: STA disconnected\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
+            print("[Wi-Fi] Event: STA auth mode change\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
+            print("[Wi-Fi] Event: STA got IP\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP6:
+            print("[Wi-Fi] Event: STA got IPv6\n");
+            break;
+        case ARDUINO_EVENT_WIFI_STA_LOST_IP:
+            print("[Wi-Fi] Event: STA lost IP\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_START:
+            print("[Wi-Fi] Event: AP start\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STOP:
+            print("[Wi-Fi] Event: AP stop\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STACONNECTED:
+            print("[Wi-Fi] Event: AP STA connected\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STADISCONNECTED:
+            print("[Wi-Fi] Event: AP STA disconnected\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED:
+            print("[Wi-Fi] Event: AP STA got IP\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_PROBEREQRECVED:
+            print("[Wi-Fi] Event: AP probe request\n");
+            break;
+        case ARDUINO_EVENT_WIFI_AP_GOT_IP6:
+            break;
+        default:
+            print("[Wi-Fi] Event: %d\n", event);
+    }
+}
+
+#endif

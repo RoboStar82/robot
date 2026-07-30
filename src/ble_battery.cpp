@@ -1,4 +1,8 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_BLE
+
 #include "ble.h"
 
 BLEBatteryLevel::BLEBatteryLevel() {}
@@ -13,7 +17,7 @@ void BLEBatteryLevel::begin(BLEService* service) {
         characteristicUuid,
         // server write client read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC
 #endif
     );
@@ -23,9 +27,8 @@ void BLEBatteryLevel::begin(BLEService* service) {
     ble2904->setFormat(characteristicFormat);
     if (batteryPin) {
         pinMode(batteryPin, INPUT);
-        if (!taskCreated) {
-            xTaskCreate(task, "battery_level_task", 4096, NULL, 1, NULL);
-            taskCreated = true;
+        if (!startedTask) {
+            xTaskCreate(task, "battery_level_task", 4096, NULL, 1, &startedTask);
         }
     }
 }
@@ -113,10 +116,11 @@ void BLEBatteryLevel::setValue(uint8_t _value) {
 void BLEBattery::begin() {
     service = ble.server->createService(serviceUuid);
     level.begin(service);
-    service->start();
 }
 
 void BLEBattery::end() {
     level.end();
     service = nullptr;
 }
+
+#endif

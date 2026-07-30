@@ -1,4 +1,8 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_BLE
+
 #include "ble.h"
 #include "ota.h"
 #include "settings.h"
@@ -16,7 +20,7 @@ void BLERobotSettings::begin(BLEService* service) {
         // server write client read
         // client write server read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
 #endif
     );
@@ -37,42 +41,6 @@ void BLERobotSettings::end() {
     characteristic = nullptr;
 }
 
-BLERobotOtaMode::BLERobotOtaMode() {}
-
-BLERobotOtaMode::~BLERobotOtaMode() {}
-
-void BLERobotOtaMode::begin(BLEService* service) {
-    if (characteristic) {
-        return;
-    }
-    characteristic = service->createCharacteristic(
-        characteristicUuid,
-        // server write client read
-        // client write server read
-        NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
-            | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
-#endif
-    );
-    BLEDescriptor* descriptor = characteristic->createDescriptor(NimBLEUUID((uint16_t)0x2901), NIMBLE_PROPERTY::READ);
-    descriptor->setValue(characteristicDescription);
-    BLE2904* ble2904 = characteristic->create2904();
-    ble2904->setFormat(characteristicFormat);
-    characteristic->setValue(settings.getOtaMode());
-    characteristic->setCallbacks(this);
-}
-
-void BLERobotOtaMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
-    std::string value = bleCharacteristic->getValue();
-    int8_t otaMode = value.length() > 0 ? value[0] : 0;
-    settings.setOtaMode((ota_mode_t)otaMode);
-    ota.begin();
-}
-
-void BLERobotOtaMode::end() {
-    characteristic = nullptr;
-}
-
 BLERobotWiFiMode::BLERobotWiFiMode() {}
 
 BLERobotWiFiMode::~BLERobotWiFiMode() {}
@@ -86,7 +54,7 @@ void BLERobotWiFiMode::begin(BLEService* service) {
         // server write client read
         // client write server read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
 #endif
     );
@@ -102,7 +70,7 @@ void BLERobotWiFiMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo
     std::string value = bleCharacteristic->getValue();
     int8_t wifiMode = value.length() > 0 ? value[0] : 0;
     settings.setWiFiMode((wifi_mode_t)wifiMode);
-    ota.begin();
+    ota.setWiFiMode((wifi_mode_t)wifiMode);
 }
 
 void BLERobotWiFiMode::end() {
@@ -122,7 +90,7 @@ void BLERobotWiFiSSID::begin(BLEService* service) {
         // server write client read
         // client write server read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
 #endif
     );
@@ -137,6 +105,7 @@ void BLERobotWiFiSSID::begin(BLEService* service) {
 void BLERobotWiFiSSID::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
     settings.setWiFiSSID(value.c_str());
+    ota.begin();
 }
 
 void BLERobotWiFiSSID::end() {
@@ -156,7 +125,7 @@ void BLERobotWiFiPassword::begin(BLEService* service) {
         // server write client read
         // client write server read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
 #endif
     );
@@ -171,6 +140,7 @@ void BLERobotWiFiPassword::begin(BLEService* service) {
 void BLERobotWiFiPassword::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
     settings.setWiFiPassword(value.c_str());
+    ota.begin();
 }
 
 void BLERobotWiFiPassword::end() {
@@ -184,18 +154,17 @@ BLERobot::~BLERobot() {}
 void BLERobot::begin() {
     service = ble.server->createService(serviceUuid);
     settings.begin(service);
-    otaMode.begin(service);
     wifiMode.begin(service);
     wifiSSID.begin(service);
     wifiPassword.begin(service);
-    service->start();
 }
 
 void BLERobot::end() {
     settings.end();
-    otaMode.end();
     wifiMode.end();
     wifiSSID.end();
     wifiPassword.end();
     service = nullptr;
 }
+
+#endif

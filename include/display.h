@@ -3,61 +3,26 @@
 
 #include <Arduino.h>
 
-#if ROBOT_HAS_DISPLAY_ST7735
-#ifndef DISPLAY_ST7735_LED_PIN
-#define DISPLAY_ST7735_LED_PIN PE10
-#endif
-#ifndef DISPLAY_ST7735_CS_PIN
-#define DISPLAY_ST7735_CS_PIN PE11
-#endif
-#ifndef DISPLAY_ST7735_SCK_PIN
-#define DISPLAY_ST7735_SCK_PIN PE12
-#endif
-#ifndef DISPLAY_ST7735_DC_PIN
-#define DISPLAY_ST7735_DC_PIN PE13
-#endif
-#ifndef DISPLAY_ST7735_MOSI_PIN
-#define DISPLAY_ST7735_MOSI_PIN PE14
-#endif
-#ifndef DISPLAY_ST7735_RST_PIN
-#define DISPLAY_ST7735_RST_PIN -1
-#endif
+#ifdef ROBOT_HAS_DISPLAY_ST7735
 #include <Adafruit_ST7735.h>
 extern Adafruit_ST7735 displayST7735;
 #endif
 
-#if ROBOT_HAS_DISPLAY_GDEY0213Z98
-#ifndef DISPLAY_GDEY0213Z98_CS_PIN
-#define DISPLAY_GDEY0213Z98_CS_PIN PB4
-#endif
-#ifndef DISPLAY_GDEY0213Z98_DC_PIN
-#define DISPLAY_GDEY0213Z98_DC_PIN PB10
-#endif
-#ifndef DISPLAY_GDEY0213Z98_RST_PIN
-#define DISPLAY_GDEY0213Z98_RST_PIN PB11
-#endif
-#ifndef DISPLAY_GDEY0213Z98_BUSY_PIN
-#define DISPLAY_GDEY0213Z98_BUSY_PIN PB12
-#endif
-#ifndef DISPLAY_GDEY0213Z98_SCK_PIN
-#define DISPLAY_GDEY0213Z98_SCK_PIN PB13
-#endif
-#ifndef DISPLAY_GDEY0213Z98_MOSI_PIN
-#define DISPLAY_GDEY0213Z98_MOSI_PIN PB15
-#endif
-#ifndef DISPLAY_GDEY0213Z98_MISO_PIN
-#define DISPLAY_GDEY0213Z98_MISO_PIN PB14
-#endif
+#ifdef ROBOT_HAS_DISPLAY_GDEY0213Z98
 #include <GxEPD2_3C.h>
 extern SPIClass spiGDEY0213Z98;
 extern SPISettings spiSettingsGDEY0213Z98;
 extern GxEPD2_3C<GxEPD2_213_Z98c, GxEPD2_213_Z98c::HEIGHT> displayGDEY0213Z98;
 #endif
 
-#if ROBOT_HAS_DISPLAY_E0213A367
+#ifdef ROBOT_HAS_DISPLAY_E0213A367
+#define DISABLE_SDCARD
 #include <heltec-eink-modules.h>
+#undef DISABLE_SDCARD
 extern E0213A367 displayE0213A367;
 #endif
+
+#include "print.h"
 
 class Display {
    public:
@@ -65,6 +30,12 @@ class Display {
     ~Display();
 
     void begin();
+
+    void clear();
+
+    int length();
+
+    void drawLogo();
 
    protected:
 };

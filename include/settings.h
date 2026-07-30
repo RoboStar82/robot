@@ -4,7 +4,13 @@
 #include <Arduino.h>
 #include <Preferences.h>
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_OTA
 #include "ota.h"
+#endif
+
+#include "print.h"
 
 class Settings : Preferences {
    public:
@@ -17,39 +23,28 @@ class Settings : Preferences {
 
     void end();
 
-    ota_mode_t getOtaMode();
-    bool hasOtaBLE();
-    bool hasOtaWiFi();
-    bool setOtaMode(ota_mode_t value);
-    bool addOtaBLE();
-    bool addOtaWiFi();
-    bool removeOtaBLE();
-    bool removeOtaWiFi();
-
+#ifdef ROBOT_HAS_OTA
     wifi_mode_t getWiFiMode();
+#endif
     String getWiFiSSID();
     String getWiFiPassword();
+#ifdef ROBOT_HAS_OTA
     bool setWiFiMode(wifi_mode_t value);
+#endif
     bool setWiFiSSID(String value);
     bool setWiFiPassword(String value);
 
     String getRobotSettings();
     bool setRobotSettings(String value);
 
-    bool setResetReason(String value);
-    bool addResetReason(String value);
-    String getResetsReasons();
-
    protected:
     bool started = false;
 
-    ota_mode_t otaMode = OTA_OFF;
-
+#ifdef ROBOT_HAS_OTA
     wifi_mode_t wifiMode = WIFI_MODE_NULL;
+#endif
     String wifiSSID = "";
     String wifiPassword = "";
-
-    String resetReason = "";
 
     String robotSettings = "";
 

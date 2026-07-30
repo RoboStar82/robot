@@ -3,22 +3,31 @@
 
 #include <Arduino.h>
 
+#ifdef ARDUINO_STM32
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
+
+#include "config.h"
+
 typedef struct {
     struct {
-        bool on = false;
+        bool value = false;
     } power;
     struct {
-        char button = 0;
-    } controller;
+        bool value = false;
+    } ble;
+    struct {
+        bool value = false;
+    } wifi;
     struct {
         bool errors = false;
         bool sending = false;
         bool sleeping = false;
     } lora;
     struct {
-        bool ble = false;
-        bool wifi = false;
-    } ota;
+        char button = 0;
+    } controller;
 } led_state_t;
 
 typedef struct {
@@ -27,8 +36,22 @@ typedef struct {
             bool value = false;
             unsigned int period = 199;
             unsigned int counter = 0;
-        } on;
+        } state;
     } power;
+    struct {
+        struct {
+            bool value = false;
+            unsigned int period = 199;
+            unsigned int counter = 0;
+        } state;
+    } ble;
+    struct {
+        struct {
+            bool value = false;
+            unsigned int period = 199;
+            unsigned int counter = 0;
+        } state;
+    } wifi;
     struct {
         struct {
             bool value = false;
@@ -41,18 +64,6 @@ typedef struct {
             unsigned int counter = 0;
         } sleeping;
     } lora;
-    struct {
-        struct {
-            bool value = false;
-            unsigned int period = 399;
-            unsigned int counter = 0;
-        } ble;
-        struct {
-            bool value = false;
-            unsigned int period = 399;
-            unsigned int counter = 0;
-        } wifi;
-    } ota;
 } led_timers_t;
 
 class Led {
@@ -64,16 +75,16 @@ class Led {
 
     void onChange();
 
-    void setPowerOn(bool value);
+    void setPower(bool value);
 
-    void setControllerButton(char value);
+    void setBLE(bool value);
+    void setWiFi(bool value);
 
     void setLoraErrors(bool value);
     void setLoraSending(bool value);
     void setLoraSleeping(bool value);
 
-    void setOtaBLE(bool value);
-    void setOtaWiFi(bool value);
+    void setControllerButton(char value);
 
     void task();
 

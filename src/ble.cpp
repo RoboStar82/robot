@@ -1,4 +1,8 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_BLE
+
 #include "ble.h"
 
 BLE ble;
@@ -10,9 +14,8 @@ BLE::~BLE() {}
 void BLE::begin() {
     if (!started) {
         started = true;
-        log_i("BLE: Init");
         BLEDevice::init("");
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
         BLEDevice::setSecurityAuth(true, true, true);
         BLEDevice::setSecurityPasskey(BLE_SECURITY_PASSKEY);
         BLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY);
@@ -21,6 +24,7 @@ void BLE::begin() {
         server->setCallbacks(this);
         advertising = BLEDevice::getAdvertising();
         advertising->setName(BLE_DEVICE_NAME);
+        advertising->setAdvertisingCompleteCallback(onAdvertisingComplete);
         battery.begin();
         robot.begin();
         uart.begin();
@@ -32,18 +36,18 @@ void BLE::begin() {
 
 void BLE::startAdvertising() {
     if (!ble_gap_adv_active()) {
-        log_i("BLE: Advertising start...");
+        print("[BLE] Advertising start...\n");
         advertising->start(advertisingDuration);
     }
 }
 
 void BLE::stopAdvertising() {
-    log_i("BLE: Advertising stop");
+    print("[BLE] Advertising stop\n");
     advertising->stop();
 }
 
 void BLE::end() {
-    log_i("BLE: Deinit");
+    print("[BLE] End\n");
     battery.end();
     robot.end();
     uart.end();
@@ -54,12 +58,18 @@ void BLE::end() {
 }
 
 void BLE::onConnect(BLEServer* bleServer, BLEConnInfo& connInfo) {
-    log_i("BLE: Connected");
+    print("[BLE] Connected\n");
     stopAdvertising();
     connected = true;
 }
 
 void BLE::onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason) {
-    log_i("BLE: Disconnected");
+    print("[BLE] Disconnected\n");
     connected = false;
 }
+
+void BLE::onAdvertisingComplete(BLEAdvertising* advertising) {
+    print("[BLE] Advertising complete\n");
+}
+
+#endif

@@ -1,0 +1,17 @@
+
+#pragma once
+
+#ifdef ARDUINO_HELTEC_VISION_MASTER_E213
+
+// #define ROBOT_HAS_BLE
+// #define ROBOT_HAS_OTA
+// #define ROBOT_HAS_OTA_UART
+// #define ROBOT_HAS_LED
+#define ROBOT_HAS_SCRIPT
+#define ROBOT_HAS_DISPLAY
+#define ROBOT_HAS_DISPLAY_E0213A367
+// #define ROBOT_HAS_SETTINGS
+
+#define ROBOT_OTA_UART_PORT 2323
+
+#endif

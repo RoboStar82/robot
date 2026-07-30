@@ -1,4 +1,8 @@
 
+#include "config.h"
+
+#ifdef ROBOT_HAS_BLE
+
 #include "ble.h"
 
 BLEUartRx::BLEUartRx() {}
@@ -13,7 +17,7 @@ void BLEUartRx::begin(BLEService* service) {
         characteristicUuid,
         // client write server read
         NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::WRITE_AUTHEN | NIMBLE_PROPERTY::WRITE_ENC
 #endif
     );
@@ -45,7 +49,7 @@ void BLEUartTx::begin(BLEService* service) {
         characteristicUuid,
         // server write client read
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::INDICATE | NIMBLE_PROPERTY::NOTIFY
-#if BLE_SECURITY_PASSKEY
+#ifdef BLE_SECURITY_PASSKEY
             | NIMBLE_PROPERTY::READ_AUTHEN | NIMBLE_PROPERTY::READ_ENC
 #endif
     );
@@ -67,7 +71,6 @@ void BLEUart::begin() {
     service = ble.server->createService(serviceUuid);
     rx.begin(service);
     tx.begin(service);
-    service->start();
 }
 
 void BLEUart::end() {
@@ -75,3 +78,5 @@ void BLEUart::end() {
     tx.end();
     service = nullptr;
 }
+
+#endif

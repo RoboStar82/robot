@@ -4,12 +4,12 @@
 #include <ArduinoOTA.h>
 #include <WiFi.h>
 
-typedef enum {
-    OTA_OFF = 0,
-    OTA_BLE = 1,
-    OTA_WIFI = 2,
-    OTA_ALL = 7,
-} ota_mode_t;
+#include "config.h"
+#include "print.h"
+
+#ifdef ROBOT_HAS_OTA_UART
+#include "ota_uart.h"
+#endif
 
 class OTA {
    public:
@@ -18,37 +18,24 @@ class OTA {
 
     void begin();
 
-    void beginBLE();
-    void beginWiFi();
-
-    void enableBLE();
-    void enableWiFi();
-
-    void disableBLE();
-    void disableWiFi();
-
-    void needEnableBLE();
-    void needEnableWiFi();
-
-    void needDisableBLE();
-    void needDisableWiFi();
-
-    void endBLE();
-    void endWiFi();
+    void setWiFiMode(wifi_mode_t value);
 
     void task();
 
     static void task(void* arg);
 
+    static void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
+
    protected:
     TaskHandle_t startedTask = nullptr;
-    QueueHandle_t needQueue = xQueueCreate(4, sizeof(int8_t));
-
-    ota_mode_t otaMode = OTA_OFF;
+    QueueHandle_t modeQueue = xQueueCreate(4, sizeof(wifi_mode_t));
 
     wifi_mode_t wifiMode = WIFI_MODE_NULL;
     wl_status_t wifiStatus = WL_NO_SHIELD;
     bool wifiConnected = false;
+
+    void beginWiFi();
+    void endWiFi();
 };
 
 extern OTA ota;

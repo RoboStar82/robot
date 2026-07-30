@@ -1,11 +1,19 @@
 
 #pragma once
 
+#include <Arduino.h>
 #include <NimBLEDevice.h>
+
+#ifdef ARDUINO_STM32
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
 
 #include "ble_battery.h"
 #include "ble_robot.h"
 #include "ble_uart.h"
+#include "config.h"
+#include "print.h"
 
 class BLE : BLEServerCallbacks {
    public:
@@ -26,6 +34,8 @@ class BLE : BLEServerCallbacks {
 
     void onConnect(BLEServer* bleServer, BLEConnInfo& connInfo);
     void onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason);
+
+    static void onAdvertisingComplete(BLEAdvertising* advertising);
 
    protected:
     bool started = false;

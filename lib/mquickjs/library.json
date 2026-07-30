@@ -1,0 +1,42 @@
+{
+  "name": "MicroQuickJS",
+  "description": "MicroQuickJS (aka. MQuickJS) is a JavaScript engine targeted at embedded systems",
+  "keywords": "JavaScript",
+  "authors": [
+    {
+      "name": "Fabrice Bellard",
+      "url": "https://bellard.org/"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bellard/mquickjs/"
+  },
+  "version": "2025-12-22",
+  "framework": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include",
+    "srcFilter": [
+      "-<*>",
+      "+<list.h>",
+      "+<dtoa.c>",
+      "+<dtoa.h>",
+      "+<libm.c>",
+      "+<libm.h>",
+      "+<cutils.c>",
+      "+<cutils.h>",
+      "+<mquickjs.c>",
+      "+<mquickjs.h>",
+      "+<mquickjs_atom.h>",
+      "+<mquickjs_build.c>",
+      "+<mquickjs_build.h>",
+      "+<mquickjs_opcode.h>",
+      "+<mquickjs_priv.h>",
+      "+<mquickjs_stdlib.h>",
+      "+<softfp_template.h>",
+      "+<softfp_template_icvt.h>"
+    ]
+  }
+}

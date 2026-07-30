@@ -3,4 +3,5 @@
 
 #include <Arduino.h>
 
-#define print(format, ...) Serial.printf(format, ##__VA_ARGS__)
+__attribute__((format(printf, 1, 2))) 
+void print(const char* format, ...);

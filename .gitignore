@@ -2,5 +2,8 @@
 .pio
 .vscode
 .DS_Store
+certs
 secrets.ini
 include/version.h
+*.pem
+*.pem.h

@@ -4,15 +4,18 @@
 [submodule "platforms/ststm32"]
 	path = platforms/ststm32
 	url = https://github.com/platformio/platform-ststm32
-[submodule "lib/Adafruit-gfx-library"]
-	path = lib/Adafruit-gfx-library
-	url = https://github.com/adafruit/Adafruit-gfx-library
+[submodule "lib/Adafruit-GFX-Library"]
+	path = lib/Adafruit-GFX-Library
+	url = https://github.com/adafruit/Adafruit-GFX-Library
+[submodule "lib/Adafruit-ST7735-Library"]
+	path = lib/Adafruit-ST7735-Library
+	url = https://github.com/adafruit/Adafruit-ST7735-Library
 [submodule "lib/Adafruit_BusIO"]
 	path = lib/Adafruit_BusIO
 	url = https://github.com/adafruit/Adafruit_BusIO
-[submodule "lib/adafruit-st7735-library"]
-	path = lib/adafruit-st7735-library
-	url = https://github.com/adafruit/adafruit-st7735-library
+[submodule "lib/ArduinoJson"]
+	path = lib/ArduinoJson
+	url = https://github.com/bblanchon/ArduinoJson
 [submodule "lib/GxEPD2"]
 	path = lib/GxEPD2
 	url = https://github.com/ZinggJM/GxEPD2
@@ -25,6 +28,9 @@
 [submodule "lib/NimBLE-Arduino"]
 	path = lib/NimBLE-Arduino
 	url = https://github.com/h2zero/NimBLE-Arduino
+[submodule "lib/PsychicHttp"]
+	path = lib/PsychicHttp
+	url = https://github.com/hoeken/PsychicHttp
 [submodule "lib/RadioLib"]
 	path = lib/RadioLib
 	url = https://github.com/jgromes/RadioLib

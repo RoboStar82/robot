@@ -1,0 +1,56 @@
+{
+  "build": {
+    "arduino": {
+      "variant_h": "variant_WeActMiniH7xx.h"
+    },
+    "extra_flags": [
+      "-DSTM32H7",
+      "-DSTM32H7xx",
+      "-DSTM32H743xx"
+    ],
+    "framework_extra_flags": {
+      "arduino": [
+        "-DARDUINO_WEACT_MINI_H743VIT6",
+        "-DARDUINO_WeActMiniH743VITX",
+        "-DCUSTOM_PERIPHERAL_PINS"
+      ]
+    },
+    "core": "stm32",
+    "cpu": "cortex-m7",
+    "mcu": "stm32h743vit6",
+    "product_line": "STM32H743xx",
+    "f_cpu": "480000000L",
+    "variants_dir": "variants",
+    "variant": "weact_mini_stm32h743vit6"
+  },
+  "connectivity": [
+    "can",
+    "ethernet"
+  ],
+  "debug": {
+    "default_tool": "stlink",
+    "jlink_device": "STM32H743VI",
+    "openocd_target": "stm32h7x",
+    "svd_path": "STM32H743.svd"
+  },
+  "frameworks": [
+    "arduino",
+    "cmsis",
+    "stm32cube"
+  ],
+  "name": "WeAct Mini STM32H743VIT6",
+  "upload": {
+    "maximum_ram_size": 524288,
+    "maximum_size": 2097152,
+    "protocol": "stlink",
+    "protocols": [
+      "dfu",
+      "jlink",
+      "cmsis-dap",
+      "stlink",
+      "blackmagic"
+    ]
+  },
+  "url": "https://github.com/WeActStudio/MiniSTM32H7xx",
+  "vendor": "WeAct Studio"
+}

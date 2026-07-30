@@ -1,0 +1,18 @@
+[submodule "lib/Adafruit-gfx-library"]
+	path = lib/Adafruit-gfx-library
+	url = https://github.com/adafruit/Adafruit-gfx-library
+[submodule "lib/Adafruit_BusIO"]
+	path = lib/Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO
+[submodule "lib/adafruit-st7735-library"]
+	path = lib/adafruit-st7735-library
+	url = https://github.com/adafruit/adafruit-st7735-library
+[submodule "lib/GxEPD2"]
+	path = lib/GxEPD2
+	url = https://github.com/ZinggJM/GxEPD2
+[submodule "lib/heltec-eink-modules"]
+	path = lib/heltec-eink-modules
+	url = https://github.com/todd-herbert/heltec-eink-modules
+[submodule "lib/STM32FreeRTOS"]
+	path = lib/STM32FreeRTOS
+	url = https://github.com/stm32duino/STM32FreeRTOS

@@ -1,17 +1,23 @@
 
-.PHONY: archive build clean
+.PHONY: all version clean
 
-archive:
-	rm -f ../robot_2026.zip
-	zip -r ../robot_2026.zip .git .gitignore src include platformio.ini version.py Makefile
+SRC_LIST := $(wildcard src/**/*.cpp src/**/*.c)
+INCLUDE_LIST := $(wildcard include/**/*.h)
+INCLUDE_LIST := $(filter-out include/version.h, $(INCLUDE_LIST))
 
-build:
-	~/.platformio/penv/bin/pio run -e robot
-	~/.platformio/penv/bin/pio run -e navigation
-	~/.platformio/penv/bin/pio run -e transceiver
+all: .pio/build/robot_stm32h743vit6/firmware.bin .pio/build/station_e213/firmware.bin
 
-source:
-	bash source.sh
+version:
+	python3 version.py
 
 clean:
-	rm -f ../robot_2026.zip
+	rm -rf .pio
+
+include/version.h: platformio.ini $(SRC_LIST) $(INCLUDE_LIST)
+	python3 version.py
+
+.pio/build/robot_stm32h743vit6/firmware.bin: include/version.h
+	~/.platformio/penv/bin/platformio run --environment robot_stm32h743vit6
+
+.pio/build/station_e213/firmware.bin: include/version.h
+	~/.platformio/penv/bin/platformio run --environment station_e213

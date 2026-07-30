@@ -4,8 +4,14 @@
 #ifdef ROBOT_HAS_BLE
 
 #include "ble.h"
+
+#ifdef ROBOT_HAS_OTA
 #include "ota.h"
+#endif
+
+#ifdef ROBOT_HAS_SETTINGS
 #include "settings.h"
+#endif
 
 BLERobotSettings::BLERobotSettings() {}
 
@@ -28,13 +34,17 @@ void BLERobotSettings::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
+#ifdef ROBOT_HAS_SETTINGS
     characteristic->setValue(settings.getRobotSettings());
+#endif
     characteristic->setCallbacks(this);
 }
 
 void BLERobotSettings::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
+#ifdef ROBOT_HAS_SETTINGS
     settings.setRobotSettings(value.c_str());
+#endif
 }
 
 void BLERobotSettings::end() {
@@ -62,15 +72,21 @@ void BLERobotWiFiMode::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
+#ifdef ROBOT_HAS_SETTINGS
     characteristic->setValue(settings.getWiFiMode());
+#endif
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
     int8_t wifiMode = value.length() > 0 ? value[0] : 0;
+#ifdef ROBOT_HAS_SETTINGS
     settings.setWiFiMode((wifi_mode_t)wifiMode);
+#endif
+#ifdef ROBOT_HAS_OTA
     ota.setWiFiMode((wifi_mode_t)wifiMode);
+#endif
 }
 
 void BLERobotWiFiMode::end() {
@@ -98,14 +114,20 @@ void BLERobotWiFiSSID::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
+#ifdef ROBOT_HAS_SETTINGS
     characteristic->setValue(settings.getWiFiSSID());
+#endif
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiSSID::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
+#ifdef ROBOT_HAS_SETTINGS
     settings.setWiFiSSID(value.c_str());
+#endif
+#ifdef ROBOT_HAS_OTA
     ota.begin();
+#endif
 }
 
 void BLERobotWiFiSSID::end() {
@@ -133,14 +155,20 @@ void BLERobotWiFiPassword::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
+#ifdef ROBOT_HAS_SETTINGS
     characteristic->setValue(settings.getWiFiPassword());
+#endif
     characteristic->setCallbacks(this);
 }
 
 void BLERobotWiFiPassword::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
+#ifdef ROBOT_HAS_SETTINGS
     settings.setWiFiPassword(value.c_str());
+#endif
+#ifdef ROBOT_HAS_OTA
     ota.begin();
+#endif
 }
 
 void BLERobotWiFiPassword::end() {

@@ -1,3 +1,9 @@
+[submodule "platforms/espressif32"]
+	path = platforms/espressif32
+	url = https://github.com/pioarduino/platform-espressif32
+[submodule "platforms/ststm32"]
+	path = platforms/ststm32
+	url = https://github.com/platformio/platform-ststm32
 [submodule "lib/Adafruit-gfx-library"]
 	path = lib/Adafruit-gfx-library
 	url = https://github.com/adafruit/Adafruit-gfx-library
@@ -13,6 +19,15 @@
 [submodule "lib/heltec-eink-modules"]
 	path = lib/heltec-eink-modules
 	url = https://github.com/todd-herbert/heltec-eink-modules
+[submodule "lib/mquickjs/src"]
+	path = lib/mquickjs/src
+	url = https://github.com/bellard/mquickjs
+[submodule "lib/NimBLE-Arduino"]
+	path = lib/NimBLE-Arduino
+	url = https://github.com/h2zero/NimBLE-Arduino
+[submodule "lib/RadioLib"]
+	path = lib/RadioLib
+	url = https://github.com/jgromes/RadioLib
 [submodule "lib/STM32FreeRTOS"]
 	path = lib/STM32FreeRTOS
 	url = https://github.com/stm32duino/STM32FreeRTOS

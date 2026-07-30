@@ -2,12 +2,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include <NimBLEDevice.h>
-
-#ifdef ARDUINO_STM32
 #include <FreeRTOS.h>
+#include <NimBLEDevice.h>
 #include <task.h>
-#endif
 
 #include "ble_battery.h"
 #include "ble_robot.h"

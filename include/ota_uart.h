@@ -2,13 +2,10 @@
 #pragma once
 
 #include <Arduino.h>
-#include <WiFiServer.h>
-#include <WiFiClient.h>
-
-#ifdef ARDUINO_STM32
 #include <FreeRTOS.h>
+#include <WiFiClient.h>
+#include <WiFiServer.h>
 #include <task.h>
-#endif
 
 #include "config.h"
 #include "print.h"

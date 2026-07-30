@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 
-#define ESP32_WROOM_32E true
-
 static const uint8_t LED_BUILTIN = SOC_GPIO_PIN_COUNT + 16;
 #define BUILTIN_LED LED_BUILTIN
 #define LED_BUILTIN LED_BUILTIN

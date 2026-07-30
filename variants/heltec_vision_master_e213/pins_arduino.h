@@ -3,11 +3,13 @@
 
 #include <stdint.h>
 
-#define HELTEC_VISION_MASTER_E213 true
 #define Vision_Master_E213 true
 #define DISPLAY_HEIGHT 122
 #define DISPLAY_WIDTH 250
 
+static const uint8_t LED_BUILTIN = 45;
+#define BUILTIN_LED LED_BUILTIN
+#define LED_BUILTIN LED_BUILTIN
 
 static const uint8_t TX = 43;
 static const uint8_t RX = 44;

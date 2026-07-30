@@ -10,11 +10,22 @@
     ],
     "framework_extra_flags": {
       "arduino": [
+        "-DARDUINO_STM32",
         "-DARDUINO_WEACT_MINI_H743VIT6",
         "-DARDUINO_WeActMiniH743VITX",
-        "-DCUSTOM_PERIPHERAL_PINS"
+        "-DCUSTOM_PERIPHERAL_PINS",
+        "-DPIO_FRAMEWORK_ARDUINO_ENABLE_CDC",
+        "-DHAL_PCD_MODULE_ENABLED",
+        "-DUSBD_USE_CDC",
+        "-DUSBCON"
       ]
     },
+    "hwids": [
+      [
+        "0x0483",
+        "0x5740"
+      ]
+    ],
     "core": "stm32",
     "cpu": "cortex-m7",
     "mcu": "stm32h743vit6",

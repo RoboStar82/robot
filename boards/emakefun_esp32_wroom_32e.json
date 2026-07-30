@@ -4,23 +4,26 @@
       "ldscript": "esp32_out.ld",
       "partitions": "min_spiffs.csv"
     },
-    "core": "esp32",
     "extra_flags": [
+      "-DARDUINO_ESP32",
       "-DARDUINO_ESP32_WROOM_32E",
+      "-DARDUINO_EMAKEFUN_ESP32_WROOM_32E",
       "-DARDUINO_RUNNING_CORE=1",
       "-DARDUINO_EVENT_RUNNING_CORE=1"
     ],
-    "f_cpu": "240000000L",
-    "f_flash": "40000000L",
-    "flash_mode": "dio",
     "hwids": [
       [
         "0x1A86",
         "0x7523"
       ]
     ],
+    "core": "esp32",
     "mcu": "esp32",
-    "variant": "esp32-wroom-32e"
+    "flash_mode": "dio",
+    "f_cpu": "240000000L",
+    "f_flash": "40000000L",
+    "variants_dir": "variants",
+    "variant": "emakefun_esp32_wroom_32e"
   },
   "connectivity": [
     "bluetooth",
@@ -33,7 +36,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "ESP32-WROOM-32E",
+  "name": "Emakefun ESP32-WROOM-32E",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,

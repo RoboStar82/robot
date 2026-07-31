@@ -47,7 +47,7 @@ void Script::exec(script_code_t code) {
             value = JS_GetException(ctx);
         }
     }
-    Serial.println("[result] ");
+    print("[result] ");
     js_output(ctx, value);
     js_timers_run(ctx);
     if (write) {

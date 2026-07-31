@@ -86,7 +86,7 @@ JSValue js_performance_memory(JSContext* ctx, JSValue* thisValue, int argc, JSVa
 
 #define JS_TIMERS 16
 
-#define JS_DELAY 20
+#define JS_DELAY 10
 
 typedef struct {
     bool active;

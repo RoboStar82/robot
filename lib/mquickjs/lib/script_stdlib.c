@@ -323,6 +323,7 @@ static const JSClassDef js_console_obj =
 
 static const JSPropDef js_performance[] = {
     JS_CFUNC_DEF("now", 0, js_performance_now),
+    JS_CGETSET_DEF("memory", js_performance_memory, NULL),
     JS_PROP_END,
 };
 static const JSClassDef js_performance_obj =
@@ -419,6 +420,8 @@ static const JSPropDef js_global_object[] = {
     JS_CFUNC_DEF("load", 1, js_load),
     JS_CFUNC_DEF("setTimeout", 2, js_setTimeout),
     JS_CFUNC_DEF("clearTimeout", 1, js_clearTimeout),
+
+    JS_CFUNC_DEF("delay", 1, js_delay),
 
     JS_PROP_CLASS_DEF("ble", &js_ble_class),
     JS_PROP_CLASS_DEF("ota", &js_ota_class),

@@ -7,6 +7,10 @@
 #include "config.h"
 #include "print.h"
 
+#ifdef ROBOT_HAS_OTA_HTTP
+#include "ota_http.h"
+#endif
+
 #ifdef ROBOT_HAS_OTA_UART
 #include "ota_uart.h"
 #endif

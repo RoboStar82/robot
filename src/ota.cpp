@@ -78,6 +78,9 @@ void OTA::beginWiFi() {
 #endif
         print("[Wi-Fi] Enabled: %s\n", WiFi.softAPIP().toString().c_str());
         ArduinoOTA.begin();
+#ifdef ROBOT_HAS_OTA_HTTP
+        otaHttp.begin();
+#endif
 #ifdef ROBOT_HAS_OTA_UART
         otaUart.begin();
 #endif
@@ -91,6 +94,13 @@ void OTA::endWiFi() {
         WiFi.disconnect(true);
     } else if (wifiMode == WIFI_MODE_AP) {
         WiFi.softAPdisconnect(true);
+        ArduinoOTA.end();
+#ifdef ROBOT_HAS_OTA_HTTP
+        otaHttp.end();
+#endif
+#ifdef ROBOT_HAS_OTA_UART
+        otaUart.end();
+#endif
     }
 #ifdef ROBOT_HAS_LED
     led.setWiFi(false);
@@ -117,6 +127,9 @@ void OTA::task() {
                     print("[Wi-Fi] Connected: %s\n", WiFi.localIP().toString().c_str());
                     wifiConnected = true;
                     ArduinoOTA.begin();
+#ifdef ROBOT_HAS_OTA_HTTP
+                    otaHttp.begin();
+#endif
 #ifdef ROBOT_HAS_OTA_UART
                     otaUart.begin();
 #endif
@@ -125,6 +138,9 @@ void OTA::task() {
                         print("[Wi-Fi] Disconnected\n");
                         wifiConnected = false;
                         ArduinoOTA.end();
+#ifdef ROBOT_HAS_OTA_HTTP
+                        otaHttp.end();
+#endif
 #ifdef ROBOT_HAS_OTA_UART
                         otaUart.end();
 #endif

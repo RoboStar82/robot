@@ -26,7 +26,7 @@ class OTAUart {
     static void task(void* arg);
 
    protected:
-    TaskHandle_t startedTask = nullptr;
+    TaskHandle_t taskStarted = nullptr;
 
     WiFiServer server = WiFiServer(ROBOT_OTA_UART_PORT, 1);
     WiFiClient client;

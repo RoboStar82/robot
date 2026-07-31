@@ -31,8 +31,8 @@ class OTA {
     static void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
    protected:
-    TaskHandle_t startedTask = nullptr;
-    QueueHandle_t modeQueue = xQueueCreate(4, sizeof(wifi_mode_t));
+    TaskHandle_t taskStarted = nullptr;
+    QueueHandle_t taskQueue = xQueueCreate(4, sizeof(wifi_mode_t));
 
     wifi_mode_t wifiMode = WIFI_MODE_NULL;
     wl_status_t wifiStatus = WL_NO_SHIELD;
@@ -40,6 +40,9 @@ class OTA {
 
     void beginWiFi();
     void endWiFi();
+
+    void beginOTA();
+    void endOTA();
 };
 
 extern OTA ota;

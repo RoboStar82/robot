@@ -5,6 +5,10 @@
 
 #include "ota_uart.h"
 
+#ifdef ROBOT_HAS_SCRIPT
+#include "script.h"
+#endif
+
 OTAUart otaUart;
 
 OTAUart::OTAUart() {}
@@ -12,14 +16,16 @@ OTAUart::OTAUart() {}
 OTAUart::~OTAUart() {}
 
 void OTAUart::begin() {
-    if (!startedTask) {
-        xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &startedTask);
+    if (!taskStarted) {
+        server.begin();
+        xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &taskStarted);
     }
 }
 
 void OTAUart::end() {
-    if (startedTask) {
-        vTaskDelete(startedTask);
+    if (taskStarted) {
+        vTaskDelete(taskStarted);
+        server.end();
     }
 }
 
@@ -35,22 +41,63 @@ size_t OTAUart::printf(const char* format, ...) {
 }
 
 void OTAUart::task() {
-    server.begin();
     while (true) {
         if (client = server.accept()) {
-            print("[OTA UART] Accept %s\n", client.localIP().toString().c_str());
+            print("[OTA UART] begin %s\n", client.remoteIP().toString().c_str());
+            std::string source;
+            size_t length = 0;
+            unsigned long start = 0;
+            script_write_callback write = [this](const uint8_t* buffer, size_t length) {
+                if (buffer && length) {
+                    this->client.write(buffer, length);
+                }
+            };
             while (client.connected()) {
-                if (client.available()) {
-                    char c = client.read();
-                    Serial.write(c);
+                if (client.available() > 0) {
+                    start = millis();
+                    source.resize(length + client.available());
+                    while (client.available() > 0) {
+                        if (length >= source.length()) {
+                            source.resize(length + client.available());
+                        }
+                        source[length] = client.read();
+                        length++;
+                    }
+                    if (length > 1 && source[length - 1] == '\n') {
+#ifdef ROBOT_HAS_SCRIPT
+                        script.run({
+                            .filename = "<OTA UART>",
+                            .source = source.c_str(),
+                            .length = length,
+                            .write = write,
+                        });
+#endif
+                        length = 0;
+                    } else {
+                        vTaskDelay(1);
+                    }
+                } else if (length) {
+                    if (millis() - start >= 1000) {
+#ifdef ROBOT_HAS_SCRIPT
+                        script.run({
+                            .filename = "<OTA UART>",
+                            .source = source.c_str(),
+                            .length = length,
+                            .write = write,
+                        });
+#endif
+                        length = 0;
+                    } else {
+                        vTaskDelay(10);
+                    }
                 } else {
                     vTaskDelay(100);
                 }
             }
             client.stop();
-            print("[OTA UART] Stop\n");
+            print("[OTA UART] end\n");
         } else {
-            vTaskDelay(100);
+            vTaskDelay(1000);
         }
     }
 }

@@ -3,6 +3,8 @@
 
 #ifdef ROBOT_HAS_SCRIPT
 
+#include <string>
+
 #include "script.h"
 
 Script script;
@@ -12,41 +14,90 @@ Script::Script() {}
 Script::~Script() {}
 
 void Script::begin() {
-    if (!startedTask) {
-        xTaskCreate(task, "script_task", 16384, NULL, 1, &startedTask);
+    if (!taskStarted) {
+        xTaskCreate(task, "script_task", 16384, NULL, 1, &taskStarted);
     }
 }
 
 void Script::end() {
-    if (startedTask) {
-        vTaskDelete(startedTask);
+    if (taskStarted) {
+        vTaskDelete(taskStarted);
         scriptEnd();
     }
 }
 
+void Script::run(script_code_t code) {
+    xQueueSend(taskQueue, &code, 0);
+}
+
+void Script::exec(script_code_t code) {
+    if (code.length > 0 && code.source[code.length - 1] == '\n') {
+        print("[script] %s\n%s<END>\n", code.filename, code.source);
+    } else {
+        print("[script] %s\n%s\n<END>\n", code.filename, code.source);
+    }
+    JSContext* ctx = scriptBegin();
+    write = code.write;
+    JSValue value = JS_Parse(ctx, code.source, code.length, code.filename, JS_EVAL_RETVAL);
+    if (JS_IsException(value)) {
+        value = JS_GetException(ctx);
+    } else {
+        value = JS_Run(ctx, value);
+        if (JS_IsException(value)) {
+            value = JS_GetException(ctx);
+        }
+    }
+    js_output(ctx, value);
+    js_timers_run(ctx);
+    if (write) {
+        write(nullptr, 0);
+        write = nullptr;
+    }
+}
+
 void Script::task() {
+    std::string source;
+    size_t length = 0;
+    unsigned long start = 0;
+    script_code_t code;
     while (true) {
-        if (Serial.available()) {
-            char script[4096];
-            size_t length = Serial.readBytesUntil('\n', script, sizeof(script) - 1);
-            if (length) {
-                script[length] = '\0';
-                JSContext* ctx = scriptBegin();
-                JSValue value = JS_Parse(ctx, script, length, "<input>", JS_EVAL_RETVAL | JS_EVAL_REPL);
-                if (JS_IsException(value)) {
-                    value = JS_GetException(ctx);
-                } else {
-                    value = JS_Run(ctx, value);
-                    if (JS_IsException(value)) {
-                        value = JS_GetException(ctx);
-                    }
+        if (Serial.available() > 0) {
+            start = millis();
+            source.resize(length + Serial.available());
+            while (Serial.available() > 0) {
+                if (length >= source.length()) {
+                    source.resize(length + Serial.available());
                 }
-                js_output(ctx, value);
+                source[length] = Serial.read();
+                length++;
             }
-            vTaskDelay(1000);
+            if (length > 1 && source[length - 1] == '\n') {
+                exec({
+                    .filename = "<Serial>",
+                    .source = source.c_str(),
+                    .length = length,
+                    .write = nullptr,
+                });
+                length = 0;
+            } else {
+                js_timers_run(scriptContext);
+            }
+        } else if (xQueueReceive(taskQueue, &code, length ? JS_DELAY : 1000)) {
+            exec(code);
+        } else if (length) {
+            if (millis() - start >= 1000) {
+                exec({
+                    .filename = "<Serial>",
+                    .source = source.c_str(),
+                    .length = length,
+                    .write = nullptr,
+                });
+                length = 0;
+            } else {
+                js_timers_run(scriptContext);
+            }
         } else if (scriptContext) {
-            js_timer(scriptContext);
-            vTaskDelay(1000);
+            js_timers_run(scriptContext);
         } else {
             vTaskDelay(1000);
         }
@@ -58,22 +109,23 @@ void Script::task(void* arg) {
 }
 
 void js_write(void* opaque, const void* buffer, size_t length) {
-    Serial.write((const char*)buffer, length);
+    if (script.write) {
+        script.write((const uint8_t*)buffer, length);
+    }
+    script.serialWrite((const uint8_t*)buffer, length);
 }
 
 void js_output(JSContext* ctx, JSValue value) {
     JS_PrintValueF(ctx, value, JS_DUMP_LONG);
-    Serial.write('\n');
+    js_write(nullptr, "\n", 1);
 }
 
 int js_interrupt(JSContext* ctx, void* opaque) {
     static unsigned long lastMillis = 0;
     unsigned long currentMillis = millis();
-    if (currentMillis - lastMillis > 100) {
+    if (currentMillis - lastMillis > JS_DELAY) {
         lastMillis = currentMillis;
-        js_timer(ctx);
-        // Watchdog IDLE task
-        vTaskDelay(1);
+        js_timers_run(ctx);
     }
     return 0;
 }
@@ -90,7 +142,7 @@ JSValue js_load(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
 JSValue js_print(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
     for (int i = 0; i < argc; i++) {
         if (i > 0) {
-            Serial.write(' ');
+            js_write(nullptr, " ", 1);
         }
         JSValue value = argv[i];
         if (JS_IsString(ctx, value)) {
@@ -98,17 +150,42 @@ JSValue js_print(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
             const char* s;
             size_t length;
             s = JS_ToCStringLen(ctx, &length, value, &buffer);
-            Serial.write(s, length);
+            js_write(nullptr, s, length);
         } else {
             JS_PrintValueF(ctx, value, JS_DUMP_LONG);
         }
     }
-    Serial.write('\n');
+    js_write(nullptr, "\n", 1);
     return JS_UNDEFINED;
 }
 
-JSValue js_performance_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
-    return JS_NewInt64(ctx, millis());
+JSValue js_delay(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
+    int delay;
+    if (JS_ToInt32(ctx, &delay, argv[0])) {
+        return JS_EXCEPTION;
+    }
+    if (delay <= 1) {
+        js_timers_run(ctx);
+    } else if (delay <= JS_DELAY) {
+        vTaskDelay(delay - 1);
+        js_timers_run(ctx);
+    } else {
+        unsigned long startMillis = millis();
+        vTaskDelay(JS_DELAY);
+        js_timers_run(ctx);
+        while (true) {
+            unsigned long currentMillis = millis();
+            if (currentMillis - startMillis >= delay) {
+                break;
+            } else if (startMillis + delay - currentMillis < JS_DELAY) {
+                vTaskDelay(startMillis + delay - currentMillis);
+            } else {
+                vTaskDelay(JS_DELAY);
+            }
+            js_timers_run(ctx);
+        }
+    }
+    return JS_UNDEFINED;
 }
 
 JSValue js_date_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
@@ -130,7 +207,33 @@ JSValue js_date_constructor(JSContext* ctx, JSValue* thisValue, int argc, JSValu
     return JS_NewDate(ctx, value);
 }
 
-JSTimer js_timer_list[JS_TIMERS];
+JSValue js_performance_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
+    return JS_NewInt64(ctx, millis());
+}
+
+JSValue js_performance_memory(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
+    JSValue obj = JS_NewObject(ctx);
+    if (JS_IsException(obj)) {
+        return obj;
+    }
+    char** ptr = (char**)ctx;
+    JSValue e;
+    e = JS_SetPropertyStr(ctx, obj, "jsHeapSizeLimit", JS_NewInt64(ctx, ptr[2] - ptr[0] - 512));
+    if (JS_IsException(e)) {
+        return e;
+    }
+    e = JS_SetPropertyStr(ctx, obj, "usedJSHeapSize", JS_NewInt64(ctx, ptr[1] - ptr[0]));
+    if (JS_IsException(e)) {
+        return e;
+    }
+    e = JS_SetPropertyStr(ctx, obj, "totalJSHeapSize", JS_NewInt64(ctx, ptr[1] - ptr[0]));
+    if (JS_IsException(e)) {
+        return e;
+    }
+    return obj;
+}
+
+JSTimer js_timers[JS_TIMERS];
 
 JSValue js_setTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
     if (!JS_IsFunction(ctx, argv[0])) {
@@ -141,12 +244,12 @@ JSValue js_setTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* arg
         return JS_EXCEPTION;
     }
     for (int i = 0; i < JS_TIMERS; i++) {
-        JSTimer* timer = &js_timer_list[i];
-        if (!timer->allocated) {
+        JSTimer* timer = &js_timers[i];
+        if (!timer->active) {
             JSValue* ref = JS_AddGCRef(ctx, &timer->callback);
             *ref = argv[0];
             timer->millis = millis() + delay;
-            timer->allocated = true;
+            timer->active = true;
             return JS_NewInt32(ctx, i);
         }
     }
@@ -159,23 +262,24 @@ JSValue js_clearTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* a
         return JS_EXCEPTION;
     }
     if (i >= 0 && i < JS_TIMERS) {
-        JSTimer* timer = &js_timer_list[i];
-        if (timer->allocated) {
+        JSTimer* timer = &js_timers[i];
+        if (timer->active) {
             JS_DeleteGCRef(ctx, &timer->callback);
-            timer->allocated = false;
+            timer->active = false;
         }
     }
     return JS_UNDEFINED;
 }
 
-void js_timer(JSContext* ctx) {
+void js_timers_run(JSContext* ctx) {
+    vTaskDelay(1);
     while (true) {
         bool isTimer = false;
-        int64_t minDelay = 100;
+        int64_t minDelay = JS_DELAY;
         int64_t currentMillis = millis();
         for (int i = 0; i < JS_TIMERS; i++) {
-            JSTimer* timer = &js_timer_list[i];
-            if (timer->allocated) {
+            JSTimer* timer = &js_timers[i];
+            if (timer->active) {
                 int64_t delay = timer->millis - currentMillis;
                 if (delay <= 0) {
                     if (JS_StackCheck(ctx, 2)) {
@@ -186,7 +290,7 @@ void js_timer(JSContext* ctx) {
                     JS_PushArg(ctx, timer->callback.val);
                     JS_PushArg(ctx, JS_NULL);
                     JS_DeleteGCRef(ctx, &timer->callback);
-                    timer->allocated = false;
+                    timer->active = false;
                     JSValue value = JS_Call(ctx, 0);
                     if (JS_IsException(value)) {
                         value = JS_GetException(ctx);

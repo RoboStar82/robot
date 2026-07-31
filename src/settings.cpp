@@ -42,7 +42,7 @@ wifi_mode_t Settings::getWiFiMode() {
 
 bool Settings::setWiFiMode(wifi_mode_t value) {
     wifiMode = value;
-    print("[Settings] wifi.mode=%d\n", value);
+    print("[settings] wifi.mode=%d\n", value);
     putUChar("wifi.mode", value);
     return true;
 }
@@ -55,7 +55,7 @@ String Settings::getWiFiSSID() {
 
 bool Settings::setWiFiSSID(String value) {
     wifiSSID = value;
-    print("[Settings] wifi.ssid=%s\n", value.c_str());
+    print("[settings] wifi.ssid=%s\n", value.c_str());
     putString("wifi.ssid", value);
     return true;
 }
@@ -66,7 +66,7 @@ String Settings::getWiFiPassword() {
 
 bool Settings::setWiFiPassword(String value) {
     wifiPassword = value;
-    print("[Settings] wifi.password=%s\n", value.c_str());
+    print("[settings] wifi.password=%s\n", value.c_str());
     putString("wifi.password", value);
     return true;
 }
@@ -77,7 +77,7 @@ String Settings::getRobotSettings() {
 
 bool Settings::setRobotSettings(String value) {
     robotSettings = value;
-    print("[Settings] robot.settings=%02x\n", value.charAt(0));
+    print("[settings] robot.settings=%02x\n", value.charAt(0));
     putString("robot.settings", value);
     return true;
 }

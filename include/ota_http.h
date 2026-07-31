@@ -24,6 +24,8 @@ class OTAHttp {
     void onOpen(PsychicClient* client);
     void onClose(PsychicClient* client);
 
+    esp_err_t onScriptPost(PsychicRequest* request, PsychicResponse* response);
+
     void onWsOpen(PsychicWebSocketClient* client);
     void onWsClose(PsychicWebSocketClient* client);
     esp_err_t onWsFrame(PsychicWebSocketRequest* request, httpd_ws_frame* frame);

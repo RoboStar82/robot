@@ -21,6 +21,15 @@ extern "C" {
 
 #include "print.h"
 
+typedef std::function<void(const uint8_t* buffer, size_t length)> script_write_callback;
+
+typedef struct {
+    const char* filename;
+    const char* source;
+    size_t length;
+    script_write_callback write;
+} script_code_t;
+
 class Script {
    public:
     Script();
@@ -30,12 +39,23 @@ class Script {
 
     void end();
 
+    void run(script_code_t code);
+
     void task();
 
     static void task(void* arg);
 
+    script_write_callback serialWrite = [](const uint8_t* buffer, size_t length) {
+        Serial.write(buffer, length);
+    };
+
+    script_write_callback write = nullptr;
+
    protected:
-    TaskHandle_t startedTask = nullptr;
+    TaskHandle_t taskStarted = nullptr;
+    QueueHandle_t taskQueue = xQueueCreate(4, sizeof(script_code_t));
+
+    void exec(script_code_t code);
 };
 
 extern Script script;
@@ -58,22 +78,26 @@ int js_interrupt(JSContext* ctx, void* opaque);
 JSValue js_gc(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_load(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_print(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
-JSValue js_performance_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
+JSValue js_delay(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_date_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_date_constructor(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
+JSValue js_performance_now(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
+JSValue js_performance_memory(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 
 #define JS_TIMERS 16
 
+#define JS_DELAY 20
+
 typedef struct {
-    bool allocated;
-    JSGCRef callback;
+    bool active;
     int64_t millis;
+    JSGCRef callback;
 } JSTimer;
 
 JSValue js_setTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_clearTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 
-void js_timer(JSContext* ctx);
+void js_timers_run(JSContext* ctx);
 
 JSValue js_display_length(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);
 JSValue js_display_clear(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);

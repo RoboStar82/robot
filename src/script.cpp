@@ -47,6 +47,7 @@ void Script::exec(script_code_t code) {
             value = JS_GetException(ctx);
         }
     }
+    Serial.println("[result] ");
     js_output(ctx, value);
     js_timers_run(ctx);
     if (write) {
@@ -140,6 +141,7 @@ JSValue js_load(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
 }
 
 JSValue js_print(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
+    print("[console] ");
     for (int i = 0; i < argc; i++) {
         if (i > 0) {
             js_write(nullptr, " ", 1);

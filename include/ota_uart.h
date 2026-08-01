@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
 #include <task.h>

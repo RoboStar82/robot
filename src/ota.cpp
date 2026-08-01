@@ -60,7 +60,7 @@ void OTA::beginWiFi() {
 #endif
 #endif
     if (wifiMode == WIFI_MODE_STA) {
-        print("[Wi-Fi] STA %s\n", ssid.c_str());
+        print("[Wi-Fi] begin STA %s\n", ssid.c_str());
         WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
@@ -69,20 +69,20 @@ void OTA::beginWiFi() {
         led.setWiFi(true);
 #endif
     } else if (wifiMode == WIFI_MODE_AP) {
-        print("[Wi-Fi] AP %s\n", ssid.c_str());
+        print("[Wi-Fi] begin AP %s\n", ssid.c_str());
         WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_20dBm);
 #ifdef ROBOT_HAS_LED
         led.setWiFi(true);
 #endif
-        print("[Wi-Fi] Enabled: %s\n", WiFi.softAPIP().toString().c_str());
+        print("[Wi-Fi] enabled: %s\n", WiFi.softAPIP().toString().c_str());
         beginOTA();
     }
 }
 
 void OTA::endWiFi() {
-    print("[Wi-Fi] Disconnect\n");
+    print("[Wi-Fi] end\n");
     if (wifiMode == WIFI_MODE_STA) {
         WiFi.setAutoReconnect(false);
         WiFi.disconnect(true);
@@ -96,7 +96,15 @@ void OTA::endWiFi() {
 }
 
 void OTA::beginOTA() {
+    IPAddress ip;
     ArduinoOTA.begin();
+    if (wifiMode == WIFI_MODE_STA) {
+        ip = WiFi.localIP();
+    } else if (wifiMode == WIFI_MODE_AP) {
+        ip = WiFi.softAPIP();
+    }
+    print("[OTA] upload_protocol = espota\n");
+    print("[OTA] upload_port = %s\n", ip.toString().c_str());
 #ifdef ROBOT_HAS_OTA_HTTP
     otaHttp.begin();
 #endif
@@ -132,12 +140,12 @@ void OTA::task() {
             if (wifiStatus != WiFi.status()) {
                 wifiStatus = WiFi.status();
                 if (wifiStatus == WL_CONNECTED) {
-                    print("[Wi-Fi] Connected: %s\n", WiFi.localIP().toString().c_str());
+                    print("[Wi-Fi] connected: %s\n", WiFi.localIP().toString().c_str());
                     wifiConnected = true;
                     beginOTA();
                 } else {
                     if (wifiConnected) {
-                        print("[Wi-Fi] Disconnected\n");
+                        print("[Wi-Fi] disconnected\n");
                         wifiConnected = false;
                         endOTA();
                     }

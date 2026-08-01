@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <task.h>
+#include <queue.h>
 
 #ifdef __cplusplus
 extern "C" {

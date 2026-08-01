@@ -19,6 +19,15 @@ void OTAUart::begin() {
     if (!taskStarted) {
         server.begin();
         xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &taskStarted);
+        IPAddress ip;
+        wifi_mode_t wifiMode = WiFi.getMode();
+        if (wifiMode == WIFI_MODE_STA) {
+            ip = WiFi.localIP();
+        } else if (wifiMode == WIFI_MODE_AP) {
+            ip = WiFi.softAPIP();
+        }
+        print("[OTA UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        print("[OTA UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
     }
 }
 

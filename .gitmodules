@@ -28,9 +28,6 @@
 [submodule "lib/NimBLE-Arduino"]
 	path = lib/NimBLE-Arduino
 	url = https://github.com/h2zero/NimBLE-Arduino
-[submodule "lib/PsychicHttp"]
-	path = lib/PsychicHttp
-	url = https://github.com/hoeken/PsychicHttp
 [submodule "lib/RadioLib"]
 	path = lib/RadioLib
 	url = https://github.com/jgromes/RadioLib

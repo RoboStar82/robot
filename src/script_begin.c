@@ -13,7 +13,7 @@ uint8_t* scriptMemory = NULL;
 JSContext* scriptBegin() {
     if (!scriptContext) {
         if (scriptMemory = malloc(16384)) {
-            scriptContext = JS_NewContext(scriptMemory, 16384, &js_stdlib);
+            scriptContext = JS_NewContext(scriptMemory, 65536, &js_stdlib);
             JS_SetInterruptHandler(scriptContext, js_interrupt);
             JS_SetLogFunc(scriptContext, js_write);
         }

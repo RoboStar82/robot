@@ -16,14 +16,17 @@
 [submodule "lib/ArduinoJson"]
 	path = lib/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson
+[submodule "lib/blackmagic/blackmagic"]
+	path = lib/blackmagic/blackmagic
+	url = https://codeberg.org/blackmagic-debug/blackmagic
 [submodule "lib/GxEPD2"]
 	path = lib/GxEPD2
 	url = https://github.com/ZinggJM/GxEPD2
 [submodule "lib/heltec-eink-modules"]
 	path = lib/heltec-eink-modules
 	url = https://github.com/todd-herbert/heltec-eink-modules
-[submodule "lib/mquickjs/src"]
-	path = lib/mquickjs/src
+[submodule "lib/mquickjs/mquickjs"]
+	path = lib/mquickjs/mquickjs
 	url = https://github.com/bellard/mquickjs
 [submodule "lib/NimBLE-Arduino"]
 	path = lib/NimBLE-Arduino

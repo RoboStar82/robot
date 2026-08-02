@@ -1,0 +1,43 @@
+{
+  "name": "Black Magic Debug",
+  "description": "The Black Magic Debug suite is a self-contained debugger for microcontrollers which needs no config files and auto-detects plus configures the connected targets",
+  "keywords": "blackmagic",
+  "authors": [
+    {
+      "name": "Black Magic Debug",
+      "url": "https://black-magic.org/"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://codeberg.org/blackmagic-debug/blackmagic"
+  },
+  "version": "2.1.0-rc1",
+  "framework": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include",
+    "flags": [
+      "-DENABLE_DEBUG=1",
+      "-DCONFIG_BMDA=0",
+      "-DNO_LIBOPENCM3",
+      "-DPLATFORM_PRINTF=platform_printf",
+      "-Isrc",
+      "-Iblackmagic/src/include",
+      "-Iblackmagic/src/target"
+    ],
+    "srcFilter": [
+      "+<*.h>",
+      "+<*.c>",
+      "+<../blackmagic/src/*.h>",
+      "+<../blackmagic/src/*.c>",
+      "-<../blackmagic/src/main.c>",
+      "-<../blackmagic/src/timing.c>",
+      "+<../blackmagic/src/include/*.h>",
+      "+<../blackmagic/src/target/*.h>",
+      "+<../blackmagic/src/target/*.c>",
+      "-<../blackmagic/src/target/swdptap_generic.c>"
+    ]
+  }
+}

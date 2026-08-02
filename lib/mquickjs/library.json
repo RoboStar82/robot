@@ -16,7 +16,7 @@
   "framework": "*",
   "platforms": "*",
   "build": {
-    "srcDir": "src",
+    "srcDir": "mquickjs",
     "includeDir": "include",
     "srcFilter": [
       "-<*>",

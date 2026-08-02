@@ -111,6 +111,9 @@ void OTA::beginOTA() {
 #ifdef ROBOT_HAS_OTA_UART
     otaUart.begin();
 #endif
+#ifdef ROBOT_HAS_OTA_BLACKMAGIC
+    otaBlackMagic.begin();
+#endif
 }
 
 void OTA::endOTA() {
@@ -120,6 +123,9 @@ void OTA::endOTA() {
 #endif
 #ifdef ROBOT_HAS_OTA_UART
     otaUart.end();
+#endif
+#ifdef ROBOT_HAS_OTA_BLACKMAGIC
+    otaBlackMagic.end();
 #endif
 }
 

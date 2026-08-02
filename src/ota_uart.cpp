@@ -56,11 +56,13 @@ void OTAUart::task() {
             std::string source;
             size_t length = 0;
             unsigned long start = 0;
+#ifdef ROBOT_HAS_SCRIPT
             script_write_callback write = [this](const uint8_t* buffer, size_t length) {
                 if (buffer && length) {
                     this->client.write(buffer, length);
                 }
             };
+#endif
             while (client.connected()) {
                 if (client.available() > 0) {
                     start = millis();

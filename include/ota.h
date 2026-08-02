@@ -15,6 +15,10 @@
 #include "ota_uart.h"
 #endif
 
+#ifdef ROBOT_HAS_OTA_BLACKMAGIC
+#include "ota_blackmagic.h"
+#endif
+
 class OTA {
    public:
     OTA();

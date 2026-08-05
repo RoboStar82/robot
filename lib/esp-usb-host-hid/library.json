@@ -1,0 +1,28 @@
+{
+  "name": "USBHostHID",
+  "description": "USB Host HID (Human Interface Device) Driver",
+  "keywords": "usb",
+  "authors": [
+    {
+      "name": "Espressif Systems",
+      "url": "https://github.com/espressif"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/espressif/esp-usb"
+  },
+  "version": "1.2.0",
+  "framework": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": "esp-usb/host/class/hid/usb_host_hid",
+    "includeDir": "esp-usb/host/class/hid/usb_host_hid/include",
+    "flags": [
+    ],
+    "srcFilter": [
+      "-<*>",
+      "+<hid_host.c>"
+    ]
+  }
+}

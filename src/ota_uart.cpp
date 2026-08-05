@@ -31,6 +31,7 @@ void OTAUart::begin(unsigned long baud) {
 void OTAUart::end() {
     if (taskStarted) {
         vTaskDelete(taskStarted);
+        taskStarted = nullptr;
         server.end();
     }
 }

@@ -26,6 +26,7 @@ void Script::begin() {
 void Script::end() {
     if (taskStarted) {
         vTaskDelete(taskStarted);
+        taskStarted = nullptr;
         scriptEnd();
     }
 }

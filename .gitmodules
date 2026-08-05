@@ -19,9 +19,6 @@
 [submodule "lib/blackmagic/blackmagic"]
 	path = lib/blackmagic/blackmagic
 	url = https://codeberg.org/blackmagic-debug/blackmagic
-[submodule "lib/EspUsbHost"]
-	path = lib/EspUsbHost
-	url = https://github.com/tanakamasayuki/EspUsbHost
 [submodule "lib/esp-usb-host-hid/esp-usb"]
 	path = lib/esp-usb-host-hid/esp-usb
 	url = https://github.com/espressif/esp-usb

@@ -82,10 +82,10 @@ void BLERobotWiFiMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo
     std::string value = bleCharacteristic->getValue();
     int8_t wifiMode = value.length() > 0 ? value[0] : 0;
 #ifdef ROBOT_HAS_SETTINGS
-    settings.setWiFiMode((wifi_mode_t)wifiMode);
+    settings.setWiFiMode((WiFiMode_t)wifiMode);
 #endif
 #ifdef ROBOT_HAS_OTA
-    ota.setWiFiMode((wifi_mode_t)wifiMode);
+    ota.setWiFiMode((WiFiMode_t)wifiMode);
 #endif
 }
 

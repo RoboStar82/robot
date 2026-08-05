@@ -3,7 +3,7 @@
 
 #ifdef ROBOT_HAS_OTA_HTTP
 
-#include "ota_http.h"
+#include "ota.h"
 
 #ifdef ROBOT_HAS_SCRIPT
 #include "script.h"
@@ -25,15 +25,9 @@ void OTAHttp::begin() {
         httpd_register_uri_handler(server, &configScript);
         httpd_register_uri_handler(server, &configWebSocket);
         httpd_register_err_handler(server, HTTPD_404_NOT_FOUND, on404);
-        IPAddress ip;
-        wifi_mode_t wifiMode = WiFi.getMode();
-        if (wifiMode == WIFI_MODE_STA) {
-            ip = WiFi.localIP();
-        } else if (wifiMode == WIFI_MODE_AP) {
-            ip = WiFi.softAPIP();
-        }
-        print("[OTA HTTP] curl http://%s\n", ip.toString().c_str());
-        print("[OTA HTTP] wscat -c ws://%s/ws\n", ip.toString().c_str());
+        IPAddress ip = ota.getIP();
+        print("[HTTP] curl http://%s\n", ip.toString().c_str());
+        print("[HTTP] wscat -c ws://%s/ws\n", ip.toString().c_str());
     }
 }
 
@@ -50,23 +44,15 @@ esp_err_t OTAHttp::onOpen(int fd) {
     socklen_t addrSize = sizeof(addr);
     if (getpeername(fd, (struct sockaddr*)&addr, &addrSize) >= 0) {
         inet_ntop(AF_INET, &addr.sin6_addr.un.u32_addr[3], remoteIP, sizeof(remoteIP));
-        print("[HTTP] begin %s\n", remoteIP);
+        print("[HTTP] begin: %s\n", remoteIP);
     } else {
-        print("[HTTP] begin %d\n", fd);
+        print("[HTTP] begin: %d\n", fd);
     }
     return ESP_OK;
 }
 
 void OTAHttp::onClose(int fd) {
-    char remoteIP[INET6_ADDRSTRLEN];
-    struct sockaddr_in6 addr;
-    socklen_t addrSize = sizeof(addr);
-    if (getpeername(fd, (struct sockaddr*)&addr, &addrSize) >= 0) {
-        inet_ntop(AF_INET, &addr.sin6_addr.un.u32_addr[3], remoteIP, sizeof(remoteIP));
-        print("[HTTP] end %s\n", remoteIP);
-    } else {
-        print("[HTTP] end %d\n", fd);
-    }
+    print("[HTTP] end\n");
 }
 
 esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
@@ -99,7 +85,7 @@ esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
     std::string content;
     bool finish = false;
     script.run({
-        .filename = "<OTA HTTP>",
+        .filename = "<HTTP>",
         .source = source,
         .length = length,
         .write = [&](const uint8_t* buffer, size_t length) {
@@ -167,7 +153,7 @@ esp_err_t OTAHttp::onWebSocketGet(httpd_req_t* request) {
     std::string content;
     bool finish = false;
     script.run({
-        .filename = "<OTA HTTP>",
+        .filename = "<HTTP>",
         .source = source,
         .length = length,
         .write = [&](const uint8_t* buffer, size_t length) {

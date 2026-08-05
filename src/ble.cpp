@@ -4,6 +4,7 @@
 #ifdef ROBOT_HAS_BLE
 
 #include "ble.h"
+#include "print.h"
 
 BLE ble;
 
@@ -36,18 +37,18 @@ void BLE::begin() {
 
 void BLE::startAdvertising() {
     if (!ble_gap_adv_active()) {
-        print("[BLE] Advertising start...\n");
+        print("[BLE] advertising start...\n");
         advertising->start(advertisingDuration);
     }
 }
 
 void BLE::stopAdvertising() {
-    print("[BLE] Advertising stop\n");
+    print("[BLE] advertising stop\n");
     advertising->stop();
 }
 
 void BLE::end() {
-    print("[BLE] End\n");
+    print("[BLE] end\n");
     battery.end();
     robot.end();
     uart.end();
@@ -58,18 +59,18 @@ void BLE::end() {
 }
 
 void BLE::onConnect(BLEServer* bleServer, BLEConnInfo& connInfo) {
-    print("[BLE] Connected\n");
+    print("[BLE] connected\n");
     stopAdvertising();
     connected = true;
 }
 
 void BLE::onDisconnect(BLEServer* bleServer, BLEConnInfo& connInfo, int reason) {
-    print("[BLE] Disconnected\n");
+    print("[BLE] disconnected\n");
     connected = false;
 }
 
 void BLE::onAdvertisingComplete(BLEAdvertising* advertising) {
-    print("[BLE] Advertising complete\n");
+    print("[BLE] advertising complete\n");
 }
 
 #endif

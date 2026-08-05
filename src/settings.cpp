@@ -5,6 +5,12 @@
 
 #include "settings.h"
 
+#ifdef ROBOT_HAS_OTA
+#include "ota.h"
+#endif
+
+#include "print.h"
+
 Settings settings;
 
 Settings::Settings() : Preferences() {}
@@ -20,7 +26,7 @@ void Settings::begin() {
 void Settings::read() {
 #ifdef ROBOT_HAS_OTA
     if (isKey("wifi.mode")) {
-        wifiMode = (wifi_mode_t)getUChar("wifi.mode");
+        wifiMode = (WiFiMode_t)getUChar("wifi.mode");
     }
     if (isKey("wifi.ssid")) {
         wifiSSID = getString("wifi.ssid");
@@ -36,11 +42,11 @@ void Settings::read() {
 
 #ifdef ROBOT_HAS_OTA
 
-wifi_mode_t Settings::getWiFiMode() {
+WiFiMode_t Settings::getWiFiMode() {
     return wifiMode;
 }
 
-bool Settings::setWiFiMode(wifi_mode_t value) {
+bool Settings::setWiFiMode(WiFiMode_t value) {
     wifiMode = value;
     print("[settings] wifi.mode=%d\n", value);
     putUChar("wifi.mode", value);

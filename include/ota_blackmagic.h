@@ -16,7 +16,7 @@ extern "C" {
 }
 #endif
 
-#include "print.h"
+#include "config.h"
 
 class OTABlackMagic {
    public:
@@ -42,7 +42,7 @@ class OTABlackMagic {
     TaskHandle_t taskMainStarted = nullptr;
     TaskHandle_t taskServerStarted = nullptr;
     char txBuffer[4096];
-    unsigned int txLength = 0;
+    size_t txLength = 0;
 };
 
 extern OTABlackMagic otaBlackMagic;

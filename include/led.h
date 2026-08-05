@@ -25,7 +25,7 @@ typedef struct {
     struct {
         char button = 0;
     } controller;
-} led_state_t;
+} LedState_t;
 
 typedef struct {
     struct {
@@ -61,7 +61,7 @@ typedef struct {
             unsigned int counter = 0;
         } sleeping;
     } lora;
-} led_timers_t;
+} LedTimers_t;
 
 class Led {
    public:
@@ -86,10 +86,10 @@ class Led {
     void task();
 
    protected:
-    uint8_t rgbPin = 0;
-    uint8_t ledPin = 0;
-    led_timers_t timers;
-    led_state_t state;
+    uint8_t rgbPin = -1;
+    uint8_t ledPin = -1;
+    LedTimers_t timers;
+    LedState_t state;
     bool changed = false;
     int counter = 0;
 

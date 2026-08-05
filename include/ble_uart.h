@@ -6,7 +6,7 @@
 #include "config.h"
 
 // client write server read
-class BLEUartRx : BLECharacteristicCallbacks {
+class BLEUartRx : public BLECharacteristicCallbacks {
    public:
     BLEUartRx();
     ~BLEUartRx();

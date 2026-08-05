@@ -1,11 +1,6 @@
 
 #include <Arduino.h>
 
-#ifdef ARDUINO_STM32
-#include <FreeRTOS.h>
-#include <task.h>
-#endif
-
 #include "config.h"
 #include "print.h"
 #include "version.h"
@@ -16,6 +11,10 @@
 
 #ifdef ROBOT_HAS_OTA
 #include "ota.h"
+#endif
+
+#ifdef ROBOT_HAS_USB
+#include "usb.h"
 #endif
 
 #ifdef ROBOT_HAS_LED
@@ -35,7 +34,7 @@
 #endif
 
 void setup() {
-    Serial.begin(115200);
+    RobotSerial.begin(115200);
     print("[main] %s (%s.local) Firmware: %u (%s)\n", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
 #ifdef ROBOT_HAS_LED
     led.begin();
@@ -52,11 +51,14 @@ void setup() {
 #ifdef ROBOT_HAS_OTA
     ota.begin();
 #endif
+#ifdef ROBOT_HAS_USB
+    usb.begin();
+#endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();
 #endif
 }
 
 void loop() {
-    vTaskDelay(1000);
+    delay(1000);
 }

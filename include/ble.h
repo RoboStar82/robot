@@ -10,9 +10,8 @@
 #include "ble_robot.h"
 #include "ble_uart.h"
 #include "config.h"
-#include "print.h"
 
-class BLE : BLEServerCallbacks {
+class BLE : public BLEServerCallbacks {
    public:
     BLE();
     ~BLE();

@@ -7,7 +7,7 @@
 
 // server write client read
 // client write server read
-class BLERobotSettings : BLECharacteristicCallbacks {
+class BLERobotSettings : public BLECharacteristicCallbacks {
    public:
     BLERobotSettings();
     ~BLERobotSettings();
@@ -28,7 +28,7 @@ class BLERobotSettings : BLECharacteristicCallbacks {
 
 // server write client read
 // client write server read
-class BLERobotWiFiMode : BLECharacteristicCallbacks {
+class BLERobotWiFiMode : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiMode();
     ~BLERobotWiFiMode();
@@ -49,7 +49,7 @@ class BLERobotWiFiMode : BLECharacteristicCallbacks {
 
 // server write client read
 // client write server read
-class BLERobotWiFiSSID : BLECharacteristicCallbacks {
+class BLERobotWiFiSSID : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiSSID();
     ~BLERobotWiFiSSID();
@@ -70,7 +70,7 @@ class BLERobotWiFiSSID : BLECharacteristicCallbacks {
 
 // server write client read
 // client write server read
-class BLERobotWiFiPassword : BLECharacteristicCallbacks {
+class BLERobotWiFiPassword : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiPassword();
     ~BLERobotWiFiPassword();

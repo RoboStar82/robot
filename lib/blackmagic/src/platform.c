@@ -113,6 +113,7 @@ uint8_t platform_spi_xfer(spi_bus_e bus, uint8_t value) {
 
 void platform_init() {
     DEBUG_INFO("[GDB] platform_init()\n");
+#ifdef GPIO_FAST_IMPL
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
@@ -120,6 +121,16 @@ void platform_init() {
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
     gpio_config(&io_conf);
+#else
+    gpio_reset_pin(SWCLK_PIN);
+    gpio_reset_pin(SWDIO_PIN);
+    gpio_intr_disable(SWCLK_PIN);
+    gpio_intr_disable(SWDIO_PIN);
+    gpio_set_direction(SWCLK_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_direction(SWDIO_PIN, GPIO_MODE_OUTPUT);
+    gpio_set_pull_mode(SWCLK_PIN, GPIO_FLOATING);
+    gpio_set_pull_mode(SWDIO_PIN, GPIO_FLOATING);
+#endif
     platform_max_frequency_set(SWD_DEFAULT_FREQUENCY);
 }
 

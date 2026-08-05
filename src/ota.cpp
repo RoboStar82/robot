@@ -13,6 +13,8 @@
 #include "settings.h"
 #endif
 
+#include "print.h"
+
 OTA ota;
 
 OTA::OTA() {}
@@ -36,7 +38,18 @@ void OTA::begin() {
     }
 }
 
-void OTA::setWiFiMode(wifi_mode_t value) {
+IPAddress OTA::getIP() {
+    if (wifiMode == WIFI_MODE_STA) {
+        if (wifiConnected) {
+            return WiFi.localIP();
+        }
+    } else if (wifiMode == WIFI_MODE_AP) {
+        return WiFi.softAPIP();
+    }
+    return IPAddress();
+}
+
+void OTA::setWiFiMode(WiFiMode_t value) {
     xQueueSend(taskQueue, &value, 0);
 }
 
@@ -60,7 +73,7 @@ void OTA::beginWiFi() {
 #endif
 #endif
     if (wifiMode == WIFI_MODE_STA) {
-        print("[Wi-Fi] begin STA %s\n", ssid.c_str());
+        print("[Wi-Fi] begin STA: %s\n", ssid.c_str());
         WiFi.setHostname(NET_HOSTNAME);
         WiFi.setAutoReconnect(true);
         WiFi.begin(ssid, password);
@@ -69,7 +82,7 @@ void OTA::beginWiFi() {
         led.setWiFi(true);
 #endif
     } else if (wifiMode == WIFI_MODE_AP) {
-        print("[Wi-Fi] begin AP %s\n", ssid.c_str());
+        print("[Wi-Fi] begin AP: %s\n", ssid.c_str());
         WiFi.softAPsetHostname(NET_HOSTNAME);
         WiFi.softAP(ssid, password);
         WiFi.setTxPower(WIFI_POWER_20dBm);
@@ -132,7 +145,7 @@ void OTA::endOTA() {
 void OTA::task() {
     WiFi.onEvent(onWiFiEvent);
     while (true) {
-        wifi_mode_t value;
+        WiFiMode_t value;
         if (xQueueReceive(taskQueue, &value, 1000)) {
             if (wifiMode != WIFI_MODE_NULL) {
                 endWiFi();
@@ -160,12 +173,12 @@ void OTA::task() {
             if (wifiConnected) {
                 ArduinoOTA.handle();
             }
-            vTaskDelay(1000);
+            delay(1000);
         } else if (wifiMode == WIFI_MODE_AP) {
             ArduinoOTA.handle();
-            vTaskDelay(1000);
+            delay(1000);
         } else {
-            vTaskDelay(1000);
+            delay(1000);
         }
     }
 }

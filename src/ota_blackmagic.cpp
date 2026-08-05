@@ -3,7 +3,8 @@
 
 #ifdef ROBOT_HAS_OTA_BLACKMAGIC
 
-#include "ota_blackmagic.h"
+#include "ota.h"
+#include "print.h"
 
 OTABlackMagic otaBlackMagic;
 
@@ -18,15 +19,9 @@ void OTABlackMagic::begin() {
     if (!taskServerStarted) {
         xTaskCreate(taskServer, "gdb_server", 4096, NULL, 1, &taskServerStarted);
     }
-    IPAddress ip;
-    wifi_mode_t wifiMode = WiFi.getMode();
-    if (wifiMode == WIFI_MODE_STA) {
-        ip = WiFi.localIP();
-    } else if (wifiMode == WIFI_MODE_AP) {
-        ip = WiFi.softAPIP();
-    }
-    print("[OTA GDB] ~/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb\n");
-    print("[OTA GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_BLACKMAGIC_PORT);
+    IPAddress ip = ota.getIP();
+    print("[GDB] ~/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb\n");
+    print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_BLACKMAGIC_PORT);
 }
 
 void OTABlackMagic::end() {}
@@ -62,16 +57,19 @@ void OTABlackMagic::taskMain() {
 }
 
 void OTABlackMagic::taskServer() {
+    server.setNoDelay(true);
     server.begin();
     while (true) {
-        if (client = server.accept()) {
-            print("[OTA GDB] begin %s\n", client.remoteIP().toString().c_str());
-            while (client.connected()) {
-                vTaskDelay(100);
+        if (server.hasClient()) {
+            client = server.accept();
+            print("[GDB] begin: %s\n", client.remoteIP().toString().c_str());
+            while (client) {
+                delay(100);
             }
+            print("[GDB] end\n");
             client.stop();
         } else {
-            vTaskDelay(100);
+            delay(100);
         }
     }
 }
@@ -90,10 +88,10 @@ int gdb_if_init(void) {
 
 char gdb_if_getchar(void) {
     while (!otaBlackMagic.client.connected()) {
-        vTaskDelay(100);
+        delay(100);
     }
     while (otaBlackMagic.client.available() <= 0) {
-        vTaskDelay(10);
+        delay(10);
         if (!otaBlackMagic.client.connected()) {
             return 0;
         }
@@ -124,14 +122,14 @@ void gdb_if_flush(bool force) {
     return otaBlackMagic.flush(force);
 }
 
-void debug_serial_send_stdout(const uint8_t* data, size_t len) {
-    Serial.write(data, len);
+void debug_serial_send_stdout(const uint8_t* buffer, size_t length) {
+    RobotSerial.write(buffer, length);
 }
 
 void platform_printf(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    Serial.vprintf(format, args);
+    RobotSerial.vprintf(format, args);
     va_end(args);
 }
 

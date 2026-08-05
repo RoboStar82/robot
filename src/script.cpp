@@ -7,6 +7,10 @@
 
 #include "script.h"
 
+#ifdef ROBOT_HAS_DISPLAY
+#include "display.h"
+#endif
+
 Script script;
 
 Script::Script() {}
@@ -26,11 +30,11 @@ void Script::end() {
     }
 }
 
-void Script::run(script_code_t code) {
+void Script::run(ScriptCode_t code) {
     xQueueSend(taskQueue, &code, 0);
 }
 
-void Script::exec(script_code_t code) {
+void Script::exec(ScriptCode_t code) {
     if (code.length > 0 && code.source[code.length - 1] == '\n') {
         print("[script] %s\n%s<END>\n", code.filename, code.source);
     } else {
@@ -60,16 +64,16 @@ void Script::task() {
     std::string source;
     size_t length = 0;
     unsigned long start = 0;
-    script_code_t code;
+    ScriptCode_t code;
     while (true) {
-        if (Serial.available() > 0) {
+        if (RobotSerial.available() > 0) {
             start = millis();
-            source.resize(length + Serial.available());
-            while (Serial.available() > 0) {
+            source.resize(length + RobotSerial.available());
+            while (RobotSerial.available() > 0) {
                 if (length >= source.length()) {
-                    source.resize(length + Serial.available());
+                    source.resize(length + RobotSerial.available());
                 }
-                source[length] = Serial.read();
+                source[length] = RobotSerial.read();
                 length++;
             }
             if (length > 1 && source[length - 1] == '\n') {
@@ -100,7 +104,7 @@ void Script::task() {
         } else if (scriptContext) {
             js_timers_run(scriptContext);
         } else {
-            vTaskDelay(1000);
+            delay(1000);
         }
     }
 }
@@ -122,10 +126,10 @@ void js_output(JSContext* ctx, JSValue value) {
 }
 
 int js_interrupt(JSContext* ctx, void* opaque) {
-    static unsigned long lastMillis = 0;
-    unsigned long currentMillis = millis();
-    if (currentMillis - lastMillis > JS_DELAY) {
-        lastMillis = currentMillis;
+    static unsigned long start = 0;
+    unsigned long now = millis();
+    if (now - start > JS_DELAY) {
+        start = now;
         js_timers_run(ctx);
     }
     return 0;
@@ -162,29 +166,33 @@ JSValue js_print(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
 }
 
 JSValue js_delay(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
-    int delay;
-    if (JS_ToInt32(ctx, &delay, argv[0])) {
+    int wait;
+    if (JS_ToInt32(ctx, &wait, argv[0])) {
         return JS_EXCEPTION;
     }
-    if (delay <= 1) {
+    if (wait <= 1) {
         js_timers_run(ctx);
-    } else if (delay <= JS_DELAY) {
-        vTaskDelay(delay - 1);
+    } else if (wait <= JS_DELAY) {
+        delay(wait - 1);
         js_timers_run(ctx);
     } else {
-        unsigned long startMillis = millis();
-        vTaskDelay(JS_DELAY);
+        unsigned long start = millis();
+        delay(JS_DELAY);
         js_timers_run(ctx);
         while (true) {
-            unsigned long currentMillis = millis();
-            if (currentMillis - startMillis >= delay) {
+            unsigned long now = millis();
+            if (now - start >= wait) {
                 break;
-            } else if (startMillis + delay - currentMillis < JS_DELAY) {
-                vTaskDelay(startMillis + delay - currentMillis);
             } else {
-                vTaskDelay(JS_DELAY);
+                int ms = start + wait - now;
+                if (ms > JS_DELAY) {
+                    delay(JS_DELAY);
+                    js_timers_run(ctx);
+                } else if (ms > 0) {
+                    delay(ms);
+                    break;
+                }
             }
-            js_timers_run(ctx);
         }
     }
     return JS_UNDEFINED;
@@ -220,15 +228,15 @@ JSValue js_performance_memory(JSContext* ctx, JSValue* thisValue, int argc, JSVa
     }
     char** ptr = (char**)ctx;
     JSValue e;
-    e = JS_SetPropertyStr(ctx, obj, "jsHeapSizeLimit", JS_NewInt64(ctx, ptr[2] - ptr[0] - 512));
+    e = JS_SetPropertyStr(ctx, obj, "jsHeapSizeLimit", JS_NewInt32(ctx, ptr[2] - ptr[0] - 512));
     if (JS_IsException(e)) {
         return e;
     }
-    e = JS_SetPropertyStr(ctx, obj, "usedJSHeapSize", JS_NewInt64(ctx, ptr[1] - ptr[0]));
+    e = JS_SetPropertyStr(ctx, obj, "usedJSHeapSize", JS_NewInt32(ctx, ptr[1] - ptr[0]));
     if (JS_IsException(e)) {
         return e;
     }
-    e = JS_SetPropertyStr(ctx, obj, "totalJSHeapSize", JS_NewInt64(ctx, ptr[1] - ptr[0]));
+    e = JS_SetPropertyStr(ctx, obj, "totalJSHeapSize", JS_NewInt32(ctx, ptr[1] - ptr[0]));
     if (JS_IsException(e)) {
         return e;
     }
@@ -241,17 +249,18 @@ JSValue js_setTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* arg
     if (!JS_IsFunction(ctx, argv[0])) {
         return JS_ThrowTypeError(ctx, "not a function");
     }
-    int delay;
-    if (JS_ToInt32(ctx, &delay, argv[1])) {
+    int wait;
+    if (JS_ToInt32(ctx, &wait, argv[1])) {
         return JS_EXCEPTION;
     }
     for (int i = 0; i < JS_TIMERS; i++) {
         JSTimer* timer = &js_timers[i];
-        if (!timer->active) {
+        if (!timer->started) {
             JSValue* ref = JS_AddGCRef(ctx, &timer->callback);
             *ref = argv[0];
-            timer->millis = millis() + delay;
-            timer->active = true;
+            timer->start = millis();
+            timer->wait = wait > 0 ? wait : 0;
+            timer->started = true;
             return JS_NewInt32(ctx, i);
         }
     }
@@ -265,9 +274,9 @@ JSValue js_clearTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* a
     }
     if (i >= 0 && i < JS_TIMERS) {
         JSTimer* timer = &js_timers[i];
-        if (timer->active) {
+        if (timer->started) {
             JS_DeleteGCRef(ctx, &timer->callback);
-            timer->active = false;
+            timer->started = false;
         }
     }
     return JS_UNDEFINED;
@@ -276,14 +285,13 @@ JSValue js_clearTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* a
 void js_timers_run(JSContext* ctx) {
     vTaskDelay(1);
     while (true) {
-        bool isTimer = false;
-        int64_t minDelay = JS_DELAY;
-        int64_t currentMillis = millis();
+        bool started = false;
+        int wait = JS_DELAY;
+        unsigned long now = millis();
         for (int i = 0; i < JS_TIMERS; i++) {
             JSTimer* timer = &js_timers[i];
-            if (timer->active) {
-                int64_t delay = timer->millis - currentMillis;
-                if (delay <= 0) {
+            if (timer->started) {
+                if (now - timer->start >= timer->wait) {
                     if (JS_StackCheck(ctx, 2)) {
                         JSValue value = JS_GetException(ctx);
                         js_output(ctx, value);
@@ -292,22 +300,23 @@ void js_timers_run(JSContext* ctx) {
                     JS_PushArg(ctx, timer->callback.val);
                     JS_PushArg(ctx, JS_NULL);
                     JS_DeleteGCRef(ctx, &timer->callback);
-                    timer->active = false;
+                    timer->started = false;
                     JSValue value = JS_Call(ctx, 0);
                     if (JS_IsException(value)) {
                         value = JS_GetException(ctx);
                         js_output(ctx, value);
                     }
-                } else if (delay < minDelay) {
-                    minDelay = delay;
-                    isTimer = true;
+                } else {
+                    int ms = timer->start + timer->wait - now;
+                    if (0 < ms && ms < wait) {
+                        started = true;
+                        wait = ms;
+                    }
                 }
             }
         }
-        if (isTimer) {
-            if (minDelay > 0) {
-                vTaskDelay(minDelay);
-            }
+        if (started) {
+            delay(wait);
         } else {
             break;
         }

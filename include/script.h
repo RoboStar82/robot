@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
-#include <task.h>
 #include <queue.h>
+#include <task.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,22 +14,20 @@ extern "C" {
 }
 #endif
 
-#ifdef __cplusplus
+#include "config.h"
 
-#ifdef ROBOT_HAS_DISPLAY
-#include "display.h"
-#endif
+#ifdef __cplusplus
 
 #include "print.h"
 
-typedef std::function<void(const uint8_t* buffer, size_t length)> script_write_callback;
+typedef std::function<void(const uint8_t* buffer, size_t length)> ScriptWrite;
 
 typedef struct {
     const char* filename;
     const char* source;
     size_t length;
-    script_write_callback write;
-} script_code_t;
+    ScriptWrite write;
+} ScriptCode_t;
 
 class Script {
    public:
@@ -40,23 +38,23 @@ class Script {
 
     void end();
 
-    void run(script_code_t code);
+    void run(ScriptCode_t code);
 
     void task();
 
     static void task(void* arg);
 
-    script_write_callback serialWrite = [](const uint8_t* buffer, size_t length) {
-        Serial.write(buffer, length);
+    ScriptWrite serialWrite = [](const uint8_t* buffer, size_t length) {
+        RobotSerial.write(buffer, length);
     };
 
-    script_write_callback write = nullptr;
+    ScriptWrite write = nullptr;
 
    protected:
     TaskHandle_t taskStarted = nullptr;
-    QueueHandle_t taskQueue = xQueueCreate(4, sizeof(script_code_t));
+    QueueHandle_t taskQueue = xQueueCreate(4, sizeof(ScriptCode_t));
 
-    void exec(script_code_t code);
+    void exec(ScriptCode_t code);
 };
 
 extern Script script;
@@ -90,9 +88,10 @@ JSValue js_performance_memory(JSContext* ctx, JSValue* thisValue, int argc, JSVa
 #define JS_DELAY 10
 
 typedef struct {
-    bool active;
-    int64_t millis;
+    unsigned long start;
+    unsigned int wait;
     JSGCRef callback;
+    bool started;
 } JSTimer;
 
 JSValue js_setTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv);

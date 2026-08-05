@@ -3,32 +3,29 @@
 
 #ifdef ROBOT_HAS_OTA_UART
 
-#include "ota_uart.h"
-
-#ifdef ROBOT_HAS_SCRIPT
-#include "script.h"
-#endif
+#include "ota.h"
 
 OTAUart otaUart;
 
-OTAUart::OTAUart() {}
-
-OTAUart::~OTAUart() {}
+OTAUart::OTAUart() : Stream() {
+    server.setNoDelay(true);
+}
 
 void OTAUart::begin() {
     if (!taskStarted) {
         server.begin();
         xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &taskStarted);
-        IPAddress ip;
-        wifi_mode_t wifiMode = WiFi.getMode();
-        if (wifiMode == WIFI_MODE_STA) {
-            ip = WiFi.localIP();
-        } else if (wifiMode == WIFI_MODE_AP) {
-            ip = WiFi.softAPIP();
-        }
-        print("[OTA UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
-        print("[OTA UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        IPAddress ip = ota.getIP();
+        printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        printf("[UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
     }
+}
+
+void OTAUart::begin(unsigned long baud) {
+    Serial.begin(baud);
+    stdoutReplaced = _GLOBAL_REENT->_stdout;
+    _GLOBAL_REENT->_stdout = funopen(NULL, NULL, write, NULL, NULL);
+    setvbuf(_GLOBAL_REENT->_stdout, NULL, _IONBF, 0);
 }
 
 void OTAUart::end() {
@@ -38,77 +35,114 @@ void OTAUart::end() {
     }
 }
 
-size_t OTAUart::printf(const char* format, ...) {
-    if (!client) {
-        return 0;
+int OTAUart::available() {
+    return Serial.available() + client.available();
+}
+
+int OTAUart::peek() {
+    if (Serial.available() > 0) {
+        return Serial.peek();
     }
-    va_list args;
-    va_start(args, format);
-    size_t r = client.vprintf(format, args);
-    va_end(args);
+    if (client.available() > 0) {
+        return client.peek();
+    }
+    return Serial.peek();
+}
+
+int OTAUart::read() {
+    if (Serial.available() > 0) {
+        return Serial.read();
+    }
+    if (client.available() > 0) {
+        return client.read();
+    }
+    return Serial.read();
+}
+
+size_t OTAUart::write(uint8_t c) {
+    BaseType_t lock = xSemaphoreTake(writeLock, waitLock);
+    size_t r = Serial.write(c);
+    if (lock != pdTRUE) {
+        return r;
+    }
+    if (txLength < sizeof(txBuffer)) {
+        txBuffer[txLength] = c;
+        txLength++;
+    } else {
+        memmove(txBuffer, txBuffer + 1, sizeof(txBuffer) - 1);
+        txBuffer[txLength - 1] = c;
+    }
+    xSemaphoreGive(writeLock);
+    if (txLength >= sizeof(txBuffer) || c == '\n') {
+        flush();
+    }
     return r;
+}
+
+size_t OTAUart::write(const uint8_t* buffer, size_t length) {
+    if (!length) {
+        return length;
+    }
+    BaseType_t lock = xSemaphoreTake(writeLock, waitLock);
+    size_t r = Serial.write(buffer, length);
+    if (lock != pdTRUE) {
+        return r;
+    }
+    if (length >= sizeof(txBuffer)) {
+        memcpy(txBuffer, buffer + length - sizeof(txBuffer), sizeof(txBuffer));
+        txLength = sizeof(txBuffer);
+    } else if (txLength + length > sizeof(txBuffer)) {
+        memmove(txBuffer, txBuffer + txLength - (sizeof(txBuffer) - length), sizeof(txBuffer) - length);
+        txLength = sizeof(txBuffer);
+    } else {
+        memcpy(txBuffer + txLength, buffer, length);
+        txLength += length;
+    }
+    xSemaphoreGive(writeLock);
+    if (txLength >= sizeof(txBuffer) || buffer[length - 1] == '\n') {
+        flush();
+    }
+    return r;
+}
+
+void OTAUart::flush() {
+    BaseType_t lock = xSemaphoreTake(writeLock, waitLock);
+    Serial.flush();
+    if (lock != pdTRUE) {
+        return;
+    }
+    while (txLength > 0) {
+        if (client) {
+            size_t length = client.write(txBuffer, txLength);
+            if (length > 0) {
+                memmove(txBuffer, txBuffer + length, txLength - length);
+                txLength -= length;
+            } else {
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    xSemaphoreGive(writeLock);
+}
+
+int OTAUart::write(void* cookie, const char* buffer, int length) {
+    return otaUart.write(buffer, length);
 }
 
 void OTAUart::task() {
     while (true) {
-        if (client = server.accept()) {
-            print("[OTA UART] begin %s\n", client.remoteIP().toString().c_str());
-            std::string source;
-            size_t length = 0;
-            unsigned long start = 0;
-#ifdef ROBOT_HAS_SCRIPT
-            script_write_callback write = [this](const uint8_t* buffer, size_t length) {
-                if (buffer && length) {
-                    this->client.write(buffer, length);
-                }
-            };
-#endif
-            while (client.connected()) {
-                if (client.available() > 0) {
-                    start = millis();
-                    source.resize(length + client.available());
-                    while (client.available() > 0) {
-                        if (length >= source.length()) {
-                            source.resize(length + client.available());
-                        }
-                        source[length] = client.read();
-                        length++;
-                    }
-                    if (length > 1 && source[length - 1] == '\n') {
-#ifdef ROBOT_HAS_SCRIPT
-                        script.run({
-                            .filename = "<OTA UART>",
-                            .source = source.c_str(),
-                            .length = length,
-                            .write = write,
-                        });
-#endif
-                        length = 0;
-                    } else {
-                        vTaskDelay(1);
-                    }
-                } else if (length) {
-                    if (millis() - start >= 1000) {
-#ifdef ROBOT_HAS_SCRIPT
-                        script.run({
-                            .filename = "<OTA UART>",
-                            .source = source.c_str(),
-                            .length = length,
-                            .write = write,
-                        });
-#endif
-                        length = 0;
-                    } else {
-                        vTaskDelay(10);
-                    }
-                } else {
-                    vTaskDelay(100);
-                }
+        if (server.hasClient()) {
+            client = server.accept();
+            printf("[UART] begin: %s\n", client.remoteIP().toString().c_str());
+            while (client) {
+                delay(1000);
             }
+            printf("[UART] end\n");
             client.stop();
-            print("[OTA UART] end\n");
         } else {
-            vTaskDelay(1000);
+            delay(1000);
         }
     }
 }

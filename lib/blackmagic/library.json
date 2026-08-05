@@ -1,5 +1,5 @@
 {
-  "name": "Black Magic Debug",
+  "name": "BlackMagicDebug",
   "description": "The Black Magic Debug suite is a self-contained debugger for microcontrollers which needs no config files and auto-detects plus configures the connected targets",
   "keywords": "blackmagic",
   "authors": [
@@ -19,11 +19,10 @@
     "srcDir": "src",
     "includeDir": "include",
     "flags": [
-      "-DENABLE_DEBUG=1",
       "-DCONFIG_BMDA=0",
       "-DNO_LIBOPENCM3",
+      "-DENABLE_DEBUG=1",
       "-DPLATFORM_PRINTF=platform_printf",
-      "-Isrc",
       "-Iblackmagic/src/include",
       "-Iblackmagic/src/target"
     ],

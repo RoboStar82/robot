@@ -27,6 +27,7 @@ void USB::begin() {
 }
 
 void USB::end() {
+    print("[USB] end\n");
     if (taskUsbDevStarted) {
         vTaskDelete(taskUsbDevStarted);
         taskUsbDevStarted = nullptr;
@@ -61,8 +62,8 @@ void USB::taskUsbLib(void* arg) {
     vTaskDelete(NULL);
 }
 
-bool USB::onEnumFilter(const usb_device_desc_t* device, uint8_t* configuration) {
-    print("[USB] enumeration: %04x:%04x\n", device->idVendor, device->idProduct);
+bool USB::onEnumFilter(const usb_device_desc_t* descriptor, uint8_t* configuration) {
+    print("[USB] enumeration: %04x:%04x\n", descriptor->idVendor, descriptor->idProduct);
     return true;
 }
 
@@ -87,10 +88,10 @@ void USB::taskUsbDev(void* arg) {
 void USB::onClientEvent(const usb_host_client_event_msg_t* event, void* arg) {
     switch (event->event) {
         case USB_HOST_CLIENT_EVENT_NEW_DEV:
-            print("[USB] new device\n");
+            print("[USB] device begin %u\n", event->new_dev.address);
             break;
         case USB_HOST_CLIENT_EVENT_DEV_GONE:
-            print("[USB] device gone\n");
+            print("[USB] device end\n");
             break;
     }
 }
@@ -112,12 +113,12 @@ void USB::taskUsbHid(void* arg) {
 void USB::onHidDriverEvent(hid_host_device_handle_t device, hid_host_driver_event_t event, void* arg) {
     switch (event) {
         case HID_HOST_DRIVER_EVENT_CONNECTED:
-            print("[USB] HID connected\n");
-            hid_host_device_config_t device_config = {
+            print("[USB] device HID begin\n");
+            hid_host_device_config_t deviceConfig = {
                 .callback = onHidDeviceEvent,
                 .callback_arg = NULL,
             };
-            hid_host_device_open(device, &device_config);
+            hid_host_device_open(device, &deviceConfig);
             hid_host_device_start(device);
             break;
     }
@@ -126,16 +127,37 @@ void USB::onHidDriverEvent(hid_host_device_handle_t device, hid_host_driver_even
 void USB::onHidDeviceEvent(hid_host_device_handle_t device, hid_host_interface_event_t event, void* arg) {
     switch (event) {
         case HID_HOST_INTERFACE_EVENT_INPUT_REPORT:
-            print("[USB] HID input\n");
+            onHidDeviceInput(device, arg);
             break;
         case HID_HOST_INTERFACE_EVENT_DISCONNECTED:
-            print("[USB] HID disconnected\n");
+            print("[USB] device HID end\n");
             hid_host_device_close(device);
             break;
         case HID_HOST_INTERFACE_EVENT_TRANSFER_ERROR:
-            print("[USB] HID transfer error\n");
+            print("[USB] device HID error\n");
             break;
     }
+}
+
+void USB::onHidDeviceInput(hid_host_device_handle_t device, void* arg) {
+    const usb_device_desc_t* descriptor;
+    if (!getDeviceDescriptor(device, &descriptor)) {
+        print("[USB] input %04x:%04x\n", descriptor->idVendor, descriptor->idProduct);
+        size_t size = 0;
+        uint8_t data[16] = {0};
+        if (!hid_host_device_get_raw_input_report_data(device, data, sizeof(data), &size)) {
+            print("[USB] input %d: 0x", size);
+            for (int i = 0; i < size; i++) {
+                print("%02x", data[i]);
+            }
+            print("\n");
+        }
+    }
+}
+
+esp_err_t USB::getDeviceDescriptor(hid_host_device_handle_t device, const usb_device_desc_t** descriptor) {
+    hid_interface_t* iface = (hid_interface_t*)device;
+    return usb_host_get_device_descriptor(iface->parent->dev_hdl, descriptor);
 }
 
 #endif

@@ -142,15 +142,12 @@ void USB::onHidDeviceEvent(hid_host_device_handle_t device, hid_host_interface_e
 void USB::onHidDeviceInput(hid_host_device_handle_t device, void* arg) {
     const usb_device_desc_t* descriptor;
     if (!getDeviceDescriptor(device, &descriptor)) {
-        print("[USB] input %04x:%04x\n", descriptor->idVendor, descriptor->idProduct);
-        size_t size = 0;
+        size_t length = 0;
         uint8_t data[16] = {0};
-        if (!hid_host_device_get_raw_input_report_data(device, data, sizeof(data), &size)) {
-            print("[USB] input %d: 0x", size);
-            for (int i = 0; i < size; i++) {
-                print("%02x", data[i]);
-            }
-            print("\n");
+        if (!hid_host_device_get_raw_input_report_data(device, data, sizeof(data), &length)) {
+#ifdef ROBOT_HAS_CONTROLLER
+            controller.onRawInput(data, length, descriptor->idVendor, descriptor->idProduct);
+#endif
         }
     }
 }

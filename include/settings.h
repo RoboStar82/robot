@@ -3,9 +3,12 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
-#include <WiFiType.h>
 
 #include "config.h"
+
+#if ROBOT_HAS_OTA
+#include <WiFiType.h>
+#endif
 
 class Settings : public Preferences {
    public:
@@ -20,11 +23,15 @@ class Settings : public Preferences {
 
 #ifdef ROBOT_HAS_OTA
     WiFiMode_t getWiFiMode();
+#else
+    int getWiFiMode();
 #endif
     String getWiFiSSID();
     String getWiFiPassword();
 #ifdef ROBOT_HAS_OTA
     bool setWiFiMode(WiFiMode_t value);
+#else
+    bool setWiFiMode(int value);
 #endif
     bool setWiFiSSID(String value);
     bool setWiFiPassword(String value);
@@ -32,16 +39,23 @@ class Settings : public Preferences {
     String getRobotSettings();
     bool setRobotSettings(String value);
 
+    String getControllerAddress();
+    bool setControllerAddress(String value);
+
    protected:
     bool started = false;
 
 #ifdef ROBOT_HAS_OTA
     WiFiMode_t wifiMode = WIFI_MODE_NULL;
+#else
+    int wifiMode = 0;
 #endif
     String wifiSSID = "";
     String wifiPassword = "";
 
     String robotSettings = "";
+
+    String controllerAddress = "";
 
     using Preferences::begin;
 

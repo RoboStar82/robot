@@ -38,6 +38,9 @@ void Settings::read() {
     if (isKey("robot.settings")) {
         robotSettings = getString("robot.settings");
     }
+    if (isKey("controller.addr")) {
+        controllerAddress = getString("controller.addr");
+    }
 }
 
 #ifdef ROBOT_HAS_OTA
@@ -49,7 +52,20 @@ WiFiMode_t Settings::getWiFiMode() {
 bool Settings::setWiFiMode(WiFiMode_t value) {
     wifiMode = value;
     print("[settings] wifi.mode=%d\n", value);
-    putUChar("wifi.mode", value);
+    putInt("wifi.mode", value);
+    return true;
+}
+
+#else
+
+int Settings::getWiFiMode() {
+    return wifiMode;
+}
+
+bool Settings::setWiFiMode(int value) {
+    wifiMode = value;
+    print("[settings] wifi.mode=%d\n", value);
+    putInt("wifi.mode", value);
     return true;
 }
 
@@ -83,8 +99,23 @@ String Settings::getRobotSettings() {
 
 bool Settings::setRobotSettings(String value) {
     robotSettings = value;
-    print("[settings] robot.settings=%02x\n", value.charAt(0));
+    print("[settings] robot.settings=0x");
+    for (int i = 0; i < value.length(); i ++) {
+        print("%02x", value[i]);
+    }
+    print("\n");
     putString("robot.settings", value);
+    return true;
+}
+
+String Settings::getControllerAddress() {
+    return controllerAddress;
+}
+
+bool Settings::setControllerAddress(String value) {
+    controllerAddress = value;
+    print("[settings] controller.address=%s\n", value.c_str());
+    putString("controller.addr", value);
     return true;
 }
 

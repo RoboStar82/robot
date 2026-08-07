@@ -6,7 +6,7 @@
 
 #include "config.h"
 
-#if ROBOT_HAS_OTA
+#ifdef ROBOT_HAS_OTA
 #include <WiFiType.h>
 #endif
 

@@ -168,7 +168,7 @@ void BLE::onAdvertisingComplete(BLEAdvertising* advertising) {
 
 void BLE::onInputNotify(uint8_t* data, size_t length) {
 #ifdef ROBOT_HAS_CONTROLLER
-    controller.onRawInput(data, length, controllerVendorId, controllerProductId);
+    controller.onInput(data, length, controllerVendorId, controllerProductId);
 #endif
 }
 
@@ -200,8 +200,8 @@ bool BLE::controllerConnect(const BLEAddress address) {
         client->setClientCallbacks(this, false);
         client->setConnectTimeout(9999);
     }
-    client->setConnectionParams(16, 16, 0, 100);
-    if (client->connect(address)) {
+    client->setConnectionParams(16, 32, 0, 100);
+    if (client->connect(address, false)) {
         controllerVendorId = 0x00;
         controllerProductId = 0x00;
         if (BLERemoteService* service = client->getService(infoServiceUuid)) {

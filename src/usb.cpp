@@ -6,6 +6,10 @@
 #include "print.h"
 #include "usb.h"
 
+#ifdef ROBOT_HAS_CONTROLLER
+#include "controller.h"
+#endif
+
 USB usb;
 
 USB::USB() {}
@@ -146,7 +150,7 @@ void USB::onHidDeviceInput(hid_host_device_handle_t device, void* arg) {
         uint8_t data[16] = {0};
         if (!hid_host_device_get_raw_input_report_data(device, data, sizeof(data), &length)) {
 #ifdef ROBOT_HAS_CONTROLLER
-            controller.onRawInput(data, length, descriptor->idVendor, descriptor->idProduct);
+            controller.onInput(data, length, descriptor->idVendor, descriptor->idProduct);
 #endif
         }
     }

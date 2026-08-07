@@ -50,12 +50,6 @@ void OTABlackMagic::flush(bool flush) {
     txLength = 0;
 }
 
-void OTABlackMagic::taskMain() {
-    while (true) {
-        platform_main();
-    }
-}
-
 void OTABlackMagic::taskServer() {
     server.setNoDelay(true);
     server.begin();
@@ -75,7 +69,10 @@ void OTABlackMagic::taskServer() {
 }
 
 void OTABlackMagic::taskMain(void* arg) {
-    otaBlackMagic.taskMain();
+    while (true) {
+        platform_main();
+        vTaskDelay(1);
+    }
 }
 
 void OTABlackMagic::taskServer(void* arg) {

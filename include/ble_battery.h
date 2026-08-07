@@ -21,8 +21,6 @@ class BLEBatteryLevel {
 
     void task();
 
-    static void task(void* arg);
-
    protected:
     BLEUUID characteristicUuid = BLEUUID((uint16_t)0x2a19);
     const char* characteristicDescription = "Battery Level";
@@ -39,6 +37,8 @@ class BLEBatteryLevel {
     uint32_t minVoltage = 0;
     uint32_t maxVoltage = 0;
 #endif
+
+    static inline void task(void* arg);
 };
 
 class BLEBattery {

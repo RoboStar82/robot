@@ -73,7 +73,9 @@ void BLERobotWiFiMode::begin(BLEService* service) {
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
 #ifdef ROBOT_HAS_SETTINGS
+#ifdef ROBOT_HAS_OTA
     characteristic->setValue(settings.getWiFiMode());
+#endif
 #endif
     characteristic->setCallbacks(this);
 }
@@ -82,7 +84,9 @@ void BLERobotWiFiMode::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo
     std::string value = bleCharacteristic->getValue();
     int8_t wifiMode = value.length() > 0 ? value[0] : 0;
 #ifdef ROBOT_HAS_SETTINGS
+#ifdef ROBOT_HAS_OTA
     settings.setWiFiMode((WiFiMode_t)wifiMode);
+#endif
 #endif
 #ifdef ROBOT_HAS_OTA
     ota.setWiFiMode((WiFiMode_t)wifiMode);

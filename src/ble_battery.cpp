@@ -25,6 +25,7 @@ void BLEBatteryLevel::begin(BLEService* service) {
     descriptor->setValue(characteristicDescription);
     BLE2904* ble2904 = characteristic->create2904();
     ble2904->setFormat(characteristicFormat);
+    ble2904->setUnit(0x27ad);
     if (batteryPin) {
         pinMode(batteryPin, INPUT);
         if (!startedTask) {

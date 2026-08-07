@@ -42,8 +42,6 @@ class Script {
 
     void task();
 
-    static void task(void* arg);
-
     ScriptWrite serialWrite = [](const uint8_t* buffer, size_t length) {
         RobotSerial.write(buffer, length);
     };
@@ -55,6 +53,8 @@ class Script {
     QueueHandle_t taskQueue = xQueueCreate(4, sizeof(ScriptCode_t));
 
     void exec(ScriptCode_t code);
+
+    static inline void task(void* arg);
 };
 
 extern Script script;

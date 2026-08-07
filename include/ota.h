@@ -31,8 +31,6 @@ class OTA {
 
     void task();
 
-    static void task(void* arg);
-
     static void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
    protected:
@@ -48,6 +46,8 @@ class OTA {
 
     void beginOTA();
     void endOTA();
+
+    static inline void task(void* arg);
 };
 
 extern OTA ota;

@@ -29,8 +29,6 @@ class OTAUart : public Stream {
 
     void task();
 
-    static void task(void* arg);
-
     static int write(void* cookie, const char* buffer, int length);
 
     using Print::print;
@@ -52,6 +50,8 @@ class OTAUart : public Stream {
 
     char txBuffer[4096];
     size_t txLength = 0;
+
+    static inline void task(void* arg);
 };
 
 extern OTAUart otaUart;

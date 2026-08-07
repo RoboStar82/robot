@@ -42,13 +42,13 @@ class OTAHttp {
         .is_websocket = true,
     };
 
-    static esp_err_t onOpen(httpd_handle_t server, int fd);
-    static void onClose(httpd_handle_t server, int fd);
+    static inline esp_err_t onOpen(httpd_handle_t server, int fd);
+    static inline void onClose(httpd_handle_t server, int fd);
 
-    static esp_err_t onScript(httpd_req_t* request);
-    static esp_err_t onWebSocket(httpd_req_t* request);
+    static inline esp_err_t onScript(httpd_req_t* request);
+    static inline esp_err_t onWebSocket(httpd_req_t* request);
 
-    static esp_err_t on404(httpd_req_t* request, httpd_err_code_t e);
+    static inline esp_err_t on404(httpd_req_t* request, httpd_err_code_t e);
 };
 
 extern OTAHttp otaHttp;

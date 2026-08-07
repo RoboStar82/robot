@@ -29,11 +29,7 @@ class OTABlackMagic {
     void write(char c, bool flush);
     void flush(bool force);
 
-    void taskMain();
     void taskServer();
-
-    static void taskMain(void* arg);
-    static void taskServer(void* arg);
 
     WiFiServer server = WiFiServer(ROBOT_OTA_BLACKMAGIC_PORT, 1);
     WiFiClient client;
@@ -43,6 +39,9 @@ class OTABlackMagic {
     TaskHandle_t taskServerStarted = nullptr;
     char txBuffer[4096];
     size_t txLength = 0;
+
+    static void taskMain(void* arg);
+    static inline void taskServer(void* arg);
 };
 
 extern OTABlackMagic otaBlackMagic;

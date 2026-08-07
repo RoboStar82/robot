@@ -93,7 +93,7 @@ class Led {
     bool changed = false;
     int counter = 0;
 
-    static void task(void* arg);
+    static inline void task(void* arg);
 };
 
 extern Led led;

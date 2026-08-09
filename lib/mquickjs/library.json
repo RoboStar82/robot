@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bellard/mquickjs/"
+    "url": "https://github.com/bellard/mquickjs"
   },
   "version": "2025-12-22",
   "framework": "*",

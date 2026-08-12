@@ -87,10 +87,11 @@ void Script::task() {
             }
             char c = length > 1 ? source[length - 1] : '\0';
             if (c == '\n' || c == '\3' || c == '\4') {
+                source[length] = '\n';
                 exec({
                     .filename = "<Serial>",
                     .source = source.c_str(),
-                    .length = length - 1,
+                    .length = length,
                     .write = nullptr,
                 });
                 length = 0;

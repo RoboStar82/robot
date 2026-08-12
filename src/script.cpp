@@ -85,11 +85,12 @@ void Script::task() {
                 source[length] = RobotSerial.read();
                 length++;
             }
-            if (length > 1 && source[length - 1] == '\n') {
+            char c = length > 1 ? source[length - 1] : '\0';
+            if (c == '\n' || c == '\3' || c == '\4') {
                 exec({
                     .filename = "<Serial>",
                     .source = source.c_str(),
-                    .length = length,
+                    .length = length - 1,
                     .write = nullptr,
                 });
                 length = 0;

@@ -112,7 +112,8 @@ esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
     return httpd_resp_send(request, content.c_str(), content.length());
 #else
 #ifdef ROBOT_HAS_PROXY
-    ProxySerial.write(source, length);
+    source[length] = '\3';
+    ProxySerial.write(source, length + 1);
 #endif
 #endif
     free(source);
@@ -186,7 +187,8 @@ esp_err_t OTAHttp::onWebSocketGet(httpd_req_t* request) {
     return httpd_ws_send_frame(request, &reply);
 #else
 #ifdef ROBOT_HAS_PROXY
-    ProxySerial.write(source, length);
+    source[length] = '\3';
+    ProxySerial.write(source, length + 1);
 #endif
 #endif
     r = httpd_ws_send_frame(request, &reply);

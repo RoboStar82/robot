@@ -6,11 +6,13 @@
 #include <hal/gpio_ll.h>
 #include <hal/gpio_types.h>
 
-#define PLATFORM_IDENT "ESP32"
+#define PLATFORM_IDENT "(ESP32) "
 
 #include "../../../include/config.h"
 
+#ifndef SWCLK_PORT
 #define SWCLK_PORT (0)
+#endif
 
 #ifndef SWCLK_PIN
 #define SWCLK_PIN (ROBOT_OTA_BLACKMAGIC_SWCLK_PIN)
@@ -21,6 +23,19 @@
 
 #if 0 <= SWCLK_PIN && SWCLK_PIN < 32 && 0 <= SWDIO_PIN && SWDIO_PIN < 32 && SWCLK_PIN != GPIO_NUM_MAX && SWDIO_PIN != GPIO_NUM_MAX
 #define GPIO_FAST_IMPL
+#endif
+
+#ifndef TCK_PORT
+#define TCK_PORT (0)
+#endif
+#ifndef TDI_PORT
+#define TDI_PORT (0)
+#endif
+#ifndef TDO_PORT
+#define TDO_PORT (0)
+#endif
+#ifndef TMS_PORT
+#define TMS_PORT (0)
 #endif
 
 #ifndef TMS_PIN

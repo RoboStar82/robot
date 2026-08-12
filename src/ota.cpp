@@ -1,4 +1,9 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <queue.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_OTA
@@ -13,6 +18,7 @@
 #include "settings.h"
 #endif
 
+#include "delay.h"
 #include "print.h"
 
 OTA ota;
@@ -50,7 +56,7 @@ IPAddress OTA::getIP() {
 }
 
 void OTA::setWiFiMode(WiFiMode_t value) {
-    xQueueSend(taskQueue, &value, 0);
+    xQueueSendMS(taskQueue, &value, 0);
 }
 
 void OTA::beginWiFi() {
@@ -146,7 +152,7 @@ void OTA::task() {
     WiFi.onEvent(onWiFiEvent);
     while (true) {
         WiFiMode_t value;
-        if (xQueueReceive(taskQueue, &value, 1000)) {
+        if (xQueueReceiveMS(taskQueue, &value, 1000)) {
             if (wifiMode != WIFI_MODE_NULL) {
                 endWiFi();
             }
@@ -173,12 +179,12 @@ void OTA::task() {
             if (wifiConnected) {
                 ArduinoOTA.handle();
             }
-            delay(1000);
+            vTaskDelayMS(1000);
         } else if (wifiMode == WIFI_MODE_AP) {
             ArduinoOTA.handle();
-            delay(1000);
+            vTaskDelayMS(1000);
         } else {
-            delay(1000);
+            vTaskDelayMS(1000);
         }
     }
 }

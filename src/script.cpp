@@ -1,15 +1,23 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <queue.h>
+#include <task.h>
+
+#include <string>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_SCRIPT
-
-#include <string>
 
 #include "script.h"
 
 #ifdef ROBOT_HAS_DISPLAY
 #include "display.h"
 #endif
+
+#include "delay.h"
+#include "print.h"
 
 Script script;
 
@@ -32,7 +40,7 @@ void Script::end() {
 }
 
 void Script::run(ScriptCode_t code) {
-    xQueueSend(taskQueue, &code, 0);
+    xQueueSendMS(taskQueue, &code, 0);
 }
 
 void Script::exec(ScriptCode_t code) {
@@ -88,7 +96,7 @@ void Script::task() {
             } else {
                 js_timers_run(scriptContext);
             }
-        } else if (xQueueReceive(taskQueue, &code, length ? JS_DELAY : 1000)) {
+        } else if (xQueueReceiveMS(taskQueue, &code, length ? JS_DELAY : 1000)) {
             exec(code);
         } else if (length) {
             if (millis() - start >= 1000) {
@@ -105,7 +113,7 @@ void Script::task() {
         } else if (scriptContext) {
             js_timers_run(scriptContext);
         } else {
-            delay(1000);
+            vTaskDelayMS(1000);
         }
     }
 }
@@ -174,11 +182,11 @@ JSValue js_delay(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
     if (wait <= 1) {
         js_timers_run(ctx);
     } else if (wait <= JS_DELAY) {
-        delay(wait - 1);
+        vTaskDelayMS(wait - 1);
         js_timers_run(ctx);
     } else {
         unsigned long start = millis();
-        delay(JS_DELAY);
+        vTaskDelayMS(JS_DELAY);
         js_timers_run(ctx);
         while (true) {
             unsigned long now = millis();
@@ -187,10 +195,10 @@ JSValue js_delay(JSContext* ctx, JSValue* thisValue, int argc, JSValue* argv) {
             } else {
                 int ms = start + wait - now;
                 if (ms > JS_DELAY) {
-                    delay(JS_DELAY);
+                    vTaskDelayMS(JS_DELAY);
                     js_timers_run(ctx);
                 } else if (ms > 0) {
-                    delay(ms);
+                    vTaskDelayMS(ms);
                     break;
                 }
             }
@@ -284,7 +292,7 @@ JSValue js_clearTimeout(JSContext* ctx, JSValue* thisValue, int argc, JSValue* a
 }
 
 void js_timers_run(JSContext* ctx) {
-    vTaskDelay(1);
+    vTaskDelayMS(1);
     while (true) {
         bool started = false;
         int wait = JS_DELAY;
@@ -317,7 +325,7 @@ void js_timers_run(JSContext* ctx) {
             }
         }
         if (started) {
-            delay(wait);
+            vTaskDelayMS(wait);
         } else {
             break;
         }

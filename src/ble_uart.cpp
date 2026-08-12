@@ -1,4 +1,6 @@
 
+#include <Arduino.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_BLE

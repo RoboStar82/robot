@@ -36,7 +36,9 @@
       "+<../blackmagic/src/include/*.h>",
       "+<../blackmagic/src/target/*.h>",
       "+<../blackmagic/src/target/*.c>",
-      "-<../blackmagic/src/target/swdptap_generic.c>"
+      "-<../blackmagic/src/target/swdptap_generic.c>",
+      "-<../blackmagic/src/platforms/common/jtagtap.c>",
+      "+<../blackmagic/src/platforms/common/swdptap.c>"
     ]
   }
 }

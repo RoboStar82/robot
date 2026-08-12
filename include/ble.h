@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <NimBLEDevice.h>
+#include <queue.h>
 #include <task.h>
 
 #include "ble_battery.h"

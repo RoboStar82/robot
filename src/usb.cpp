@@ -1,14 +1,20 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_USB
 
-#include "print.h"
 #include "usb.h"
 
 #ifdef ROBOT_HAS_CONTROLLER
 #include "controller.h"
 #endif
+
+#include "delay.h"
+#include "print.h"
 
 USB usb;
 
@@ -20,7 +26,7 @@ void USB::begin() {
     print("[USB] begin\n");
     if (!taskUsbLibStarted) {
         xTaskCreate(taskUsbLib, "usb_lib_task", 4096, xTaskGetCurrentTaskHandle(), 1, &taskUsbLibStarted);
-        ulTaskNotifyTake(false, 1000);
+        ulTaskNotifyTakeMS(false, 1000);
     }
     if (!taskUsbDevStarted) {
         xTaskCreate(taskUsbDev, "usb_dev_task", 4096, NULL, 1, &taskUsbDevStarted);
@@ -60,7 +66,7 @@ void USB::taskUsbLib(void* arg) {
         if (eventFlags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
             usb_host_device_free_all();
         }
-        vTaskDelay(1);
+        vTaskDelayMS(1);
     }
     usb_host_uninstall();
     vTaskDelete(NULL);
@@ -84,7 +90,7 @@ void USB::taskUsbDev(void* arg) {
     usb_host_client_register(&clientConfig, &client);
     while (true) {
         usb_host_client_handle_events(client, 100);
-        vTaskDelay(1);
+        vTaskDelayMS(1);
     }
     usb_host_client_deregister(client);
 }
@@ -109,7 +115,7 @@ void USB::taskUsbHid(void* arg) {
     hid_host_install(&driver_config);
     while (true) {
         hid_host_handle_events(100);
-        vTaskDelay(1);
+        vTaskDelayMS(1);
     }
     hid_host_uninstall();
 }

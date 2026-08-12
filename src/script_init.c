@@ -1,10 +1,15 @@
 
+#include <Arduino.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_SCRIPT
 
 #include "script.h"
-#include "script_begin.h"
+
+#if true
+#include "../lib/mquickjs/include/script_stdlib.h"
+#endif
 
 JSContext* scriptContext = NULL;
 

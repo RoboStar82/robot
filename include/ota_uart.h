@@ -14,10 +14,10 @@
 class OTAUart : public Stream {
    public:
     OTAUart();
+    ~OTAUart();
 
     void begin();
     void begin(unsigned long baud);
-
     void end();
 
     int available() override;

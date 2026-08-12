@@ -1,4 +1,6 @@
 
+#include <Arduino.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_SETTINGS
@@ -26,7 +28,7 @@ void Settings::begin() {
 void Settings::read() {
 #ifdef ROBOT_HAS_OTA
     if (isKey("wifi.mode")) {
-        wifiMode = (WiFiMode_t)getUChar("wifi.mode");
+        wifiMode = (WiFiMode_t)getInt("wifi.mode");
     }
     if (isKey("wifi.ssid")) {
         wifiSSID = getString("wifi.ssid");
@@ -100,7 +102,7 @@ String Settings::getRobotSettings() {
 bool Settings::setRobotSettings(String value) {
     robotSettings = value;
     print("[settings] robot.settings=0x");
-    for (int i = 0; i < value.length(); i ++) {
+    for (int i = 0; i < value.length(); i++) {
         print("%02x", value[i]);
     }
     print("\n");

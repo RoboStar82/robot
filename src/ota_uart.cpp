@@ -1,9 +1,15 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_OTA_UART
 
+#include "delay.h"
 #include "ota.h"
+#include "print.h"
 
 OTAUart otaUart;
 
@@ -11,12 +17,16 @@ OTAUart::OTAUart() : Stream() {
     server.setNoDelay(true);
 }
 
+OTAUart::~OTAUart() {}
+
 void OTAUart::begin() {
     if (!taskStarted) {
         server.begin();
         xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &taskStarted);
         IPAddress ip = ota.getIP();
+        printf("[UART] monitor_port = socket://%s:%d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
         printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        printf("[UART] nc %s %d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
         printf("[UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
     }
 }
@@ -138,12 +148,12 @@ void OTAUart::task() {
             client = server.accept();
             printf("[UART] begin: %s\n", client.remoteIP().toString().c_str());
             while (client) {
-                delay(1000);
+                vTaskDelayMS(1000);
             }
             printf("[UART] end\n");
             client.stop();
         } else {
-            delay(1000);
+            vTaskDelayMS(1000);
         }
     }
 }

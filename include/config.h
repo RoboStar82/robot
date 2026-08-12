@@ -1,8 +1,8 @@
 
 #pragma once
 
-#ifdef ARDUINO_DIYMORE_ESP32_S3_N16R8
-#include "config/diymore_esp32s3n16r8.h"
+#ifdef ARDUINO_GENERIC_ESP32_S3_N16R8
+#include "config/generic_esp32s3n16r8.h"
 #endif
 
 #ifdef ARDUINO_EMAKEFUN_ESP32_WROOM_32E

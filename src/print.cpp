@@ -1,5 +1,9 @@
 
+#include <Arduino.h>
+
+#if true
 #include "print.h"
+#endif
 
 void print(const char* format, ...) {
     va_list args;

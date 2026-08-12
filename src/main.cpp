@@ -1,7 +1,10 @@
 
 #include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 #include "config.h"
+#include "delay.h"
 #include "print.h"
 #include "version.h"
 
@@ -25,12 +28,20 @@
 #include "display.h"
 #endif
 
+#ifdef ROBOT_HAS_PROXY
+#include "proxy.h"
+#endif
+
 #ifdef ROBOT_HAS_SETTINGS
 #include "settings.h"
 #endif
 
 #ifdef ROBOT_HAS_SCRIPT
 #include "script.h"
+#endif
+
+#ifdef ROBOT_HAS_TFLM
+#include "tflm.h"
 #endif
 
 void setup() {
@@ -54,11 +65,22 @@ void setup() {
 #ifdef ROBOT_HAS_USB
     usb.begin();
 #endif
+#ifdef ROBOT_HAS_PROXY
+    proxy.begin();
+#endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();
+#endif
+#ifdef ROBOT_HAS_TFLM
+    tflm.begin();
+#endif
+#ifdef ARDUINO_STM32
+    vTaskStartScheduler();
 #endif
 }
 
 void loop() {
-    delay(1000);
+#ifdef ARDUINO_ESP32
+    vTaskDelayMS(1000);
+#endif
 }

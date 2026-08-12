@@ -1,4 +1,6 @@
 
+#include <Arduino.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_DISPLAY
@@ -35,6 +37,8 @@ GxEPD2_3C<GxEPD2_213_Z98c, GxEPD2_213_Z98c::HEIGHT> displayGDEY0213Z98(GxEPD2_21
 E0213A367 displayE0213A367;
 #endif
 
+#include "delay.h"
+
 Display::Display() {}
 
 Display::~Display() {}
@@ -46,7 +50,7 @@ void Display::begin() {
     displayST7735.setRotation(1);
     displayST7735.fillScreen(ST77XX_BLACK);
     drawLogo();
-    delay(100);
+    vTaskDelayMS(100);
     pinMode(DISPLAY_ST7735_LED_PIN, OUTPUT);
     digitalWrite(DISPLAY_ST7735_LED_PIN, LOW);
 #endif
@@ -55,7 +59,7 @@ void Display::begin() {
     displayGDEY0213Z98.epd2.selectSPI(spiGDEY0213Z98, spiSettingsGDEY0213Z98);
     displayGDEY0213Z98.init();
     displayGDEY0213Z98.clearScreen();
-    delay(1000);
+    vTaskDelayMS(1000);
     displayGDEY0213Z98.hibernate();
 #endif
 #ifdef ROBOT_HAS_DISPLAY_E0213A367

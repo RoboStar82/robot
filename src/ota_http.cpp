@@ -1,4 +1,8 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_OTA_HTTP
@@ -8,6 +12,9 @@
 #ifdef ROBOT_HAS_SCRIPT
 #include "script.h"
 #endif
+
+#include "delay.h"
+#include "print.h"
 
 OTAHttp otaHttp;
 
@@ -26,7 +33,9 @@ void OTAHttp::begin() {
         httpd_register_uri_handler(server, &configWebSocket);
         httpd_register_err_handler(server, HTTPD_404_NOT_FOUND, on404);
         IPAddress ip = ota.getIP();
+        print("[HTTP] curl http://%s\n", NET_HOSTNAME);
         print("[HTTP] curl http://%s\n", ip.toString().c_str());
+        print("[HTTP] wscat -c ws://%s/ws\n", NET_HOSTNAME);
         print("[HTTP] wscat -c ws://%s/ws\n", ip.toString().c_str());
     }
 }
@@ -97,10 +106,14 @@ esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
         },
     });
     while (!finish) {
-        vTaskDelay(1);
+        vTaskDelayMS(1);
     }
     free(source);
     return httpd_resp_send(request, content.c_str(), content.length());
+#else
+#ifdef ROBOT_HAS_PROXY
+    ProxySerial.write(source, length);
+#endif
 #endif
     free(source);
     return httpd_resp_send(request, nullptr, 0);
@@ -165,12 +178,16 @@ esp_err_t OTAHttp::onWebSocketGet(httpd_req_t* request) {
         },
     });
     while (!finish) {
-        vTaskDelay(1);
+        vTaskDelayMS(1);
     }
     free(source);
     reply.payload = (uint8_t*)content.c_str();
     reply.len = content.length();
     return httpd_ws_send_frame(request, &reply);
+#else
+#ifdef ROBOT_HAS_PROXY
+    ProxySerial.write(source, length);
+#endif
 #endif
     r = httpd_ws_send_frame(request, &reply);
     free(source);

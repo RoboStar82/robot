@@ -1,9 +1,14 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_LED
 
 #include "led.h"
+#include "delay.h"
 
 Led led;
 
@@ -199,7 +204,7 @@ void Led::task() {
             onChange();
         }
         counter++;
-        delay(10);
+        vTaskDelayMS(10);
     }
 }
 

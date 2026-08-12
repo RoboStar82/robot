@@ -9,12 +9,12 @@ else
 	RM = rm -f
 endif
 
-all: ../include/mquickjs_atom.h ../../../include/script_begin.h
+all: ../include/mquickjs_atom.h ../include/script_stdlib.h
 
 ../include/mquickjs_atom.h: script_stdlib$(EXE)
 	./script_stdlib$(EXE) -a -m32 > $@
 
-../../../include/script_begin.h: script_stdlib$(EXE)
+../include/script_stdlib.h: script_stdlib$(EXE)
 	./script_stdlib$(EXE) -m32 > $@
 
 script_stdlib$(EXE): script_stdlib.o mquickjs_build.o

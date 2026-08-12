@@ -7,7 +7,6 @@
 #include <lwip/sockets.h>
 
 #include "config.h"
-#include "print.h"
 
 class OTAHttp {
    public:

@@ -16,7 +16,7 @@
 #include <timing.h>
 
 const char* platform_target_voltage(void) {
-    return NULL;
+    return "3.3v";
 }
 
 int platform_hwversion(void) {
@@ -43,16 +43,16 @@ void platform_request_boot(void) {
     return;
 }
 
-uint32_t swd_delay_count = 0;
+uint32_t target_clk_divider = 0;
 
 void platform_max_frequency_set(uint32_t frequency) {
     if (frequency < 50000) return;
     int32_t count = (esp_clk_cpu_freq() - SWD_TOTAL_CYCLES * (int32_t)frequency) / (SWD_CYCLES_PER_CLOCK * (int32_t)frequency);
-    swd_delay_count = count > 0 ? count : 0;
+    target_clk_divider = count > 0 ? count : 0;
 }
 
 uint32_t platform_max_frequency_get(void) {
-    return esp_clk_cpu_freq() / (swd_delay_count * SWD_CYCLES_PER_CLOCK + SWD_TOTAL_CYCLES);
+    return esp_clk_cpu_freq() / (target_clk_divider * SWD_CYCLES_PER_CLOCK + SWD_TOTAL_CYCLES);
 }
 
 void platform_target_clk_output_enable(bool enable) {
@@ -83,12 +83,6 @@ jtag_proc_s jtag_proc;
 
 void jtagtap_init(void) {
     DEBUG_INFO("[GDB] jtagtap_init()\n");
-}
-
-swd_proc_s swd_proc;
-
-void swdptap_init(void) {
-    DEBUG_INFO("[GDB] swdptap_init()\n");
 }
 
 bool platform_spi_init(spi_bus_e bus) {
@@ -152,7 +146,25 @@ void platform_loop() {
     if (packet->data[0] != '\x04' || cur_target) {
         SET_IDLE_STATE(false);
     }
-    DEBUG_INFO("[GDB] gdb_main(%s)\n", packet->data);
+    if (!packet->size) {
+        DEBUG_INFO("[GDB] gdb_main()\n");
+    } else {
+        bool isPrint = true;
+        for (size_t i = 0; i < packet->size; i++) {
+            char c = packet->data[i];
+            if (!(0x20 <= c && c < 0x7f)) {
+                isPrint = false;
+                break;
+            }
+        }
+        if (isPrint) {
+            DEBUG_INFO("[GDB] gdb_main(%s)\n", packet->data);
+        } else if (packet->size > 1) {
+            DEBUG_INFO("[GDB] gdb_main(%d 0x%02x...)\n", packet->size, packet->data[0]);
+        } else {
+            DEBUG_INFO("[GDB] gdb_main(0x%02x...)\n", packet->data[0]);
+        }
+    }
     gdb_main(packet);
 }
 

@@ -1,10 +1,14 @@
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <queue.h>
+#include <task.h>
+
 #include "config.h"
 
 #ifdef ROBOT_HAS_BLE
 
 #include "ble.h"
-#include "print.h"
 
 #ifdef ROBOT_HAS_CONTROLLER
 #include "controller.h"
@@ -13,6 +17,9 @@
 #ifdef ROBOT_HAS_SETTINGS
 #include "settings.h"
 #endif
+
+#include "delay.h"
+#include "print.h"
 
 BLE ble;
 
@@ -152,7 +159,7 @@ void BLE::onDiscovered(const BLEAdvertisedDevice* advertised) {
     if (name.length() > 0) {
         print("[BLE] discovered %s\n", advertised->getName().c_str());
         if (advertised->isConnectable() && advertised->isAdvertisingService(hidServiceUuid)) {
-            xQueueSend(advertisedQueue, &advertised, 0);
+            xQueueSendMS(advertisedQueue, &advertised, 0);
             scanPause();
         }
     }
@@ -254,13 +261,13 @@ void BLE::taskController() {
         if (!hasController) {
             if (controllerAddress.length()) {
                 controllerConnect(BLEAddress(std::string(controllerAddress.c_str()), BLE_ADDR_PUBLIC));
-            } else if (xQueueReceive(advertisedQueue, &advertised, 1000)) {
+            } else if (xQueueReceiveMS(advertisedQueue, &advertised, 1000)) {
                 controllerConnect(advertised);
             } else {
                 scanStart();
             }
         } else {
-            delay(1000);
+            vTaskDelayMS(1000);
         }
     }
 }

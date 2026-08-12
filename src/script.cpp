@@ -87,7 +87,7 @@ void Script::task() {
             }
             char c = length > 1 ? source[length - 1] : '\0';
             if (c == '\n' || c == '\3' || c == '\4') {
-                source[length] = '\n';
+                source[length - 1] = '\n';
                 exec({
                     .filename = "<Serial>",
                     .source = source.c_str(),

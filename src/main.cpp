@@ -40,6 +40,10 @@
 #include "script.h"
 #endif
 
+#ifdef ROBOT_HAS_CAMERA
+#include "camera.h"
+#endif
+
 #ifdef ROBOT_HAS_TFLM
 #include "tflm.h"
 #endif
@@ -70,6 +74,9 @@ void setup() {
 #endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();
+#endif
+#ifdef ROBOT_HAS_CAMERA
+    camera.begin();
 #endif
 #ifdef ROBOT_HAS_TFLM
     tflm.begin();

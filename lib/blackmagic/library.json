@@ -1,5 +1,5 @@
 {
-  "name": "BlackMagicDebug",
+  "name": "BlackMagic Debug",
   "description": "The Black Magic Debug suite is a self-contained debugger for microcontrollers which needs no config files and auto-detects plus configures the connected targets",
   "keywords": "blackmagic",
   "authors": [

@@ -1,5 +1,9 @@
 
 #include <Arduino.h>
+#include <FreeRTOS.h>
+#include <HardwareTimer.h>
+#include <Wire.h>
+#include <task.h>
 
 #include "config.h"
 
@@ -10,6 +14,113 @@
 #include "print.h"
 
 Camera camera;
+
+#ifdef ROBOT_HAS_CAMERA_OV2640
+
+#include "driver_ov2640_interface.h"
+
+TwoWire cameraOV2640Wire;
+HardwareTimer cameraOV2640Timer;
+DMA_HandleTypeDef cameraOV2640DMA;
+DCMI_HandleTypeDef cameraOV2640DCMI;
+
+// __attribute__((section(".rama_d1")))
+uint16_t cameraOV2640FrameBuffer[160][120] = {0};
+
+bool cameraOV2640HasFrame = false;
+
+void cameraOV2640FrameEvent(DCMI_HandleTypeDef* hDCMI) {
+    cameraOV2640HasFrame = true;
+}
+
+void cameraOV2640DMAInit() {
+    memset(cameraOV2640FrameBuffer, sizeof(uint16_t), 160 * 120);
+
+    __HAL_RCC_DMA1_CLK_ENABLE();
+
+    HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+}
+
+void cameraOV2640MSPInit(DCMI_HandleTypeDef* hDCMI) {
+    __HAL_RCC_DCMI_CLK_ENABLE();
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+
+    pin_function(digitalPinToPinName(CAMERA_OV2640_VSYNC_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_HSYNC_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_PCLK_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D0_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D1_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D2_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D3_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D4_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D5_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D6_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+    pin_function(digitalPinToPinName(CAMERA_OV2640_D7_PIN), STM_PIN_DATA(STM_MODE_AF_PP, GPIO_NOPULL, GPIO_AF13_DCMI));
+
+    cameraOV2640DMA.Instance = DMA1_Stream0;
+    cameraOV2640DMA.Init.Request = DMA_REQUEST_DCMI;
+    cameraOV2640DMA.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    cameraOV2640DMA.Init.PeriphInc = DMA_PINC_DISABLE;
+    cameraOV2640DMA.Init.MemInc = DMA_MINC_ENABLE;
+    cameraOV2640DMA.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+    cameraOV2640DMA.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    cameraOV2640DMA.Init.Mode = DMA_CIRCULAR;
+    cameraOV2640DMA.Init.Priority = DMA_PRIORITY_LOW;
+    cameraOV2640DMA.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+    uint8_t r = HAL_DMA_Init(&cameraOV2640DMA);
+
+    __HAL_LINKDMA(&cameraOV2640DCMI, DMA_Handle, cameraOV2640DMA);
+
+    HAL_NVIC_SetPriority(DCMI_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(DCMI_IRQn);
+
+    print("[camera] MSP init: %d\n", r);
+}
+
+void cameraOV2640DCMIInit() {
+    cameraOV2640DCMI.Instance = DCMI;
+    cameraOV2640DCMI.Init.SynchroMode = DCMI_SYNCHRO_HARDWARE;
+    cameraOV2640DCMI.Init.PCKPolarity = DCMI_PCKPOLARITY_RISING;
+    cameraOV2640DCMI.Init.VSPolarity = DCMI_VSPOLARITY_LOW;
+    cameraOV2640DCMI.Init.HSPolarity = DCMI_HSPOLARITY_LOW;
+    cameraOV2640DCMI.Init.CaptureRate = DCMI_CR_ALL_FRAME;
+    cameraOV2640DCMI.Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
+    cameraOV2640DCMI.Init.JPEGMode = DCMI_JPEG_DISABLE;
+    cameraOV2640DCMI.Init.ByteSelectMode = DCMI_BSM_ALL;
+    cameraOV2640DCMI.Init.ByteSelectStart = DCMI_OEBS_ODD;
+    cameraOV2640DCMI.Init.LineSelectMode = DCMI_LSM_ALL;
+    cameraOV2640DCMI.Init.LineSelectStart = DCMI_OELS_ODD;
+
+    cameraOV2640DCMI.MspInitCallback = cameraOV2640MSPInit;
+    cameraOV2640DCMI.FrameEventCallback = cameraOV2640FrameEvent;
+
+    uint8_t r = HAL_DCMI_Init(&cameraOV2640DCMI);
+
+    print("[camera] DCMI init: %d\n", r);
+}
+
+ov2640_handle_t cameraOV2640 = {
+    .sccb_init = ov2640_interface_sccb_init,
+    .sccb_deinit = ov2640_interface_sccb_deinit,
+    .sccb_read = ov2640_interface_sccb_read,
+    .sccb_write = ov2640_interface_sccb_write,
+    .power_down_init = ov2640_interface_power_down_init,
+    .power_down_deinit = ov2640_interface_power_down_deinit,
+    .power_down_write = ov2640_interface_power_down_write,
+    .reset_init = ov2640_interface_reset_init,
+    .reset_deinit = ov2640_interface_reset_deinit,
+    .reset_write = ov2640_interface_reset_write,
+    .delay_ms = ov2640_interface_delay_ms,
+    .debug_print = ov2640_interface_debug_print,
+};
+#endif
 
 Camera::Camera() {}
 
@@ -22,285 +133,136 @@ void Camera::begin() {
 }
 
 void Camera::task() {
-    uint32_t timerChannel = STM_PIN_CHANNEL(pinmap_function(PA_8, PinMap_PWM));
-    timer.setMode(timerChannel, TIMER_OUTPUT_COMPARE_PWM1, PA_8);
-    timer.setPrescaleFactor(1);
-    timer.setOverflow(20000000, HERTZ_FORMAT);
-    timer.setCaptureCompare(timerChannel, 50, PERCENT_COMPARE_FORMAT);
-    timer.resume();
+    vTaskDelayMS(1000);
 
-    pinMode(PA7, OUTPUT);
-    digitalWrite(PA7, LOW);
-
-    wire.setSCL(PB8);
-    wire.setSDA(PB9);
-    wire.begin();
-    wire.setClock(100000);
-
-    setRegister(0xff, 0x01);
-    setRegister(0x12, 0x80);
-
-    vendorId = ((uint16_t)getRegister(0x1c) << 8) | getRegister(0x1d);
-    deviceId = ((uint16_t)getRegister(0x0a) << 8) | getRegister(0x0b);
-    print("[camera] vendor:device = %04x:%04x\n", vendorId, deviceId);
-
-    vTaskDelayMS(10);
-
-    const char data[][2] = {
-        {0xff, 0x00},
-        {0x2c, 0xff},
-        {0x2e, 0xdf},
-        {0xff, 0x01},
-        {0x3c, 0x32},
-        {0x11, 0x00},
-        {0x09, 0x02},
-        {0x04, 0xA8},
-        {0x13, 0xe5},
-        {0x14, 0x48},
-        {0x2c, 0x0c},
-        {0x33, 0x78},
-        {0x3a, 0x33},
-        {0x3b, 0xfB},
-        {0x3e, 0x00},
-        {0x43, 0x11},
-        {0x16, 0x10},
-        {0x4a, 0x81},
-        {0x21, 0x99},
-        {0x24, 0x40},
-        {0x25, 0x38},
-        {0x26, 0x82},
-        {0x5c, 0x00},
-        {0x63, 0x00},
-        {0x46, 0x3f},
-        {0x0c, 0x3c},
-        {0x61, 0x70},
-        {0x62, 0x80},
-        {0x7c, 0x05},
-        {0x20, 0x80},
-        {0x28, 0x30},
-        {0x6c, 0x00},
-        {0x6d, 0x80},
-        {0x6e, 0x00},
-        {0x70, 0x02},
-        {0x71, 0x94},
-        {0x73, 0xc1},
-        {0x3d, 0x34},
-        {0x5a, 0x57},
-        {0x12, 0x00},
-        {0x11, 0x00},
-        {0x17, 0x11},
-        {0x18, 0x75},
-        {0x19, 0x01},
-        {0x1a, 0x97},
-        {0x32, 0x36},
-        {0x03, 0x0f},
-        {0x37, 0x40},
-        {0x4f, 0xbb},
-        {0x50, 0x9c},
-        {0x5a, 0x57},
-        {0x6d, 0x80},
-        {0x6d, 0x38},
-        {0x39, 0x02},
-        {0x35, 0x88},
-        {0x22, 0x0a},
-        {0x37, 0x40},
-        {0x23, 0x00},
-        {0x34, 0xa0},
-        {0x36, 0x1a},
-        {0x06, 0x02},
-        {0x07, 0xc0},
-        {0x0d, 0xb7},
-        {0x0e, 0x01},
-        {0x4c, 0x00},
-        {0xff, 0x00},
-        {0xe5, 0x7f},
-        {0xf9, 0xc0},
-        {0x41, 0x24},
-        {0xe0, 0x14},
-        {0x76, 0xff},
-        {0x33, 0xa0},
-        {0x42, 0x20},
-        {0x43, 0x18},
-        {0x4c, 0x00},
-        {0x87, 0xd0},
-        {0x88, 0x3f},
-        {0xd7, 0x03},
-        {0xd9, 0x10},
-        {0xd3, 0x82},
-        {0xc8, 0x08},
-        {0xc9, 0x80},
-        {0x7d, 0x00},
-        {0x7c, 0x03},
-        {0x7d, 0x48},
-        {0x7c, 0x08},
-        {0x7d, 0x20},
-        {0x7d, 0x10},
-        {0x7d, 0x0e},
-        {0x90, 0x00},
-        {0x91, 0x0e},
-        {0x91, 0x1a},
-        {0x91, 0x31},
-        {0x91, 0x5a},
-        {0x91, 0x69},
-        {0x91, 0x75},
-        {0x91, 0x7e},
-        {0x91, 0x88},
-        {0x91, 0x8f},
-        {0x91, 0x96},
-        {0x91, 0xa3},
-        {0x91, 0xaf},
-        {0x91, 0xc4},
-        {0x91, 0xd7},
-        {0x91, 0xe8},
-        {0x91, 0x20},
-        {0x92, 0x00},
-        {0x93, 0x06},
-        {0x93, 0xe3},
-        {0x93, 0x02},
-        {0x93, 0x02},
-        {0x93, 0x00},
-        {0x93, 0x04},
-        {0x93, 0x00},
-        {0x93, 0x03},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x93, 0x00},
-        {0x96, 0x00},
-        {0x97, 0x08},
-        {0x97, 0x19},
-        {0x97, 0x02},
-        {0x97, 0x0c},
-        {0x97, 0x24},
-        {0x97, 0x30},
-        {0x97, 0x28},
-        {0x97, 0x26},
-        {0x97, 0x02},
-        {0x97, 0x98},
-        {0x97, 0x80},
-        {0x97, 0x00},
-        {0x97, 0x00},
-        {0xc3, 0xef},
-        {0xff, 0x00},
-        {0xba, 0xdc},
-        {0xbb, 0x08},
-        {0xb6, 0x24},
-        {0xb8, 0x33},
-        {0xb7, 0x20},
-        {0xb9, 0x30},
-        {0xb3, 0xb4},
-        {0xb4, 0xca},
-        {0xb5, 0x43},
-        {0xb0, 0x5c},
-        {0xb1, 0x4f},
-        {0xb2, 0x06},
-        {0xc7, 0x00},
-        {0xc6, 0x51},
-        {0xc5, 0x11},
-        {0xc4, 0x9c},
-        {0xbf, 0x00},
-        {0xbc, 0x64},
-        {0xa6, 0x00},
-        {0xa7, 0x1e},
-        {0xa7, 0x6b},
-        {0xa7, 0x47},
-        {0xa7, 0x33},
-        {0xa7, 0x00},
-        {0xa7, 0x23},
-        {0xa7, 0x2e},
-        {0xa7, 0x85},
-        {0xa7, 0x42},
-        {0xa7, 0x33},
-        {0xa7, 0x00},
-        {0xa7, 0x23},
-        {0xa7, 0x1b},
-        {0xa7, 0x74},
-        {0xa7, 0x42},
-        {0xa7, 0x33},
-        {0xa7, 0x00},
-        {0xa7, 0x23},
-        {0xc0, 0xc8},
-        {0xc1, 0x96},
-        {0x8c, 0x00},
-        {0x86, 0x3d},
-        {0x50, 0x92},
-        {0x51, 0x90},
-        {0x52, 0x2c},
-        {0x53, 0x00},
-        {0x54, 0x00},
-        {0x55, 0x88},
-        {0x5a, 0x50},
-        {0x5b, 0x3c},
-        {0x5c, 0x00},
-        {0xd3, 0x04},
-        {0x7f, 0x00},
-        {0xda, 0x00},
-        {0xe5, 0x1f},
-        {0xe1, 0x67},
-        {0xe0, 0x00},
-        {0xdd, 0x7f},
-        {0x05, 0x00},
-        {0xff, 0x00},
-        {0xe0, 0x04},
-        {0xc0, 0xc8},
-        {0xc1, 0x96},
-        {0x86, 0x3d},
-        {0x50, 0x92},
-        {0x51, 0x90},
-        {0x52, 0x2c},
-        {0x53, 0x00},
-        {0x54, 0x00},
-        {0x55, 0x88},
-        {0x57, 0x00},
-        {0x5a, 0x28},
-        {0x5b, 0x1E},
-        {0x5c, 0x00},
-        {0xd3, 0x08},
-        {0xe0, 0x00},
-        {0xFF, 0x00},
-        {0x05, 0x00},
-        {0xDA, 0x08},
-        {0xda, 0x09},
-        {0x98, 0x00},
-        {0x99, 0x00},
-        {0x00, 0x00},
-    };
-
-    for (int i = 0; data[i][0] != 0; i++) {
-        setRegister(data[i][0], data[i][1]);
+    uint8_t r = 0;
+    if (r = ov2640_init(&cameraOV2640)) {
+        print("[camera] ov2640_init: %d\n", r);
+    }
+    if (r = ov2640_table_init(&cameraOV2640)) {
+        print("[camera] ov2640_table_init: %d\n", r);
+    }
+    if (r = ov2640_table_rgb565_init(&cameraOV2640)) {
+        print("[camera] ov2640_table_rgb565_init: %d\n", r);
+    }
+    if (r = ov2640_set_output_width(&cameraOV2640, 160 / 4)) {
+        print("[camera] ov2640_set_output_width: %d\n", r);
+    }
+    if (r = ov2640_set_output_height(&cameraOV2640, 120 / 4)) {
+        print("[camera] ov2640_set_output_height: %d\n", r);
     }
 
-    vTaskDelayMS(10);
+    cameraOV2640DMAInit();
+    cameraOV2640DCMIInit();
 
-    vTaskDelete(NULL);
+    r = HAL_DCMI_Start_DMA(&cameraOV2640DCMI, DCMI_MODE_CONTINUOUS, (uint32_t)&cameraOV2640FrameBuffer, 160 * 120 / 2);
+
+    print("[camera] DCMI DMA init: %d\n", r);
+
+    while (true) {
+        print("[camera] %d %02x%02x%02x%02x%02x%02x%02x%02x\n", cameraOV2640HasFrame, cameraOV2640FrameBuffer[0][0], cameraOV2640FrameBuffer[1][1], cameraOV2640FrameBuffer[2][2], cameraOV2640FrameBuffer[3][3], cameraOV2640FrameBuffer[4][4], cameraOV2640FrameBuffer[5][5], cameraOV2640FrameBuffer[6][6], cameraOV2640FrameBuffer[7][7]);
+        // SCB_InvalidateDCache_by_Addr(&cameraOV2640FrameBuffer, 256 * 256 / 2);
+        vTaskDelayMS(1000);
+    }
 }
 
 void Camera::end() {}
 
-void Camera::setRegister(uint8_t addr, uint8_t value) {
-    uint8_t data[] = {addr, value};
-    Wire.beginTransmission(0x30);
-    Wire.write(data, sizeof(data));
-    Wire.endTransmission();
-}
-
-uint8_t Camera::getRegister(uint8_t addr) {
-    wire.beginTransmission(0x30);
-    wire.write(addr);
-    wire.endTransmission(false);
-    wire.requestFrom(0x30, 1);
-    if (wire.available()) {
-        return wire.read();
-    } else {
-        return 0;
-    }
-}
-
 void Camera::task(void* arg) {
     camera.task();
 }
+
+#ifdef ROBOT_HAS_CAMERA_OV2640
+
+uint8_t ov2640_interface_sccb_init(void) {
+    cameraOV2640Wire.setSCL(PB8);
+    cameraOV2640Wire.setSDA(PB9);
+    cameraOV2640Wire.begin();
+    cameraOV2640Wire.setClock(100000);
+    return 0;
+}
+
+uint8_t ov2640_interface_sccb_deinit() {
+    cameraOV2640Wire.end();
+    return 0;
+}
+
+uint8_t ov2640_interface_sccb_read(uint8_t addr, uint8_t reg, uint8_t* buf, uint16_t len) {
+    addr >>= 1;
+    uint8_t r;
+    cameraOV2640Wire.beginTransmission(addr);
+    cameraOV2640Wire.write(reg);
+    if (r = cameraOV2640Wire.endTransmission(false)) {
+        return r;
+    }
+    cameraOV2640Wire.requestFrom((int)addr, (int)len);
+    for (int i = 0; i < len; i++) {
+        if (cameraOV2640Wire.available()) {
+            buf[i] = cameraOV2640Wire.read();
+        } else {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+uint8_t ov2640_interface_sccb_write(uint8_t addr, uint8_t reg, uint8_t* buf, uint16_t len) {
+    addr >>= 1;
+    uint8_t r;
+    cameraOV2640Wire.beginTransmission(addr);
+    cameraOV2640Wire.write(reg);
+    cameraOV2640Wire.write(buf, len);
+    if (r = cameraOV2640Wire.endTransmission()) {
+        return r;
+    }
+    return 0;
+}
+
+uint8_t ov2640_interface_power_down_init() {
+    uint32_t cameraOV2640TimerChannel = STM_PIN_CHANNEL(pinmap_function(digitalPinToPinName(CAMERA_OV2640_XCLK_PIN), PinMap_TIM));
+    cameraOV2640Timer.setup(TIM1);
+    cameraOV2640Timer.setMode(cameraOV2640TimerChannel, TIMER_OUTPUT_COMPARE_PWM1, digitalPinToPinName(CAMERA_OV2640_XCLK_PIN));
+    cameraOV2640Timer.setPrescaleFactor(1);
+    cameraOV2640Timer.setOverflow(20000000, HERTZ_FORMAT);
+    cameraOV2640Timer.setCaptureCompare(cameraOV2640TimerChannel, 50, PERCENT_COMPARE_FORMAT);
+    cameraOV2640Timer.resume();
+    pinMode(CAMERA_OV2640_PWDN_PIN, OUTPUT);
+    return 0;
+}
+
+uint8_t ov2640_interface_power_down_deinit() {
+    cameraOV2640Timer.pause();
+    return 0;
+}
+
+uint8_t ov2640_interface_power_down_write(uint8_t level) {
+    digitalWrite(CAMERA_OV2640_PWDN_PIN, level);
+    return 0;
+}
+
+uint8_t ov2640_interface_reset_init() {
+    return 0;
+}
+
+uint8_t ov2640_interface_reset_deinit() {
+    return 0;
+}
+
+uint8_t ov2640_interface_reset_write(uint8_t level) {
+    return 0;
+}
+
+void ov2640_interface_delay_ms(uint32_t ms) {
+    vTaskDelayMS(ms);
+}
+
+void ov2640_interface_debug_print(const char* const format, ...) {
+    va_list args;
+    va_start(args, format);
+    RobotSerial.vprintf(format, args);
+    va_end(args);
+}
+
+#endif
 
 #endif

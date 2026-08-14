@@ -34,6 +34,9 @@
 [submodule "lib/NimBLE-Arduino"]
 	path = lib/NimBLE-Arduino
 	url = https://github.com/h2zero/NimBLE-Arduino
+[submodule "lib/ov2640/ov2640"]
+	path = lib/ov2640/ov2640
+	url = https://github.com/libdriver/ov2640
 [submodule "lib/RadioLib"]
 	path = lib/RadioLib
 	url = https://github.com/jgromes/RadioLib

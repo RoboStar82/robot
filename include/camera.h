@@ -13,6 +13,7 @@ class Camera {
     ~Camera();
 
     void begin();
+    void init();
     void task();
     void end();
 

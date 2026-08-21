@@ -55,5 +55,5 @@ void vprint(const char* format, va_list args) {
     }
     char buffer[1024];
     size_t length = vsnprintf(buffer, sizeof(buffer), format, args);
-    print(buffer, length);
+    print((const uint8_t*)buffer, length);
 }

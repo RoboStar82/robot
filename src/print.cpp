@@ -24,26 +24,36 @@ void taskPrint(void* arg) {
 }
 
 void print(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprint(format, args);
+    va_end(args);
+}
+
+void print(const uint8_t* buffer, size_t length) {
 #ifdef ARDUINO_STM32
     if (!xTaskGetCurrentTaskHandle()) {
-        va_list args;
-        va_start(args, format);
-        RobotSerial.vprintf(format, args);
-        va_end(args);
+        RobotSerial.write(buffer, length);
         return;
     }
 #endif
-    if (printMessageBuffer == nullptr) {
+    if (length && printMessageBuffer && !xMessageBufferIsFull(printMessageBuffer)) {
+        xMessageBufferSend(printMessageBuffer, buffer, min(length, xMessageBufferSpaceAvailable(printMessageBuffer)), 0);
+    }
+}
+
+void vprint(const char* format, va_list args) {
+#ifdef ARDUINO_STM32
+    if (!xTaskGetCurrentTaskHandle()) {
+        RobotSerial.vprintf(format, args);
+        return;
+    }
+#endif
+    if (!printMessageBuffer) {
         printMessageBuffer = xMessageBufferCreateStatic(sizeof(printBuffer), printBuffer, &printMessageBufferStruct);
         xTaskCreate(taskPrint, "print_task", 4096, NULL, 0, NULL);
     }
     char buffer[1024];
-    size_t length;
-    va_list args;
-    va_start(args, format);
-    length = vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    if (!xMessageBufferIsFull(printMessageBuffer) && length > 0) {
-        xMessageBufferSend(printMessageBuffer, buffer, min(length, xMessageBufferSpaceAvailable(printMessageBuffer)), 0);
-    }
+    size_t length = vsnprintf(buffer, sizeof(buffer), format, args);
+    print(buffer, length);
 }

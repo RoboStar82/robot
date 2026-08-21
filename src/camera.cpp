@@ -1,7 +1,6 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
-#include <Wire.h>
 #include <task.h>
 
 #include "config.h"
@@ -9,8 +8,14 @@
 #ifdef ROBOT_HAS_CAMERA
 
 #include <HardwareTimer.h>
+#include <Wire.h>
 
 #include "camera.h"
+
+#ifdef ROBOT_HAS_DISPLAY
+#include "display.h"
+#endif
+
 #include "delay.h"
 #include "print.h"
 
@@ -35,18 +40,15 @@ ov2640_handle_t cameraOV2640 = {
     .debug_print = ov2640_interface_debug_print,
 };
 
+int cameraOV2640FPS = 0;
+
 TwoWire cameraOV2640Wire;
 HardwareTimer cameraOV2640Timer;
 DMA_HandleTypeDef cameraOV2640DMA;
 DCMI_HandleTypeDef cameraOV2640DCMI;
 
 __attribute__((aligned(32)))
-uint16_t cameraOV2640FrameBuffer[320][240] = {0};
-
-int cameraOV2640Errors = 0;
-int cameraOV2640Frames = 0;
-int cameraOV2640VSyncs = 0;
-int cameraOV2640Lines = 0;
+uint16_t cameraOV2640FrameBuffer[CAMERA_OV2640_IMAGE_WIDTH * CAMERA_OV2640_IMAGE_HEIGHT] = {0};
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,7 +77,7 @@ void Camera::begin() {
 }
 
 void Camera::init() {
-    memset(cameraOV2640FrameBuffer, 0, 320 * 240 * sizeof(uint16_t));
+    memset(cameraOV2640FrameBuffer, 0, sizeof(cameraOV2640FrameBuffer));
 
     // DMA
 
@@ -110,22 +112,39 @@ void Camera::init() {
     if (r = ov2640_table_init(&cameraOV2640)) {
         print("[camera] ov2640_table_init: %d\n", r);
     }
-    if (r = ov2640_table_rgb565_init(&cameraOV2640)) {
-        print("[camera] ov2640_table_rgb565_init: %d\n", r);
-    }
 
-    /* */
+#ifdef CAMERA_OV2640_YUV422
+    r = ov2640_set_dvp_output_format(&cameraOV2640, OV2640_DVP_OUTPUT_FORMAT_YUV422);
+    r = ov2640_set_yuv422(&cameraOV2640, OV2640_BOOL_TRUE);
+#else
+    r = ov2640_table_rgb565_init(&cameraOV2640)) {
+#endif
+
+    r = ov2640_set_resolution(&cameraOV2640, OV2640_RESOLUTION_SVGA);
+    r = ov2640_set_image_horizontal(&cameraOV2640, 800);
+    r = ov2640_set_image_vertical(&cameraOV2640, 600);
+    r = ov2640_set_horizontal_size(&cameraOV2640, 800 >> 2);
+    r = ov2640_set_vertical_size(&cameraOV2640, 600 >> 2);
+
+    r = ov2640_set_output_width(&cameraOV2640, CAMERA_OV2640_IMAGE_WIDTH >> 2);
+    r = ov2640_set_output_height(&cameraOV2640, CAMERA_OV2640_IMAGE_HEIGHT >> 2);
+    r = ov2640_set_offset_x(&cameraOV2640, 0);
+    r = ov2640_set_offset_y(&cameraOV2640, 0);
+
+    r = ov2640_set_agc_control(&cameraOV2640, OV2640_CONTROL_AUTO);
+    r = ov2640_set_agc_gain_ceiling(&cameraOV2640, OV2640_AGC_16X);
+    r = ov2640_set_exposure_control(&cameraOV2640, OV2640_CONTROL_AUTO);
+    r = ov2640_set_band_filter(&cameraOV2640, OV2640_BOOL_TRUE);
+    r = ov2640_set_band(&cameraOV2640, OV2640_BAND_50HZ);
+
+#if false
+    r = ov2640_set_horizontal_mirror(&cameraOV2640, OV2640_BOOL_TRUE);
+    r = ov2640_set_vertical_flip(&cameraOV2640, OV2640_BOOL_TRUE);
+    r = ov2640_set_mode(&cameraOV2640, OV2640_MODE_NORMAL);
     r = ov2640_set_clock_rate_double(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_clock_divider(&cameraOV2640, 0x00);
-    r = ov2640_set_mode(&cameraOV2640, OV2640_MODE_NORMAL);
     r = ov2640_set_power_reset_pin_remap(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_output_drive(&cameraOV2640, OV2640_OUTPUT_DRIVE_2_CAPABILITY);
-    r = ov2640_set_horizontal_mirror(&cameraOV2640, OV2640_BOOL_FALSE);
-    r = ov2640_set_vertical_flip(&cameraOV2640, OV2640_BOOL_FALSE);
-    r = ov2640_set_band_filter(&cameraOV2640, OV2640_BOOL_TRUE);
-    r = ov2640_set_agc_control(&cameraOV2640, OV2640_CONTROL_AUTO);
-    r = ov2640_set_exposure_control(&cameraOV2640, OV2640_CONTROL_AUTO);
-    r = ov2640_set_agc_gain_ceiling(&cameraOV2640, OV2640_AGC_2X);
     r = ov2640_set_zoom_window_horizontal_start_point(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_clock_output_power_down_pin_status(&cameraOV2640, OV2640_PIN_STATUS_TRI_STATE);
     r = ov2640_set_zoom_mode_vertical_window_start_point(&cameraOV2640, 0x0000);
@@ -133,14 +152,12 @@ void Camera::init() {
     r = ov2640_set_luminance_signal_low_range(&cameraOV2640, 0x38);
     r = ov2640_set_fast_mode_large_step_range(&cameraOV2640, 0x8, 0x2);
     r = ov2640_set_frame_length_adjustment(&cameraOV2640, 0x0000);
-    r = ov2640_set_band(&cameraOV2640, OV2640_BAND_50HZ);
     r = ov2640_set_auto_band(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_live_video_after_snapshot(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_histogram_algorithm_low_level(&cameraOV2640, 0x70);
     r = ov2640_set_histogram_algorithm_high_level(&cameraOV2640, 0x80);
     r = ov2640_set_50hz_banding_aec(&cameraOV2640, 0x0CA);
     r = ov2640_set_60hz_banding_aec(&cameraOV2640, 0x0A8);
-    r = ov2640_set_resolution(&cameraOV2640, OV2640_RESOLUTION_CIF);
     r = ov2640_set_zoom(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_color_bar_test(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_pclk(&cameraOV2640, OV2640_PCLK_NO_EFFECT);
@@ -149,7 +166,7 @@ void Camera::init() {
     r = ov2640_set_vertical_window_line_start(&cameraOV2640, 7);
     r = ov2640_set_vertical_window_line_end(&cameraOV2640, 607);
     r = ov2640_set_vsync_pulse_width(&cameraOV2640, 0x0000);
-    r = ov2640_set_agc_gain(&cameraOV2640, 0x0000);
+    r = ov2640_set_agc_gain(&cameraOV2640, 0x00ff);
     r = ov2640_set_dummy_frame(&cameraOV2640, OV2640_DUMMY_FRAME_NONE);
     r = ov2640_set_aec(&cameraOV2640, 0x0CC);
     r = ov2640_set_frame_exposure_pre_charge_row_number(&cameraOV2640, 0x40);
@@ -179,11 +196,8 @@ void Camera::init() {
     r = ov2640_set_pre(&cameraOV2640, OV2640_BOOL_TRUE);
     r = ov2640_set_dvp_y8(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_jpeg_output(&cameraOV2640, OV2640_BOOL_FALSE);
-    r = ov2640_set_dvp_output_format(&cameraOV2640, OV2640_DVP_OUTPUT_FORMAT_RGB565);
     r = ov2640_set_dvp_jpeg_output_href_timing(&cameraOV2640, OV2640_HREF_TIMING_SENSOR);
     r = ov2640_set_byte_swap(&cameraOV2640, OV2640_BYTE_SWAP_UVUV);
-    r = ov2640_set_image_horizontal(&cameraOV2640, 320);
-    r = ov2640_set_image_vertical(&cameraOV2640, 240);
     r = ov2640_set_dcw(&cameraOV2640, OV2640_BOOL_TRUE);
     r = ov2640_set_sde(&cameraOV2640, OV2640_BOOL_TRUE);
     r = ov2640_set_uv_adj(&cameraOV2640, OV2640_BOOL_TRUE);
@@ -193,12 +207,6 @@ void Camera::init() {
     r = ov2640_set_round(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_vertical_divider(&cameraOV2640, 0x00);
     r = ov2640_set_horizontal_divider(&cameraOV2640, 0x00);
-    r = ov2640_set_horizontal_size(&cameraOV2640, 320 >> 2);
-    r = ov2640_set_vertical_size(&cameraOV2640, 240 >> 2);
-    r = ov2640_set_offset_x(&cameraOV2640, 0);
-    r = ov2640_set_offset_y(&cameraOV2640, 0);
-    r = ov2640_set_output_width(&cameraOV2640, 320 >> 2);
-    r = ov2640_set_output_height(&cameraOV2640, 240 >> 2);
     r = ov2640_set_zoom_speed(&cameraOV2640, 0x00);
     r = ov2640_set_quantization_scale_factor(&cameraOV2640, 0x0C);
     r = ov2640_set_sccb_master_speed(&cameraOV2640, 4);
@@ -211,36 +219,30 @@ void Camera::init() {
     r = ov2640_set_aec_sel(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_stat_sel(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_vfirst(&cameraOV2640, OV2640_BOOL_FALSE);
-    r = ov2640_set_yuv422(&cameraOV2640, OV2640_BOOL_TRUE);
     r = ov2640_set_yuv(&cameraOV2640, OV2640_BOOL_TRUE);
     r = ov2640_set_rgb(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_raw(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_dp_selx(&cameraOV2640, 0x00);
     r = ov2640_set_dp_sely(&cameraOV2640, 0x00);
     r = ov2640_set_dsp_bypass(&cameraOV2640, OV2640_BOOL_FALSE);
-    /* */
-
-    /*
-    r = ov2640_set_image_horizontal(&cameraOV2640, 320);
-    r = ov2640_set_image_vertical(&cameraOV2640, 240);
-
-    r = ov2640_set_horizontal_size(&cameraOV2640, 320 / 4);
-    r = ov2640_set_vertical_size(&cameraOV2640, 240 / 4);
-
-    r = ov2640_set_output_width(&cameraOV2640, 320 / 4);
-    r = ov2640_set_output_height(&cameraOV2640, 240 / 4);
-    */
-
-    HAL_DCMI_Start_DMA(&cameraOV2640DCMI, DCMI_MODE_CONTINUOUS, (uint32_t)&cameraOV2640FrameBuffer, 320 * 240 * sizeof(uint16_t) / sizeof(word));
+#endif
 }
 
 void Camera::task() {
     vTaskDelayMS(1000);
     init();
+    HAL_DCMI_Start_DMA(&cameraOV2640DCMI, DCMI_MODE_CONTINUOUS, (uint32_t)&cameraOV2640FrameBuffer, sizeof(cameraOV2640FrameBuffer) / sizeof(uint32_t));
     while (true) {
-        print("[camera] %d %d %d %d %02x%02x%02x%02x%02x%02x%02x%02x\n", cameraOV2640Errors, cameraOV2640Frames, cameraOV2640VSyncs, cameraOV2640Lines, cameraOV2640FrameBuffer[0][0], cameraOV2640FrameBuffer[10][10], cameraOV2640FrameBuffer[20][20], cameraOV2640FrameBuffer[30][30], cameraOV2640FrameBuffer[40][40], cameraOV2640FrameBuffer[50][50], cameraOV2640FrameBuffer[60][60], cameraOV2640FrameBuffer[70][70]);
+        while (!cameraOV2640FPS) {
+            vTaskDelayMS(10);
+        }
+        // print("[camera] %dx%d %d fps\n", CAMERA_OV2640_IMAGE_WIDTH, CAMERA_OV2640_IMAGE_HEIGHT, cameraOV2640FPS);
+#ifdef ROBOT_HAS_DISPLAY
+        display.drawFrameBuffer(cameraOV2640FrameBuffer, CAMERA_OV2640_IMAGE_WIDTH, CAMERA_OV2640_IMAGE_HEIGHT);
+#endif
         SCB_InvalidateDCache_by_Addr(&cameraOV2640FrameBuffer, sizeof(cameraOV2640FrameBuffer));
-        vTaskDelayMS(1000);
+        cameraOV2640FPS = 0;
+        vTaskDelayMS(50);
     }
 }
 
@@ -253,19 +255,19 @@ void Camera::task(void* arg) {
 #ifdef ROBOT_HAS_CAMERA_OV2640
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef* hDCMI) {
-    cameraOV2640Frames++;
+    cameraOV2640FPS++;
 }
 
 void HAL_DCMI_VsyncEventCallback(DCMI_HandleTypeDef* hDCMI) {
-    cameraOV2640VSyncs++;
+    return;
 }
 
 void HAL_DCMI_LineEventCallback(DCMI_HandleTypeDef* hDCMI) {
-    cameraOV2640Lines++;
+    return;
 }
 
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef* hDCMI) {
-    cameraOV2640Errors++;
+    return;
 }
 
 void HAL_DCMI_MspInit(DCMI_HandleTypeDef* hDCMI) {

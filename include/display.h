@@ -18,6 +18,8 @@ class Display {
 
     void drawLogo();
 
+    void drawFrameBuffer(uint16_t* buffer, uint16_t width, uint16_t height);
+
    protected:
 };
 

@@ -38,6 +38,7 @@ E0213A367 displayE0213A367;
 #endif
 
 #include "delay.h"
+#include "print.h"
 
 Display::Display() {}
 
@@ -156,6 +157,22 @@ void Display::drawLogo() {
             }
         }
         displayE0213A367.update();
+    }
+#endif
+}
+
+void Display::drawFrameBuffer(uint16_t* buffer, uint16_t width, uint16_t height) {
+#ifdef ROBOT_HAS_DISPLAY_ST7735
+    {
+        int i = 0;
+        for (int y = 0; y < height; y += 4) {
+            for (int x = 0; x < width; x += 4) {
+                uint8_t c = buffer[i] >> 8;
+                displayST7735.drawPixel(68 + (x >> 2), 4 + (y >> 2), displayST7735.color565(c, c, c));
+                i += 4;
+            }
+            i += width * 3;
+        }
     }
 #endif
 }

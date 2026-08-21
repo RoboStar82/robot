@@ -114,7 +114,7 @@ void Camera::init() {
         print("[camera] ov2640_table_rgb565_init: %d\n", r);
     }
 
-    /*
+    /* */
     r = ov2640_set_clock_rate_double(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_clock_divider(&cameraOV2640, 0x00);
     r = ov2640_set_mode(&cameraOV2640, OV2640_MODE_NORMAL);
@@ -193,12 +193,12 @@ void Camera::init() {
     r = ov2640_set_round(&cameraOV2640, OV2640_BOOL_FALSE);
     r = ov2640_set_vertical_divider(&cameraOV2640, 0x00);
     r = ov2640_set_horizontal_divider(&cameraOV2640, 0x00);
-    r = ov2640_set_horizontal_size(&cameraOV2640, 320);
-    r = ov2640_set_vertical_size(&cameraOV2640, 240);
+    r = ov2640_set_horizontal_size(&cameraOV2640, 320 >> 2);
+    r = ov2640_set_vertical_size(&cameraOV2640, 240 >> 2);
     r = ov2640_set_offset_x(&cameraOV2640, 0);
     r = ov2640_set_offset_y(&cameraOV2640, 0);
-    r = ov2640_set_output_width(&cameraOV2640, 320);
-    r = ov2640_set_output_height(&cameraOV2640, 240);
+    r = ov2640_set_output_width(&cameraOV2640, 320 >> 2);
+    r = ov2640_set_output_height(&cameraOV2640, 240 >> 2);
     r = ov2640_set_zoom_speed(&cameraOV2640, 0x00);
     r = ov2640_set_quantization_scale_factor(&cameraOV2640, 0x0C);
     r = ov2640_set_sccb_master_speed(&cameraOV2640, 4);
@@ -218,18 +218,18 @@ void Camera::init() {
     r = ov2640_set_dp_selx(&cameraOV2640, 0x00);
     r = ov2640_set_dp_sely(&cameraOV2640, 0x00);
     r = ov2640_set_dsp_bypass(&cameraOV2640, OV2640_BOOL_FALSE);
-    */
-
     /* */
+
+    /*
     r = ov2640_set_image_horizontal(&cameraOV2640, 320);
     r = ov2640_set_image_vertical(&cameraOV2640, 240);
 
-    r = ov2640_set_horizontal_size(&cameraOV2640, 320);
-    r = ov2640_set_vertical_size(&cameraOV2640, 240);
+    r = ov2640_set_horizontal_size(&cameraOV2640, 320 / 4);
+    r = ov2640_set_vertical_size(&cameraOV2640, 240 / 4);
 
-    r = ov2640_set_output_width(&cameraOV2640, 320);
-    r = ov2640_set_output_height(&cameraOV2640, 240);
-    /* */
+    r = ov2640_set_output_width(&cameraOV2640, 320 / 4);
+    r = ov2640_set_output_height(&cameraOV2640, 240 / 4);
+    */
 
     HAL_DCMI_Start_DMA(&cameraOV2640DCMI, DCMI_MODE_CONTINUOUS, (uint32_t)&cameraOV2640FrameBuffer, 320 * 240 * sizeof(uint16_t) / sizeof(word));
 }

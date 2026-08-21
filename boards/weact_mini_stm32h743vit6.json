@@ -14,9 +14,8 @@
         "-DARDUINO_WEACT_MINI_H743VIT6",
         "-DARDUINO_WeActMiniH743VITX",
         "-DCUSTOM_PERIPHERAL_PINS",
-        "-DconfigUSE_CMSIS_RTOS_V2",
         "-DHAL_DCMI_MODULE_ENABLED",
-        "-DUSE_HAL_DCMI_REGISTER_CALLBACKS=1"
+        "-DconfigUSE_CMSIS_RTOS_V2"
       ],
       "arduino~": [
         "-DPIO_FRAMEWORK_ARDUINO_ENABLE_CDC",

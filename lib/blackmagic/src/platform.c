@@ -162,7 +162,7 @@ void platform_loop() {
         } else if (packet->size > 1) {
             DEBUG_INFO("[GDB] gdb_main(%d 0x%02x...)\n", packet->size, packet->data[0]);
         } else {
-            DEBUG_INFO("[GDB] gdb_main(0x%02x...)\n", packet->data[0]);
+            DEBUG_INFO("[GDB] gdb_main(0x%02x)\n", packet->data[0]);
         }
     }
     gdb_main(packet);

@@ -126,13 +126,13 @@ void gdb_if_flush(bool force) {
 }
 
 void debug_serial_send_stdout(const uint8_t* buffer, size_t length) {
-    RobotSerial.write(buffer, length);
+    print(buffer, length);
 }
 
 void platform_printf(const char* format, ...) {
     va_list args;
     va_start(args, format);
-    RobotSerial.vprintf(format, args);
+    vprint(format, args);
     va_end(args);
 }
 

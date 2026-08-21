@@ -43,7 +43,7 @@ class Script {
     void task();
 
     ScriptWrite serialWrite = [](const uint8_t* buffer, size_t length) {
-        RobotSerial.write(buffer, length);
+        print(buffer, length);
     };
 
     ScriptWrite write = nullptr;

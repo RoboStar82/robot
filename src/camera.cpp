@@ -452,7 +452,7 @@ void ov2640_interface_delay_ms(uint32_t ms) {
 void ov2640_interface_debug_print(const char* const format, ...) {
     va_list args;
     va_start(args, format);
-    RobotSerial.vprintf(format, args);
+    vprint(format, args);
     va_end(args);
 }
 

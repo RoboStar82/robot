@@ -63,7 +63,7 @@ void Proxy::task() {
         while (ProxySerial.available() > 0) {
             RobotSerial.write(ProxySerial.read());
         }
-        vTaskDelayMS(1000);
+        vTaskDelayMS(100);
     }
 }
 

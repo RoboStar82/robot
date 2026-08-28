@@ -1,0 +1,9 @@
+
+/build/genhdr/qstr
+/build/genhdr/module
+/build/genhdr/compress
+/build/genhdr/root_pointer
+
+/build/genhdr/*.collected
+/build/genhdr/*.split
+/build/genhdr/*.hash

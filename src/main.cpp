@@ -36,6 +36,10 @@
 #include "settings.h"
 #endif
 
+#ifdef ROBOT_HAS_PYTHON
+#include "python.h"
+#endif
+
 #ifdef ROBOT_HAS_SCRIPT
 #include "script.h"
 #endif
@@ -74,6 +78,9 @@ void setup() {
 #endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();
+#endif
+#ifdef ROBOT_HAS_PYTHON
+    python.begin();
 #endif
 #ifdef ROBOT_HAS_CAMERA
     camera.begin();

@@ -1,0 +1,37 @@
+{
+  "name": "micropython",
+  "description": "This is the MicroPython project, an implementation of Python 3.x for microcontrollers, embedded systems and other constrained platforms",
+  "keywords": "micropython",
+  "authors": [
+    {
+      "name": "micropython",
+      "url": "https://www.micropython.org/"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micropython/micropython"
+  },
+  "version": "1.29.0",
+  "framework": "*",
+  "platforms": "*",
+  "build": {
+    "srcDir": "micropython",
+    "includeDir": "micropython",
+    "flags": [
+      "-I.",
+      "-Iport",
+      "-Ibuild",
+      "-Imicropython"
+    ],
+    "srcFilter": [
+      "-<*>",
+      "+<py/*.c>",
+      "+<py/*.h>",
+      "+<ports/stm32/gccollect.c>",
+      "+<shared/runtime/gchelper_generic.c>",
+      "+<shared/runtime/softtimer.c>",
+      "+<../port/main.c>"
+    ]
+  }
+}

@@ -22,14 +22,14 @@ Writer::Writer() : Print() {}
 
 void Writer::begin() {
     if (!taskHandle) {
+        stdoutReplaced = _GLOBAL_REENT->_stdout;
+        _GLOBAL_REENT->_stdout = funopen(NULL, NULL, write, NULL, NULL);
+        setvbuf(_GLOBAL_REENT->_stdout, NULL, _IONBF, 0);
         xTaskCreate(task, "writer_task", 4096, NULL, 0, &taskHandle);
     }
 }
 
 void Writer::end() {
-    stdoutReplaced = _GLOBAL_REENT->_stdout;
-    _GLOBAL_REENT->_stdout = funopen(NULL, NULL, write, NULL, NULL);
-    setvbuf(_GLOBAL_REENT->_stdout, NULL, _IONBF, 0);
     if (taskHandle) {
         vTaskDelete(taskHandle);
         taskHandle = nullptr;
@@ -88,6 +88,10 @@ size_t Writer::write(const uint8_t* buffer, size_t length) {
         flush();
     }
     return r;
+}
+
+int write(void* cookie, const char* buffer, int length) {
+    writer.write((const uint8_t*)buffer, length);
 }
 
 void Writer::flush() {

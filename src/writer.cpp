@@ -90,7 +90,7 @@ size_t Writer::write(const uint8_t* buffer, size_t length) {
     return r;
 }
 
-int write(void* cookie, const char* buffer, int length) {
+int Writer::write(void* cookie, const char* buffer, int length) {
     writer.write((const uint8_t*)buffer, length);
 }
 

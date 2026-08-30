@@ -1,7 +1,5 @@
 
 #include <Arduino.h>
-#include <FreeRTOS.h>
-#include <task.h>
 
 #include "config.h"
 
@@ -19,8 +17,6 @@
 OTAHttp otaHttp;
 
 OTAHttp::OTAHttp() {}
-
-OTAHttp::~OTAHttp() {}
 
 void OTAHttp::begin() {
     if (!server && !httpd_start(&server, &config)) {
@@ -70,13 +66,10 @@ esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
         return httpd_resp_send(request, nullptr, 0);
     }
     size_t length = request->content_len;
-    if (length > 8192) {
+    if (length > 4096) {
         return httpd_resp_send_err(request, HTTPD_413_CONTENT_TOO_LARGE, nullptr);
     }
-    char* source = (char*)malloc(length + 1);
-    if (!source) {
-        return httpd_resp_send_500(request);
-    }
+    char source[length + 1];
     size_t index = 0;
     while (index < length) {
         int size = httpd_req_recv(request, source + index, length - index);
@@ -85,38 +78,28 @@ esp_err_t OTAHttp::onScriptPost(httpd_req_t* request) {
         } else if (size == HTTPD_SOCK_ERR_TIMEOUT) {
             continue;
         } else {
-            free(source);
             return httpd_resp_send_500(request);
         }
     }
     source[length] = '\0';
-#ifdef ROBOT_HAS_SCRIPT
-    std::string content;
-    bool finish = false;
-    script.run({
-        .filename = "<HTTP>",
-        .source = source,
-        .length = length,
-        .write = [&](const uint8_t* buffer, size_t length) {
-            if (buffer && !finish) {
-                content.append(reinterpret_cast<const char*>(buffer), length);
-            } else {
-                finish = true;
-            }
-        },
-    });
-    while (!finish) {
-        vTaskDelayMS(1);
+#ifdef ROBOT_HAS_PYTHON
+    {
+        std::string output;
+        python.run(source, length, output);
+        return httpd_resp_send(request, output.c_str(), output.length());
     }
-    free(source);
-    return httpd_resp_send(request, content.c_str(), content.length());
-#else
+#endif
+#ifdef ROBOT_HAS_SCRIPT
+    {
+        std::string output;
+        script.run(source, length, output);
+        return httpd_resp_send(request, output.c_str(), output.length());
+    }
+#endif
 #ifdef ROBOT_HAS_PROXY
     source[length] = '\3';
     ProxySerial.write(source, length + 1);
 #endif
-#endif
-    free(source);
     return httpd_resp_send(request, nullptr, 0);
 }
 
@@ -141,18 +124,13 @@ esp_err_t OTAHttp::onWebSocketGet(httpd_req_t* request) {
     if (!length) {
         return httpd_ws_send_frame(request, &reply);
     }
-    if (length > 8192) {
+    if (length > 4096) {
         reply.type = HTTPD_WS_TYPE_CLOSE;
         return httpd_ws_send_frame(request, &reply);
     }
-    char* source = (char*)malloc(length + 1);
-    if (!source) {
-        reply.type = HTTPD_WS_TYPE_CLOSE;
-        return httpd_ws_send_frame(request, &reply);
-    }
+    char source[length + 1];
     frame.payload = (uint8_t*)source;
     if (r = httpd_ws_recv_frame(request, &frame, length)) {
-        free(source);
         return r;
     }
     source[length] = '\0';
@@ -160,39 +138,31 @@ esp_err_t OTAHttp::onWebSocketGet(httpd_req_t* request) {
         reply.payload = frame.payload;
         reply.len = frame.len;
         esp_err_t r = httpd_ws_send_frame(request, &reply);
-        free(source);
         return r;
     }
-#ifdef ROBOT_HAS_SCRIPT
-    std::string content;
-    bool finish = false;
-    script.run({
-        .filename = "<HTTP>",
-        .source = source,
-        .length = length,
-        .write = [&](const uint8_t* buffer, size_t length) {
-            if (buffer && !finish) {
-                content.append(reinterpret_cast<const char*>(buffer), length);
-            } else {
-                finish = true;
-            }
-        },
-    });
-    while (!finish) {
-        vTaskDelayMS(1);
+#ifdef ROBOT_HAS_PYTHON
+    {
+        std::string output;
+        script.run(source, length, output);
+        reply.payload = (uint8_t*)output.c_str();
+        reply.len = output.length();
+        return httpd_ws_send_frame(request, &reply);
     }
-    free(source);
-    reply.payload = (uint8_t*)content.c_str();
-    reply.len = content.length();
-    return httpd_ws_send_frame(request, &reply);
-#else
+#endif
+#ifdef ROBOT_HAS_SCRIPT
+    {
+        std::string output;
+        script.run(source, length, output);
+        reply.payload = (uint8_t*)output.c_str();
+        reply.len = output.length();
+        return httpd_ws_send_frame(request, &reply);
+    }
+#endif
 #ifdef ROBOT_HAS_PROXY
     source[length] = '\3';
     ProxySerial.write(source, length + 1);
 #endif
-#endif
     r = httpd_ws_send_frame(request, &reply);
-    free(source);
     return r;
 }
 

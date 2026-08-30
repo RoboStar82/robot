@@ -9,8 +9,6 @@
 
 BLEUartRx::BLEUartRx() {}
 
-BLEUartRx::~BLEUartRx() {}
-
 void BLEUartRx::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -41,8 +39,6 @@ void BLEUartRx::end() {
 
 BLEUartTx::BLEUartTx() {}
 
-BLEUartTx::~BLEUartTx() {}
-
 void BLEUartTx::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -66,8 +62,6 @@ void BLEUartTx::end() {
 }
 
 BLEUart::BLEUart() {}
-
-BLEUart::~BLEUart() {}
 
 void BLEUart::begin() {
     service = ble.server->createService(serviceUuid);

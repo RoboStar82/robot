@@ -12,8 +12,6 @@ Controller controller;
 
 Controller::Controller() {}
 
-Controller::~Controller() {}
-
 void Controller::begin() {}
 
 void Controller::end() {}

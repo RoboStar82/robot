@@ -1,12 +1,11 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <queue.h>
 #include <task.h>
 
-#if true
 #include "config.h"
 #include "delay.h"
-#endif
 
 void vTaskDelayMS(uint32_t ms) {
 #ifdef ARDUINO_STM32

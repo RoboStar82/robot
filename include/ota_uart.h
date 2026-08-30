@@ -3,21 +3,21 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
+#include <semphr.h>
+#include <task.h>
+
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
-#include <semphr.h>
-#include <task.h>
 
 #include "config.h"
 
 class OTAUart : public Stream {
    public:
     OTAUart();
-    ~OTAUart();
+    virtual ~OTAUart() = default;
 
     void begin();
-    void begin(unsigned long baud);
     void end();
 
     int available() override;
@@ -29,8 +29,6 @@ class OTAUart : public Stream {
 
     void task();
 
-    static int write(void* cookie, const char* buffer, int length);
-
     using Print::print;
     using Print::printf;
     using Print::println;
@@ -38,18 +36,10 @@ class OTAUart : public Stream {
     using Print::write;
 
    protected:
-    TaskHandle_t taskStarted = nullptr;
-
-    SemaphoreHandle_t writeLock = xSemaphoreCreateMutex();
-    TickType_t waitLock = 100;
-
-    FILE* stdoutReplaced = nullptr;
+    TaskHandle_t taskHandle = nullptr;
 
     WiFiServer server = WiFiServer(ROBOT_OTA_UART_PORT, 1);
     WiFiClient client;
-
-    char txBuffer[4096];
-    size_t txLength = 0;
 
     static inline void task(void* arg);
 };

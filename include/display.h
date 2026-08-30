@@ -8,9 +8,10 @@
 class Display {
    public:
     Display();
-    ~Display();
+    virtual ~Display() = default;
 
     void begin();
+    void end();
 
     void clear();
 

@@ -1,9 +1,9 @@
 
 #pragma once
 
-/*
-#include <EspUsbHost.h>
-*/
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,7 @@ typedef struct {
 class USB {
    public:
     USB();
-    ~USB();
+    virtual ~USB() = default;
 
     void begin();
 
@@ -65,9 +65,9 @@ class USB {
 
     static esp_err_t getDeviceDescriptor(hid_host_device_handle_t device, const usb_device_desc_t** descriptor);
 
-    TaskHandle_t taskUsbLibStarted = nullptr;
-    TaskHandle_t taskUsbDevStarted = nullptr;
-    TaskHandle_t taskUsbHidStarted = nullptr;
+    TaskHandle_t taskUsbLibHandle = nullptr;
+    TaskHandle_t taskUsbDevHandle = nullptr;
+    TaskHandle_t taskUsbHidHandle = nullptr;
 };
 
 extern USB usb;

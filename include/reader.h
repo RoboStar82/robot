@@ -5,17 +5,21 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
+#include <string>
+
 #include "config.h"
 
-class Camera {
+class Reader {
    public:
-    Camera();
-    virtual ~Camera() = default;
+    Reader();
+    virtual ~Reader() = default;
 
     void begin();
-    void init();
-    void task();
     void end();
+
+    size_t read(Stream& stream, std::string& source);
+
+    void task();
 
    protected:
     TaskHandle_t taskHandle = nullptr;
@@ -23,4 +27,4 @@ class Camera {
     static inline void task(void* arg);
 };
 
-extern Camera camera;
+extern Reader reader;

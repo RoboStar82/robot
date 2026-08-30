@@ -2,9 +2,17 @@
 #pragma once
 
 #include <ArduinoOTA.h>
+#include <FreeRTOS.h>
+#include <queue.h>
+#include <task.h>
+
 #include <WiFi.h>
 
 #include "config.h"
+
+#ifdef ROBOT_HAS_OTA_GDB
+#include "ota_gdb.h"
+#endif
 
 #ifdef ROBOT_HAS_OTA_HTTP
 #include "ota_http.h"
@@ -14,16 +22,13 @@
 #include "ota_uart.h"
 #endif
 
-#ifdef ROBOT_HAS_OTA_BLACKMAGIC
-#include "ota_blackmagic.h"
-#endif
-
 class OTA {
    public:
     OTA();
-    ~OTA();
+    virtual ~OTA() = default;
 
     void begin();
+    void end();
 
     IPAddress getIP();
 
@@ -34,7 +39,7 @@ class OTA {
     static void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
 
    protected:
-    TaskHandle_t taskStarted = nullptr;
+    TaskHandle_t taskHandle = nullptr;
     QueueHandle_t taskQueue = xQueueCreate(4, sizeof(WiFiMode_t));
 
     WiFiMode_t wifiMode = WIFI_MODE_NULL;

@@ -23,35 +23,73 @@ Script script;
 
 Script::Script() {}
 
-Script::~Script() {}
-
 void Script::begin() {
-    if (!taskStarted) {
-        xTaskCreate(task, "script_task", 16384, NULL, 1, &taskStarted);
+    if (!taskHandle) {
+        xTaskCreate(task, "script_task", 16384, NULL, 1, &taskHandle);
     }
 }
 
 void Script::end() {
-    if (taskStarted) {
-        vTaskDelete(taskStarted);
-        taskStarted = nullptr;
+    if (taskHandle) {
+        vTaskDelete(taskHandle);
+        taskHandle = nullptr;
         scriptEnd();
     }
 }
 
-void Script::run(ScriptCode_t code) {
+void Script::run(const char* source, size_t length, std::string& output, const char* filename) {
+    bool finished = false;
+    ScriptCode_t code = {
+        .source = source,
+        .length = length,
+        .filename = filename,
+        .finished = &finished,
+        .buffering = true,
+    };
     xQueueSendMS(taskQueue, &code, 0);
+    vTaskDelayMS(1);
+    while (!finished) {
+        vTaskDelayMS(1);
+    }
+    output = outputBuffer;
 }
 
-void Script::exec(ScriptCode_t code) {
-    if (code.length > 0 && code.source[code.length - 1] == '\n') {
-        print("[script] %s\n%s<END>\n", code.filename, code.source);
-    } else {
-        print("[script] %s\n%s\n<END>\n", code.filename, code.source);
+void Script::run(const char* source, size_t length, const char* filename, bool wait) {
+    bool finished = false;
+    ScriptCode_t code = {
+        .source = source,
+        .length = length,
+        .filename = filename,
+        .finished = wait ? &finished : nullptr,
+        .buffering = false,
+    };
+    xQueueSendMS(taskQueue, &code, 0);
+    if (wait) {
+        vTaskDelayMS(1);
+        while (!finished) {
+            vTaskDelayMS(1);
+        }
     }
+}
+
+void Script::write(const char* buffer, size_t length) {
+    if (!outputBuffering) {
+        return;
+    }
+    outputBuffer.append(buffer, length);
+}
+
+void Script::exec(const char* source, size_t length, const char* filename, bool* finished, bool buffering) {
+    if (!filename) {
+        filename = "<input>";
+    }
+    print("[script] %s\n", filename);
+    print((const uint8_t*)source, length);
+    print(length > 1 && source[length - 1] == '\n' ? "<END>\n" : "\n<END>\n");
+    outputBuffering = buffering;
+    outputBuffer.resize(0);
     JSContext* ctx = scriptBegin();
-    write = code.write;
-    JSValue value = JS_Parse(ctx, code.source, code.length, code.filename, JS_EVAL_RETVAL);
+    JSValue value = JS_Parse(ctx, source, length, filename, JS_EVAL_RETVAL);
     if (JS_IsException(value)) {
         value = JS_GetException(ctx);
     } else {
@@ -63,59 +101,22 @@ void Script::exec(ScriptCode_t code) {
     print("[result] ");
     js_output(ctx, value);
     js_timers_run(ctx);
-    if (write) {
-        write(nullptr, 0);
-        write = nullptr;
+    outputBuffering = false;
+    if (finished != nullptr) {
+        *finished = true;
+    }
+    if (buffering) {
+        vTaskDelayMS(1);
     }
 }
 
 void Script::task() {
-    std::string source;
-    size_t length = 0;
-    unsigned long start = 0;
     ScriptCode_t code;
     while (true) {
-        if (RobotSerial.available() > 0) {
-            start = millis();
-            source.resize(length + RobotSerial.available());
-            while (RobotSerial.available() > 0) {
-                if (length >= source.length()) {
-                    source.resize(length + RobotSerial.available());
-                }
-                source[length] = RobotSerial.read();
-                length++;
-            }
-            char c = length > 1 ? source[length - 1] : '\0';
-            if (c == '\n' || c == '\3' || c == '\4') {
-                source[length - 1] = '\n';
-                exec({
-                    .filename = "<Serial>",
-                    .source = source.c_str(),
-                    .length = length,
-                    .write = nullptr,
-                });
-                length = 0;
-            } else {
-                js_timers_run(scriptContext);
-            }
-        } else if (xQueueReceiveMS(taskQueue, &code, length ? JS_DELAY : 1000)) {
-            exec(code);
-        } else if (length) {
-            if (millis() - start >= 1000) {
-                exec({
-                    .filename = "<Serial>",
-                    .source = source.c_str(),
-                    .length = length,
-                    .write = nullptr,
-                });
-                length = 0;
-            } else {
-                js_timers_run(scriptContext);
-            }
+        if (xQueueReceiveMS(taskQueue, &code, 1000) == pdTRUE) {
+            exec(code.source, code.length, code.filename, code.finished, code.buffering);
         } else if (scriptContext) {
             js_timers_run(scriptContext);
-        } else {
-            vTaskDelayMS(1000);
         }
     }
 }
@@ -125,10 +126,8 @@ void Script::task(void* arg) {
 }
 
 void js_write(void* opaque, const void* buffer, size_t length) {
-    if (script.write) {
-        script.write((const uint8_t*)buffer, length);
-    }
-    script.serialWrite((const uint8_t*)buffer, length);
+    script.write((const char*)buffer, length);
+    print((const uint8_t*)buffer, length);
 }
 
 void js_output(JSContext* ctx, JSValue value) {

@@ -109,7 +109,7 @@ typedef struct {
 class Controller {
    public:
     Controller();
-    ~Controller();
+    virtual ~Controller() = default;
 
     void begin();
 

@@ -3,9 +3,10 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
-#include <NimBLEDevice.h>
 #include <queue.h>
 #include <task.h>
+
+#include <NimBLEDevice.h>
 
 #include "ble_battery.h"
 #include "ble_robot.h"
@@ -15,7 +16,7 @@
 class BLE : public BLEServerCallbacks, public BLEClientCallbacks, public BLEAdvertisedDeviceCallbacks {
    public:
     BLE();
-    ~BLE();
+    virtual ~BLE() = default;
 
     BLEServer* server = nullptr;
     BLEAdvertising* advertising = nullptr;
@@ -57,7 +58,7 @@ class BLE : public BLEServerCallbacks, public BLEClientCallbacks, public BLEAdve
     bool started = false;
     bool hasClient = false;
     bool hasController = false;
-    TaskHandle_t controllerStarted = nullptr;
+    TaskHandle_t taskControllerHandle = nullptr;
     QueueHandle_t advertisedQueue = xQueueCreate(4, sizeof(BLEAdvertisedDevice*));
     String controllerAddress = "";
     uint16_t controllerVendorId = 0x00;

@@ -11,8 +11,6 @@ TFLM tflm;
 
 TFLM::TFLM() {}
 
-TFLM::~TFLM() {}
-
 void TFLM::begin() {
 #include "../lib/tflite-micro/yolo/yolo26n_int8.h"
 

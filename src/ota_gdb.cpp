@@ -5,34 +5,32 @@
 
 #include "config.h"
 
-#ifdef ROBOT_HAS_OTA_BLACKMAGIC
+#ifdef ROBOT_HAS_OTA_GDB
 
 #include "ota.h"
 #include "delay.h"
 #include "print.h"
 
-OTABlackMagic otaBlackMagic;
+OTAGdb otaGdb;
 
-OTABlackMagic::OTABlackMagic() {}
+OTAGdb::OTAGdb() {}
 
-OTABlackMagic::~OTABlackMagic() {}
-
-void OTABlackMagic::begin() {
-    if (!taskMainStarted) {
-        xTaskCreate(taskMain, "gdb_main", 4096, NULL, 1, &taskMainStarted);
+void OTAGdb::begin() {
+    if (!taskMainHandle) {
+        xTaskCreate(taskMain, "gdb_main", 4096, NULL, 1, &taskMainHandle);
     }
-    if (!taskServerStarted) {
-        xTaskCreate(taskServer, "gdb_server", 4096, NULL, 1, &taskServerStarted);
+    if (!taskMainHandle) {
+        xTaskCreate(taskServer, "gdb_server", 4096, NULL, 1, &taskMainHandle);
     }
     IPAddress ip = ota.getIP();
     print("[GDB] ~/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb\n");
-    print("[GDB] target extended-remote %s:%d\n", NET_HOSTNAME, ROBOT_OTA_BLACKMAGIC_PORT);
-    print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_BLACKMAGIC_PORT);
+    print("[GDB] target extended-remote %s:%d\n", NET_HOSTNAME, ROBOT_OTA_GDB_PORT);
+    print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_GDB_PORT);
 }
 
-void OTABlackMagic::end() {}
+void OTAGdb::end() {}
 
-void OTABlackMagic::write(char c, bool flush) {
+void OTAGdb::write(char c, bool flush) {
     txBuffer[txLength] = c;
     txLength++;
     if (txLength >= sizeof(txBuffer) || flush) {
@@ -40,7 +38,7 @@ void OTABlackMagic::write(char c, bool flush) {
     }
 }
 
-void OTABlackMagic::flush(bool flush) {
+void OTAGdb::flush(bool flush) {
     if (!txLength) {
         return;
     }
@@ -56,7 +54,7 @@ void OTABlackMagic::flush(bool flush) {
     txLength = 0;
 }
 
-void OTABlackMagic::taskServer() {
+void OTAGdb::taskServer() {
     server.setNoDelay(true);
     server.begin();
     while (true) {
@@ -74,15 +72,15 @@ void OTABlackMagic::taskServer() {
     }
 }
 
-void OTABlackMagic::taskMain(void* arg) {
+void OTAGdb::taskMain(void* arg) {
     while (true) {
         platform_main();
         vTaskDelayMS(1);
     }
 }
 
-void OTABlackMagic::taskServer(void* arg) {
-    otaBlackMagic.taskServer();
+void OTAGdb::taskServer(void* arg) {
+    otaGdb.taskServer();
 }
 
 int gdb_if_init(void) {
@@ -90,27 +88,27 @@ int gdb_if_init(void) {
 }
 
 char gdb_if_getchar(void) {
-    while (!otaBlackMagic.client.connected()) {
+    while (!otaGdb.client.connected()) {
         vTaskDelayMS(100);
     }
-    while (otaBlackMagic.client.available() <= 0) {
+    while (otaGdb.client.available() <= 0) {
         vTaskDelayMS(10);
-        if (!otaBlackMagic.client.connected()) {
+        if (!otaGdb.client.connected()) {
             return 0;
         }
     }
-    int c = otaBlackMagic.client.read();
+    int c = otaGdb.client.read();
     return c < 0 ? 0 : c;
 }
 
 char gdb_if_getchar_to(uint32_t timeout) {
-    if (otaBlackMagic.client.available() > 0) {
-        return otaBlackMagic.client.read();
+    if (otaGdb.client.available() > 0) {
+        return otaGdb.client.read();
     }
     while (timeout > 0) {
         vTaskDelayMS(1);
-        if (otaBlackMagic.client.available() > 0) {
-            return otaBlackMagic.client.read();
+        if (otaGdb.client.available() > 0) {
+            return otaGdb.client.read();
         }
         timeout--;
     }
@@ -118,11 +116,11 @@ char gdb_if_getchar_to(uint32_t timeout) {
 }
 
 void gdb_if_putchar(char c, bool flush) {
-    return otaBlackMagic.write(c, flush);
+    return otaGdb.write(c, flush);
 }
 
 void gdb_if_flush(bool force) {
-    return otaBlackMagic.flush(force);
+    return otaGdb.flush(force);
 }
 
 void debug_serial_send_stdout(const uint8_t* buffer, size_t length) {

@@ -3,10 +3,11 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiServer.h>
 #include <task.h>
+
+#include <WiFi.h>
+#include <WiFiServer.h>
+#include <WiFiClient.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,10 +19,10 @@ extern "C" {
 
 #include "config.h"
 
-class OTABlackMagic {
+class OTAGdb {
    public:
-    OTABlackMagic();
-    ~OTABlackMagic();
+    OTAGdb();
+    virtual ~OTAGdb() = default;
 
     void begin();
     void end();
@@ -31,12 +32,12 @@ class OTABlackMagic {
 
     void taskServer();
 
-    WiFiServer server = WiFiServer(ROBOT_OTA_BLACKMAGIC_PORT, 1);
+    WiFiServer server = WiFiServer(ROBOT_OTA_GDB_PORT, 1);
     WiFiClient client;
 
    protected:
-    TaskHandle_t taskMainStarted = nullptr;
-    TaskHandle_t taskServerStarted = nullptr;
+    TaskHandle_t taskMainHandle = nullptr;
+    TaskHandle_t taskServerHandle = nullptr;
     char txBuffer[4096];
     size_t txLength = 0;
 
@@ -44,4 +45,4 @@ class OTABlackMagic {
     static inline void taskServer(void* arg);
 };
 
-extern OTABlackMagic otaBlackMagic;
+extern OTAGdb otaGdb;

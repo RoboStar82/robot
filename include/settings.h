@@ -13,7 +13,7 @@
 class Settings : public Preferences {
    public:
     Settings();
-    ~Settings();
+    virtual ~Settings() = default;
 
     void begin();
 

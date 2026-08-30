@@ -2,16 +2,17 @@
 #pragma once
 
 #include <Arduino.h>
+
 #include <WiFi.h>
-#include <esp_http_server.h>
 #include <lwip/sockets.h>
+#include <esp_http_server.h>
 
 #include "config.h"
 
 class OTAHttp {
    public:
     OTAHttp();
-    ~OTAHttp();
+    virtual ~OTAHttp() = default;
 
     void begin();
 

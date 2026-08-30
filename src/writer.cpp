@@ -90,10 +90,6 @@ size_t Writer::write(const uint8_t* buffer, size_t length) {
     return r;
 }
 
-int Writer::write(void* cookie, const char* buffer, int length) {
-    writer.write((const uint8_t*)buffer, length);
-}
-
 void Writer::flush() {
     if (taskHandle) {
         xTaskNotifyGive(taskHandle);
@@ -111,6 +107,10 @@ size_t Writer::send(Stream& stream, const std::string& output) {
         }
     }
     return index;
+}
+
+int Writer::write(void* cookie, const char* buffer, int length) {
+    writer.write((const uint8_t*)buffer, length);
 }
 
 void Writer::task() {

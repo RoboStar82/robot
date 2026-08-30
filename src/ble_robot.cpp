@@ -17,8 +17,6 @@
 
 BLERobotSettings::BLERobotSettings() {}
 
-BLERobotSettings::~BLERobotSettings() {}
-
 void BLERobotSettings::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -54,8 +52,6 @@ void BLERobotSettings::end() {
 }
 
 BLERobotWiFiMode::BLERobotWiFiMode() {}
-
-BLERobotWiFiMode::~BLERobotWiFiMode() {}
 
 void BLERobotWiFiMode::begin(BLEService* service) {
     if (characteristic) {
@@ -101,8 +97,6 @@ void BLERobotWiFiMode::end() {
 
 BLERobotWiFiSSID::BLERobotWiFiSSID() {}
 
-BLERobotWiFiSSID::~BLERobotWiFiSSID() {}
-
 void BLERobotWiFiSSID::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -142,8 +136,6 @@ void BLERobotWiFiSSID::end() {
 
 BLERobotWiFiPassword::BLERobotWiFiPassword() {}
 
-BLERobotWiFiPassword::~BLERobotWiFiPassword() {}
-
 void BLERobotWiFiPassword::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -182,8 +174,6 @@ void BLERobotWiFiPassword::end() {
 }
 
 BLERobot::BLERobot() {}
-
-BLERobot::~BLERobot() {}
 
 void BLERobot::begin() {
     service = ble.server->createService(serviceUuid);

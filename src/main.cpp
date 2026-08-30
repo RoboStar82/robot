@@ -28,12 +28,16 @@
 #include "display.h"
 #endif
 
-#ifdef ROBOT_HAS_PROXY
-#include "proxy.h"
-#endif
-
 #ifdef ROBOT_HAS_SETTINGS
 #include "settings.h"
+#endif
+
+#ifdef ROBOT_HAS_READER
+#include "reader.h"
+#endif
+
+#ifdef ROBOT_HAS_WRITER
+#include "writer.h"
 #endif
 
 #ifdef ROBOT_HAS_PYTHON
@@ -53,10 +57,16 @@
 #endif
 
 void setup() {
-    RobotSerial.begin(115200);
+    Serial.begin(115200);
     print("[main] %s (%s.local) Firmware: %u (%s)\n", BLE_DEVICE_NAME, NET_HOSTNAME, BUILD_TIMESTAMP, BUILD_DATETIME);
 #ifdef ROBOT_HAS_LED
     led.begin();
+#endif
+#ifdef ROBOT_HAS_READER
+    reader.begin();
+#endif
+#ifdef ROBOT_HAS_WRITER
+    writer.begin();
 #endif
 #ifdef ROBOT_HAS_DISPLAY
     display.begin();
@@ -72,9 +82,6 @@ void setup() {
 #endif
 #ifdef ROBOT_HAS_USB
     usb.begin();
-#endif
-#ifdef ROBOT_HAS_PROXY
-    proxy.begin();
 #endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();

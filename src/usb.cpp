@@ -20,34 +20,32 @@ USB usb;
 
 USB::USB() {}
 
-USB::~USB() {}
-
 void USB::begin() {
     print("[USB] begin\n");
-    if (!taskUsbLibStarted) {
-        xTaskCreate(taskUsbLib, "usb_lib_task", 4096, xTaskGetCurrentTaskHandle(), 1, &taskUsbLibStarted);
+    if (!taskUsbLibHandle) {
+        xTaskCreate(taskUsbLib, "usb_lib_task", 4096, xTaskGetCurrentTaskHandle(), 1, &taskUsbLibHandle);
         ulTaskNotifyTakeMS(false, 1000);
     }
-    if (!taskUsbDevStarted) {
-        xTaskCreate(taskUsbDev, "usb_dev_task", 4096, NULL, 1, &taskUsbDevStarted);
+    if (!taskUsbDevHandle) {
+        xTaskCreate(taskUsbDev, "usb_dev_task", 4096, NULL, 1, &taskUsbDevHandle);
     }
-    if (!taskUsbHidStarted) {
-        xTaskCreate(taskUsbHid, "usb_hid_task", 4096, NULL, 1, &taskUsbHidStarted);
+    if (!taskUsbHidHandle) {
+        xTaskCreate(taskUsbHid, "usb_hid_task", 4096, NULL, 1, &taskUsbHidHandle);
     }
 }
 
 void USB::end() {
     print("[USB] end\n");
-    if (taskUsbDevStarted) {
-        vTaskDelete(taskUsbDevStarted);
-        taskUsbDevStarted = nullptr;
+    if (taskUsbDevHandle) {
+        vTaskDelete(taskUsbDevHandle);
+        taskUsbDevHandle = nullptr;
     }
-    if (taskUsbHidStarted) {
-        vTaskDelete(taskUsbHidStarted);
-        taskUsbHidStarted = nullptr;
+    if (taskUsbHidHandle) {
+        vTaskDelete(taskUsbHidHandle);
+        taskUsbHidHandle = nullptr;
         hid_host_uninstall();
     }
-    if (taskUsbLibStarted) {
+    if (taskUsbLibHandle) {
         usb_host_uninstall();
     }
 }

@@ -1,6 +1,10 @@
 
 #pragma once
 
+#include <Arduino.h>
+#include <FreeRTOS.h>
+#include <task.h>
+
 #include <NimBLEDevice.h>
 
 #include "config.h"
@@ -9,7 +13,7 @@
 class BLEBatteryLevel {
    public:
     BLEBatteryLevel();
-    ~BLEBatteryLevel();
+    virtual ~BLEBatteryLevel() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -26,7 +30,7 @@ class BLEBatteryLevel {
     const char* characteristicDescription = "Battery Level";
     uint8_t characteristicFormat = BLE2904::FORMAT_UINT8;
 
-    TaskHandle_t startedTask = nullptr;
+    TaskHandle_t taskHandle = nullptr;
     uint8_t value = 0;
 #ifdef ROBOT_HAS_TRANSCEIVER_LORA
     uint8_t batteryPin = 2;

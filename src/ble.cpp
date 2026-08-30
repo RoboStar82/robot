@@ -25,8 +25,6 @@ BLE ble;
 
 BLE::BLE() {}
 
-BLE::~BLE() {}
-
 void BLE::begin() {
     if (!started) {
         started = true;
@@ -66,15 +64,15 @@ void BLE::advertisingStop() {
 }
 
 void BLE::controllerStart() {
-    if (!controllerStarted) {
-        xTaskCreate(taskController, "ble_controller_task", 4096, NULL, 1, &controllerStarted);
+    if (!taskControllerHandle) {
+        xTaskCreate(taskController, "ble_controller_task", 4096, NULL, 1, &taskControllerHandle);
     }
 }
 
 void BLE::controllerStop() {
-    if (controllerStarted) {
-        vTaskDelete(controllerStarted);
-        controllerStarted = nullptr;
+    if (taskControllerHandle) {
+        vTaskDelete(taskControllerHandle);
+        taskControllerHandle = nullptr;
     }
 }
 
@@ -261,7 +259,7 @@ void BLE::taskController() {
         if (!hasController) {
             if (controllerAddress.length()) {
                 controllerConnect(BLEAddress(std::string(controllerAddress.c_str()), BLE_ADDR_PUBLIC));
-            } else if (xQueueReceiveMS(advertisedQueue, &advertised, 1000)) {
+            } else if (xQueueReceiveMS(advertisedQueue, &advertised, 1000) == pdTRUE) {
                 controllerConnect(advertised);
             } else {
                 scanStart();

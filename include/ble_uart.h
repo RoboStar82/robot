@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <Arduino.h>
+
 #include <NimBLEDevice.h>
 
 #include "config.h"
@@ -9,7 +11,7 @@
 class BLEUartRx : public BLECharacteristicCallbacks {
    public:
     BLEUartRx();
-    ~BLEUartRx();
+    virtual ~BLEUartRx() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -29,7 +31,7 @@ class BLEUartRx : public BLECharacteristicCallbacks {
 class BLEUartTx {
    public:
     BLEUartTx();
-    ~BLEUartTx();
+    virtual ~BLEUartTx() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -46,7 +48,7 @@ class BLEUartTx {
 class BLEUart : public BLECharacteristicCallbacks {
    public:
     BLEUart();
-    ~BLEUart();
+    virtual ~BLEUart() = default;
 
     BLEService* service = nullptr;
 

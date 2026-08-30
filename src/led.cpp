@@ -14,20 +14,27 @@ Led led;
 
 Led::Led() {}
 
-Led::~Led() {}
-
 void Led::begin() {
-    setPower(true);
+    if (!taskHandle) {
+        setPower(true);
 #ifdef RGB_BUILTIN
-    rgbPin = RGB_BUILTIN;
-    rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
+        rgbPin = RGB_BUILTIN;
+        rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
 #else
 #ifdef LED_BUILTIN
-    ledPin = LED_BUILTIN;
-    ledcAttach(LED_BUILTIN, 5000, 8);
+        ledPin = LED_BUILTIN;
+        ledcAttach(LED_BUILTIN, 5000, 8);
 #endif
 #endif
-    xTaskCreate(task, "led_task", 4096, NULL, 1, NULL);
+        xTaskCreate(task, "led_task", 4096, NULL, 1, &taskHandle);
+    }
+}
+
+void Led::end() {
+    if (taskHandle) {
+        vTaskDelete(taskHandle);
+        taskHandle = nullptr;
+    }
 }
 
 void Led::onChange() {

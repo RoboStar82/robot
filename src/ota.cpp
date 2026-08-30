@@ -25,13 +25,11 @@ OTA ota;
 
 OTA::OTA() {}
 
-OTA::~OTA() {}
-
 void OTA::begin() {
     ArduinoOTA.setHostname(NET_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
-    if (!taskStarted) {
-        xTaskCreate(task, "ota_task", 16384, NULL, 1, &taskStarted);
+    if (!taskHandle) {
+        xTaskCreate(task, "ota_task", 16384, NULL, 1, &taskHandle);
 #ifdef ROBOT_HAS_SETTINGS
         setWiFiMode(settings.getWiFiMode());
 #else
@@ -41,6 +39,13 @@ void OTA::begin() {
 #endif
     } else {
         setWiFiMode(wifiMode);
+    }
+}
+
+void OTA::end() {
+    if (taskHandle) {
+        vTaskDelete(taskHandle);
+        taskHandle = nullptr;
     }
 }
 
@@ -124,27 +129,27 @@ void OTA::beginOTA() {
     }
     print("[OTA] upload_protocol = espota\n");
     print("[OTA] upload_port = %s\n", ip.toString().c_str());
+#ifdef ROBOT_HAS_OTA_GDB
+    otaGdb.begin();
+#endif
 #ifdef ROBOT_HAS_OTA_HTTP
     otaHttp.begin();
 #endif
 #ifdef ROBOT_HAS_OTA_UART
     otaUart.begin();
 #endif
-#ifdef ROBOT_HAS_OTA_BLACKMAGIC
-    otaBlackMagic.begin();
-#endif
 }
 
 void OTA::endOTA() {
     ArduinoOTA.end();
+#ifdef ROBOT_HAS_OTA_GDB
+    otaGdb.end();
+#endif
 #ifdef ROBOT_HAS_OTA_HTTP
     otaHttp.end();
 #endif
 #ifdef ROBOT_HAS_OTA_UART
     otaUart.end();
-#endif
-#ifdef ROBOT_HAS_OTA_BLACKMAGIC
-    otaBlackMagic.end();
 #endif
 }
 
@@ -152,7 +157,7 @@ void OTA::task() {
     WiFi.onEvent(onWiFiEvent);
     while (true) {
         WiFiMode_t value;
-        if (xQueueReceiveMS(taskQueue, &value, 1000)) {
+        if (xQueueReceiveMS(taskQueue, &value, 1000) == pdTRUE) {
             if (wifiMode != WIFI_MODE_NULL) {
                 endWiFi();
             }

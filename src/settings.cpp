@@ -17,8 +17,6 @@ Settings settings;
 
 Settings::Settings() : Preferences() {}
 
-Settings::~Settings() {}
-
 void Settings::begin() {
     begin("robot");
     started = true;

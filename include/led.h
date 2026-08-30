@@ -66,9 +66,10 @@ typedef struct {
 class Led {
    public:
     Led();
-    ~Led();
+    virtual ~Led() = default;
 
     void begin();
+    void end();
 
     void onChange();
 
@@ -86,6 +87,8 @@ class Led {
     void task();
 
    protected:
+    TaskHandle_t taskHandle = nullptr;
+
     uint8_t rgbPin = -1;
     uint8_t ledPin = -1;
     LedTimers_t timers;

@@ -12,8 +12,6 @@
 
 BLEBatteryLevel::BLEBatteryLevel() {}
 
-BLEBatteryLevel::~BLEBatteryLevel() {}
-
 void BLEBatteryLevel::begin(BLEService* service) {
     if (characteristic) {
         return;
@@ -33,8 +31,8 @@ void BLEBatteryLevel::begin(BLEService* service) {
     ble2904->setUnit(0x27ad);
     if (batteryPin) {
         pinMode(batteryPin, INPUT);
-        if (!startedTask) {
-            xTaskCreate(task, "battery_level_task", 4096, NULL, 1, &startedTask);
+        if (!taskHandle) {
+            xTaskCreate(task, "battery_level_task", 4096, NULL, 1, &taskHandle);
         }
     }
 }

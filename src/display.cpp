@@ -42,8 +42,6 @@ E0213A367 displayE0213A367;
 
 Display::Display() {}
 
-Display::~Display() {}
-
 void Display::begin() {
     bool logo = false;
 #ifdef ROBOT_HAS_DISPLAY_ST7735
@@ -71,6 +69,8 @@ void Display::begin() {
     drawLogo();
 #endif
 }
+
+void Display::end() {}
 
 void Display::clear() {
 #ifdef ROBOT_HAS_DISPLAY_ST7735

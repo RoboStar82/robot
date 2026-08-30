@@ -18,41 +18,41 @@ extern "C" {
 
 #ifdef __cplusplus
 
+#include <string>
+
 #include "print.h"
 
-typedef std::function<void(const uint8_t* buffer, size_t length)> ScriptWrite;
-
 typedef struct {
-    const char* filename;
     const char* source;
     size_t length;
-    ScriptWrite write;
+    const char* filename;
+    bool* finished;
+    bool buffering;
 } ScriptCode_t;
 
 class Script {
    public:
     Script();
-    ~Script();
+    virtual ~Script() = default;
 
     void begin();
-
     void end();
 
-    void run(ScriptCode_t code);
+    void run(const char* source, size_t length, std::string& output, const char* filename = nullptr);
+    void run(const char* source, size_t length, const char* filename = nullptr, bool wait = true);
+
+    void write(const char* buffer, size_t length);
 
     void task();
 
-    ScriptWrite serialWrite = [](const uint8_t* buffer, size_t length) {
-        print(buffer, length);
-    };
-
-    ScriptWrite write = nullptr;
-
    protected:
-    TaskHandle_t taskStarted = nullptr;
+    TaskHandle_t taskHandle = nullptr;
     QueueHandle_t taskQueue = xQueueCreate(4, sizeof(ScriptCode_t));
 
-    void exec(ScriptCode_t code);
+    std::string outputBuffer;
+    bool outputBuffering = false;
+
+    void exec(const char* source, size_t length, const char* filename, bool* finished, bool buffering);
 
     static inline void task(void* arg);
 };

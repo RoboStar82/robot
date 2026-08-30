@@ -11,7 +11,7 @@
 class TFLM {
    public:
     TFLM();
-    ~TFLM();
+    virtual ~TFLM() = default;
 
     void begin();
     void end();

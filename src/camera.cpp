@@ -68,11 +68,9 @@ void DCMI_IRQHandler();
 
 Camera::Camera() {}
 
-Camera::~Camera() {}
-
 void Camera::begin() {
-    if (!taskStarted) {
-        xTaskCreate(task, "camera_task", 4096, NULL, 1, &taskStarted);
+    if (!taskHandle) {
+        xTaskCreate(task, "camera_task", 4096, NULL, 1, &taskHandle);
     }
 }
 

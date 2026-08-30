@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <Arduino.h>
+
 #include <NimBLEDevice.h>
 
 #include "config.h"
@@ -10,7 +12,7 @@
 class BLERobotSettings : public BLECharacteristicCallbacks {
    public:
     BLERobotSettings();
-    ~BLERobotSettings();
+    virtual ~BLERobotSettings() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -31,7 +33,7 @@ class BLERobotSettings : public BLECharacteristicCallbacks {
 class BLERobotWiFiMode : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiMode();
-    ~BLERobotWiFiMode();
+    virtual ~BLERobotWiFiMode() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -52,7 +54,7 @@ class BLERobotWiFiMode : public BLECharacteristicCallbacks {
 class BLERobotWiFiSSID : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiSSID();
-    ~BLERobotWiFiSSID();
+    virtual ~BLERobotWiFiSSID() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -73,7 +75,7 @@ class BLERobotWiFiSSID : public BLECharacteristicCallbacks {
 class BLERobotWiFiPassword : public BLECharacteristicCallbacks {
    public:
     BLERobotWiFiPassword();
-    ~BLERobotWiFiPassword();
+    virtual ~BLERobotWiFiPassword() = default;
 
     BLECharacteristic* characteristic = nullptr;
 
@@ -92,7 +94,7 @@ class BLERobotWiFiPassword : public BLECharacteristicCallbacks {
 class BLERobot {
    public:
     BLERobot();
-    ~BLERobot();
+    virtual ~BLERobot() = default;
 
     BLEService* service = nullptr;
 

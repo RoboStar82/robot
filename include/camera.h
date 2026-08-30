@@ -10,7 +10,7 @@
 class Camera {
    public:
     Camera();
-    ~Camera();
+    virtual ~Camera() = default;
 
     void begin();
     void init();
@@ -18,7 +18,7 @@ class Camera {
     void end();
 
    protected:
-    TaskHandle_t taskStarted = nullptr;
+    TaskHandle_t taskHandle = nullptr;
 
     static inline void task(void* arg);
 };

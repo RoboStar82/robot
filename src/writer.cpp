@@ -110,7 +110,7 @@ size_t Writer::send(Stream& stream, const std::string& output) {
 }
 
 int Writer::write(void* cookie, const char* buffer, int length) {
-    writer.write((const uint8_t*)buffer, length);
+    return writer.write((const uint8_t*)buffer, length);
 }
 
 void Writer::task() {
@@ -124,7 +124,8 @@ void Writer::task() {
             }
             size_t length = txLength;
             uint8_t buffer[length];
-            memcpy(buffer, txBuffer, length);
+            memcpy(buffer, txBuffer, txLength);
+            txLength = 0;
             xSemaphoreGive(txLock);
             std::string output((char*)buffer, length);
             send(Serial, output);

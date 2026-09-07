@@ -62,7 +62,7 @@ size_t Reader::read(Stream& stream, std::string& source) {
             continue;
         }
         char c = source[length - 1];
-        if (c == '\n' || c == '\r' || c == '\3' || c == '\4') {
+        if (c == '\n' || c == '\r' || c == '\3' || c == '\4' || c == '\0') {
             source[length - 1] = '\n';
             break;
         }

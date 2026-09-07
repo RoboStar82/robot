@@ -67,6 +67,8 @@ extern "C" {
 
 extern JSContext* scriptContext;
 
+#define JS_MEMORY 16384
+
 JSContext* scriptBegin();
 void scriptEnd();
 

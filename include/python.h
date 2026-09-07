@@ -45,8 +45,6 @@ class Python {
 
     bool initCalled = false;
 
-    void init();
-
     void exec(const char* source, size_t length, const char* filename, bool* finished, bool buffering);
 
     static inline void task(void* arg);

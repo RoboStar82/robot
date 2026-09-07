@@ -52,7 +52,7 @@ size_t Writer::write(uint8_t c) {
     }
     r = 1;
     xSemaphoreGive(txLock);
-    if (txLength >= sizeof(txBuffer) || c == '\n' || c == '\r' || c == '\3' || c == '\4') {
+    if (txLength >= sizeof(txBuffer) || c == '\n' || c == '\r' || c == '\3' || c == '\4' || c == '\0') {
         flush();
     }
     return r;
@@ -84,7 +84,8 @@ size_t Writer::write(const uint8_t* buffer, size_t length) {
         r = length;
     }
     xSemaphoreGive(txLock);
-    if (txLength >= sizeof(txBuffer) || buffer[txLength - 1] == '\n' || buffer[txLength - 1] == '\r' || buffer[txLength - 1] == '\3' || buffer[txLength - 1] == '\4') {
+    uint8_t c = buffer[txLength - 1];
+    if (txLength >= sizeof(txBuffer) || c == '\n' || c == '\r' || c == '\3' || c == '\4' || c == '\0') {
         flush();
     }
     return r;

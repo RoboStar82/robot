@@ -6,6 +6,7 @@
 #ifdef ROBOT_HAS_BLE
 
 #include "ble.h"
+#include "print.h"
 
 BLEUartRx::BLEUartRx() {}
 
@@ -30,7 +31,7 @@ void BLEUartRx::begin(BLEService* service) {
 
 void BLEUartRx::onWrite(BLECharacteristic* bleCharacteristic, BLEConnInfo& connInfo) {
     std::string value = bleCharacteristic->getValue();
-    log_i("rx: %s", value.c_str());
+    print("[BLE] rx: %s\n", value.c_str());
 }
 
 void BLEUartRx::end() {

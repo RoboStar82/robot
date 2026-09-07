@@ -25,7 +25,7 @@ void Writer::begin() {
         stdoutReplaced = _GLOBAL_REENT->_stdout;
         _GLOBAL_REENT->_stdout = funopen(NULL, NULL, write, NULL, NULL);
         setvbuf(_GLOBAL_REENT->_stdout, NULL, _IONBF, 0);
-        xTaskCreate(task, "writer_task", 4096, NULL, 0, &taskHandle);
+        xTaskCreate(task, "writer_task", 8192, NULL, 0, &taskHandle);
     }
 }
 
@@ -100,7 +100,7 @@ size_t Writer::send(Stream& stream, const std::string& output) {
     size_t length = output.length();
     size_t index = 0;
     while (index < length) {
-        if (size_t size = Serial.write(&output[index], length - index)) {
+        if (size_t size = stream.write(&output[index], length - index)) {
             index += size;
         } else {
             break;

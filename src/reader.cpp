@@ -23,6 +23,7 @@
 
 #include "delay.h"
 #include "reader.h"
+#include "writer.h"
 
 Reader reader;
 
@@ -82,29 +83,42 @@ void Reader::task() {
 #ifdef ROBOT_HAS_PROXY_UART
     ProxySerial.begin(115200, SERIAL_8N1, ROBOT_PROXY_RX_PIN, ROBOT_PROXY_TX_PIN);
 #endif
-    std::string source;
-    size_t length;
     while (true) {
-        length = read(Serial, source);
+        std::string source;
+        size_t length = read(Serial, source);
 #ifdef ROBOT_HAS_OTA_UART
         if (!length) {
             length = read(otaUart, source);
         }
 #endif
         if (length) {
-#ifdef ROBOT_HAS_PROXY_UART
-            ProxySerial.write(source.c_str(), length);
-#endif
 #ifdef ROBOT_HAS_PYTHON
             python.run(source.c_str(), length);
 #endif
 #ifdef ROBOT_HAS_SCRIPT
             script.run(source.c_str(), length);
 #endif
+#ifdef ROBOT_HAS_PROXY_UART
+            ProxySerial.write(source.c_str(), length);
+#endif
             vTaskDelayMS(1);
         } else {
             vTaskDelayMS(100);
         }
+#ifdef ROBOT_HAS_PROXY_UART
+        if (ProxySerial.available() > 0) {
+            char c;
+            do {
+                c = ProxySerial.read();
+#ifdef ROBOT_HAS_WRITER
+                writer.write(c);
+#else
+                Serial.write(c);
+#endif
+            } while (ProxySerial.available() > 0);
+            vTaskDelayMS(1);
+        }
+#endif
     }
 }
 

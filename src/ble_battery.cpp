@@ -9,6 +9,7 @@
 
 #include "ble.h"
 #include "delay.h"
+#include "print.h"
 
 BLEBatteryLevel::BLEBatteryLevel() {}
 
@@ -110,7 +111,7 @@ void BLEBatteryLevel::setValue(uint8_t _value) {
         return;
     }
     value = _value;
-    log_i("Battery: %d%%", value);
+    print("[BLE] battery: %d%%\n", value);
     if (characteristic) {
         characteristic->setValue(value);
         characteristic->indicate();

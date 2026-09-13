@@ -21,15 +21,21 @@ Writer writer;
 Writer::Writer() : Print() {}
 
 void Writer::begin() {
-    if (!taskHandle) {
+    if (!stdoutReplaced) {
         stdoutReplaced = _GLOBAL_REENT->_stdout;
         _GLOBAL_REENT->_stdout = funopen(NULL, NULL, write, NULL, NULL);
         setvbuf(_GLOBAL_REENT->_stdout, NULL, _IONBF, 0);
+    }
+    if (!taskHandle) {
         xTaskCreate(task, "writer_task", 8192, NULL, 0, &taskHandle);
     }
 }
 
 void Writer::end() {
+    if (stdoutReplaced) {
+        _GLOBAL_REENT->_stdout = stdoutReplaced;
+        stdoutReplaced = nullptr;
+    }
     if (taskHandle) {
         vTaskDelete(taskHandle);
         taskHandle = nullptr;
@@ -97,11 +103,10 @@ void Writer::flush() {
     }
 }
 
-size_t Writer::send(Stream& stream, const std::string& output) {
-    size_t length = output.length();
+size_t Writer::send(Stream& stream, const uint8_t* buffer, size_t length) {
     size_t index = 0;
     while (index < length) {
-        if (size_t size = stream.write(&output[index], length - index)) {
+        if (size_t size = stream.write(&buffer[index], length - index)) {
             index += size;
         } else {
             break;
@@ -120,18 +125,29 @@ void Writer::task() {
             if (!txLength) {
                 continue;
             }
-            if (xSemaphoreTake(txLock, 1) != pdTRUE) {
-                continue;
+            if (txLength > txSerial) {
+                if (xSemaphoreTake(txLock, 1) != pdTRUE) {
+                    continue;
+                }
+                size_t length = txLength - txSerial;
+                uint8_t buffer[length];
+                memcpy(buffer, &txBuffer[txSerial], length);
+                txSerial = txLength;
+                xSemaphoreGive(txLock);
+                send(Serial, buffer, length);
             }
-            size_t length = txLength;
-            uint8_t buffer[length];
-            memcpy(buffer, txBuffer, txLength);
-            txLength = 0;
-            xSemaphoreGive(txLock);
-            std::string output((char*)buffer, length);
-            send(Serial, output);
 #ifdef ROBOT_HAS_OTA_UART
-            send(otaUart, output);
+            if (otaUart.connected()) {
+                if (xSemaphoreTake(txLock, 1) != pdTRUE) {
+                    continue;
+                }
+                size_t length = txLength;
+                uint8_t buffer[length];
+                memcpy(buffer, txBuffer, length);
+                txSerial = txLength = 0;
+                xSemaphoreGive(txLock);
+                send(otaUart, buffer, length);
+            }
 #endif
             vTaskDelayMS(1);
         }

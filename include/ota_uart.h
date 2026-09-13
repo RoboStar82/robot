@@ -26,6 +26,7 @@ class OTAUart : public Stream {
     size_t write(uint8_t c) override;
     size_t write(const uint8_t* buffer, size_t length) override;
     void flush() override;
+    bool connected();
 
     void task();
 

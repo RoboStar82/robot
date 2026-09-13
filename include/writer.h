@@ -7,8 +7,6 @@
 #include <semphr.h>
 #include <task.h>
 
-#include <string>
-
 #include "config.h"
 
 class Writer : public Print {
@@ -23,7 +21,7 @@ class Writer : public Print {
     size_t write(const uint8_t* buffer, size_t length) override;
     void flush() override;
 
-    size_t send(Stream& stream, const std::string& output);
+    size_t send(Stream& stream, const uint8_t* buffer, size_t length);
 
     void task();
 
@@ -41,6 +39,7 @@ class Writer : public Print {
     SemaphoreHandle_t txLock = xSemaphoreCreateMutex();
 
     uint8_t txBuffer[4096];
+    size_t txSerial = 0;
     size_t txLength = 0;
 
     static inline void task(void* arg);

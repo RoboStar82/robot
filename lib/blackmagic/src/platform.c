@@ -16,51 +16,62 @@
 #include <timing.h>
 
 const char* platform_target_voltage(void) {
+    DEBUG_INFO("[GDB] platform_target_voltage(): 3.3v\n");
     return "3.3v";
 }
 
 int platform_hwversion(void) {
+    DEBUG_INFO("[GDB] platform_hwversion(): 0\n");
     return 0;
 }
 
 void platform_nrst_set_val(bool assert) {
+    DEBUG_INFO("[GDB] platform_nrst_set_val(%d)\n", assert);
     return;
 }
 
 bool platform_nrst_get_val() {
+    DEBUG_INFO("[GDB] platform_nrst_get_val(): 0\n");
     return false;
 }
 
 bool platform_target_get_power(void) {
+    DEBUG_INFO("[GDB] platform_target_get_power(): 0\n");
     return false;
 }
 
 bool platform_target_set_power(bool power) {
+    DEBUG_INFO("[GDB] platform_target_set_power(%d): 0\n", power);
     return false;
 }
 
 void platform_request_boot(void) {
+    DEBUG_INFO("[GDB] platform_request_boot()\n");
     return;
 }
 
 uint32_t target_clk_divider = 0;
 
 void platform_max_frequency_set(uint32_t frequency) {
+    DEBUG_INFO("[GDB] platform_max_frequency_set(%d)\n", frequency);
     if (frequency < 50000) return;
     int32_t count = (esp_clk_cpu_freq() - SWD_TOTAL_CYCLES * (int32_t)frequency) / (SWD_CYCLES_PER_CLOCK * (int32_t)frequency);
     target_clk_divider = count > 0 ? count : 0;
+    DEBUG_INFO("[GDB] platform_max_frequency_set(%d): %d\n", frequency, target_clk_divider);
 }
 
 uint32_t platform_max_frequency_get(void) {
-    return esp_clk_cpu_freq() / (target_clk_divider * SWD_CYCLES_PER_CLOCK + SWD_TOTAL_CYCLES);
+    uint32_t r = esp_clk_cpu_freq() / (target_clk_divider * SWD_CYCLES_PER_CLOCK + SWD_TOTAL_CYCLES);
+    DEBUG_INFO("[GDB] platform_max_frequency_get(): %d\n", r);
+    return r;
 }
 
 void platform_target_clk_output_enable(bool enable) {
-    return;
+    DEBUG_INFO("[GDB] platform_target_clk_output_enable(): %d\n", enable);
 }
 
 void platform_ospeed_update(uint32_t frequency) {
-    return;
+    DEBUG_INFO("[GDB] platform_ospeed_update(): %d\n", frequency);
 }
 
 uint32_t platform_time_ms(void) {
@@ -68,7 +79,7 @@ uint32_t platform_time_ms(void) {
 }
 
 void platform_delay(uint32_t ms) {
-    vTaskDelay(ms / portTICK_PERIOD_MS);
+    vTaskDelayMS(ms);
 }
 
 void platform_timeout_set(platform_timeout_s* t, uint32_t ms) {
@@ -96,12 +107,12 @@ bool platform_spi_deinit(spi_bus_e bus) {
 }
 
 bool platform_spi_chip_select(uint8_t device_select) {
-    DEBUG_INFO("[GDB] platform_spi_chip_select()\n");
+    DEBUG_INFO("[GDB] platform_spi_chip_select(%d)\n", device_select);
     return false;
 }
 
 uint8_t platform_spi_xfer(spi_bus_e bus, uint8_t value) {
-    DEBUG_INFO("[GDB] platform_spi_xfer()\n");
+    DEBUG_INFO("[GDB] platform_spi_xfer(0x%02x)\n", value);
     return 0;
 }
 
@@ -136,14 +147,14 @@ void platform_loop() {
             break;
         }
         char c = gdb_if_getchar_to(0);
-        if (c == '\x03' || c == '\x04') {
+        if (c == '\3' || c == '\4') {
             target_halt_request(cur_target);
         }
         platform_pace_poll();
     }
     SET_IDLE_STATE(true);
     const gdb_packet_s* const packet = gdb_packet_receive();
-    if (packet->data[0] != '\x04' || cur_target) {
+    if (packet->data[0] != '\4' || cur_target) {
         SET_IDLE_STATE(false);
     }
     if (!packet->size) {
@@ -158,7 +169,7 @@ void platform_loop() {
             }
         }
         if (isPrint) {
-            DEBUG_INFO("[GDB] gdb_main(%s)\n", packet->data);
+            DEBUG_INFO("[GDB] gdb_main(\"%s\")\n", packet->data);
         } else if (packet->size > 1) {
             DEBUG_INFO("[GDB] gdb_main(%d 0x%02x...)\n", packet->size, packet->data[0]);
         } else {

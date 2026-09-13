@@ -21,7 +21,7 @@
 #define SWDIO_PIN (ROBOT_OTA_GDB_SWDIO_PIN)
 #endif
 
-#if 0 <= SWCLK_PIN && SWCLK_PIN < 32 && 0 <= SWDIO_PIN && SWDIO_PIN < 32 && SWCLK_PIN != GPIO_NUM_MAX && SWDIO_PIN != GPIO_NUM_MAX
+#if 0 <= SWCLK_PIN && SWCLK_PIN < 32 && 0 <= SWDIO_PIN && SWDIO_PIN < 32
 #define GPIO_FAST_IMPL
 #endif
 
@@ -69,8 +69,9 @@
     do {                      \
     } while (0)
 
-#define SET_ERROR_STATE(state) \
-    do {                       \
+#define SET_ERROR_STATE(state)                                 \
+    do {                                                       \
+        platform_printf("[GDB] set error state: %d\n", state); \
     } while (0)
 
 #define TMS_SET_MODE() \
@@ -155,4 +156,6 @@ void platform_init();
 void platform_loop();
 void platform_main();
 
-void platform_printf(const char* format, ...);
+void platform_printf(const char* format, ...) __attribute__((format(printf, 1, 2)));
+
+void vTaskDelayMS(uint32_t ms);

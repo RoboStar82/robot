@@ -9,14 +9,6 @@
 #include <WiFiServer.h>
 #include <WiFiClient.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <blackmagic.h>
-#ifdef __cplusplus
-}
-#endif
-
 #include "config.h"
 
 class OTAGdb {

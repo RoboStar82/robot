@@ -7,6 +7,14 @@
 
 #ifdef ROBOT_HAS_OTA_GDB
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include <blackmagic.h>
+#ifdef __cplusplus
+}
+#endif
+
 #include "ota.h"
 #include "delay.h"
 #include "print.h"
@@ -19,8 +27,8 @@ void OTAGdb::begin() {
     if (!taskMainHandle) {
         xTaskCreate(taskMain, "gdb_main", 4096, NULL, 1, &taskMainHandle);
     }
-    if (!taskMainHandle) {
-        xTaskCreate(taskServer, "gdb_server", 4096, NULL, 1, &taskMainHandle);
+    if (!taskServerHandle) {
+        xTaskCreate(taskServer, "gdb_server", 4096, NULL, 1, &taskServerHandle);
     }
     IPAddress ip = ota.getIP();
     print("[GDB] ~/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb\n");
@@ -28,7 +36,16 @@ void OTAGdb::begin() {
     print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_GDB_PORT);
 }
 
-void OTAGdb::end() {}
+void OTAGdb::end() {
+    if (taskMainHandle) {
+        vTaskDelete(taskMainHandle);
+        taskMainHandle = nullptr;
+    }
+    if (taskServerHandle) {
+        vTaskDelete(taskServerHandle);
+        taskServerHandle = nullptr;
+    }
+}
 
 void OTAGdb::write(char c, bool flush) {
     txBuffer[txLength] = c;

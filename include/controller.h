@@ -63,47 +63,47 @@ typedef struct {
     uint8_t RY = 0;
     uint8_t RA = 0;
     uint8_t LA = 0;
-    uint8_t A : 1 = 0;
-    uint8_t B : 1 = 0;
-    uint8_t L4 : 1 = 0;
-    uint8_t X : 1 = 0;
-    uint8_t Y : 1 = 0;
-    uint8_t R4 : 1 = 0;
-    uint8_t LB : 1 = 0;
-    uint8_t RB : 1 = 0;
-    uint8_t LT : 1 = 0;
-    uint8_t RT : 1 = 0;
-    uint8_t back : 1 = 0;
-    uint8_t start : 1 = 0;
-    uint8_t mode : 1 = 0;
-    uint8_t L3 : 1 = 0;
-    uint8_t R3 : 1 = 0;
+    uint8_t A : 1;
+    uint8_t B : 1;
+    uint8_t L4 : 1;
+    uint8_t X : 1;
+    uint8_t Y : 1;
+    uint8_t R4 : 1;
+    uint8_t LB : 1;
+    uint8_t RB : 1;
+    uint8_t LT : 1;
+    uint8_t RT : 1;
+    uint8_t back : 1;
+    uint8_t start : 1;
+    uint8_t mode : 1;
+    uint8_t L3 : 1;
+    uint8_t R3 : 1;
 } __attribute__((packed)) ControllerInput_2dc8_301b_t;
 
 typedef struct {
-    int8_t LX = 0; // 8
-    int8_t LY = 0; // 16
-    int8_t RX = 0; // 24
-    int8_t RY = 0; // 32
-    int8_t DX : 2 = 0; // 34
-    int8_t DY : 2 = 0; // 36
-    bool A : 1 = false; // 37
-    bool B : 1 = false; // 38
-    bool X : 1 = false; // 39
-    bool Y : 1 = false; // 40
-    bool LT : 1 = false; // 41
-    bool RT : 1 = false; // 42
-    bool LB : 1 = false; // 43
-    bool RB : 1 = false; // 44
-    bool L3 : 1 = false; // 45
-    bool R3 : 1 = false; // 46
-    bool L4 : 1 = false; // 47
-    bool R4 : 1 = false; // 48
-    uint8_t LA : 4 = 0; // 52
-    uint8_t RA : 4 = 0; // 56
-    bool start : 1 = false; // 57
-    bool back : 1 = false; // 58
-    uint8_t mode : 6 = 0; // 64
+    int8_t LX = 0;     // 8
+    int8_t LY = 0;     // 16
+    int8_t RX = 0;     // 24
+    int8_t RY = 0;     // 32
+    int8_t DX : 2;     // 34
+    int8_t DY : 2;     // 36
+    bool A : 1;        // 37
+    bool B : 1;        // 38
+    bool X : 1;        // 39
+    bool Y : 1;        // 40
+    bool LT : 1;       // 41
+    bool RT : 1;       // 42
+    bool LB : 1;       // 43
+    bool RB : 1;       // 44
+    bool L3 : 1;       // 45
+    bool R3 : 1;       // 46
+    bool L4 : 1;       // 47
+    bool R4 : 1;       // 48
+    uint8_t LA : 4;    // 52
+    uint8_t RA : 4;    // 56
+    bool start : 1;    // 57
+    bool back : 1;     // 58
+    uint8_t mode : 6;  // 64
 } __attribute__((packed)) ControllerState_t;
 
 class Controller {

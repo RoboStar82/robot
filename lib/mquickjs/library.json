@@ -20,23 +20,11 @@
     "includeDir": "include",
     "srcFilter": [
       "-<*>",
-      "+<list.h>",
       "+<dtoa.c>",
-      "+<dtoa.h>",
       "+<libm.c>",
-      "+<libm.h>",
       "+<cutils.c>",
-      "+<cutils.h>",
       "+<mquickjs.c>",
-      "+<mquickjs.h>",
-      "+<mquickjs_atom.h>",
-      "+<mquickjs_build.c>",
-      "+<mquickjs_build.h>",
-      "+<mquickjs_opcode.h>",
-      "+<mquickjs_priv.h>",
-      "+<mquickjs_stdlib.h>",
-      "+<softfp_template.h>",
-      "+<softfp_template_icvt.h>"
+      "+<mquickjs_build.c>"
     ]
   }
 }

@@ -12,7 +12,7 @@
     "type": "git",
     "url": "https://codeberg.org/blackmagic-debug/blackmagic"
   },
-  "version": "2.1.0-rc1",
+  "version": "2.1.0",
   "framework": "*",
   "platforms": "*",
   "build": {
@@ -27,14 +27,11 @@
       "-Iblackmagic/src/target"
     ],
     "srcFilter": [
-      "+<*.h>",
+      "-<*>",
       "+<*.c>",
-      "+<../blackmagic/src/*.h>",
       "+<../blackmagic/src/*.c>",
       "-<../blackmagic/src/main.c>",
       "-<../blackmagic/src/timing.c>",
-      "+<../blackmagic/src/include/*.h>",
-      "+<../blackmagic/src/target/*.h>",
       "+<../blackmagic/src/target/*.c>",
       "-<../blackmagic/src/target/swdptap_generic.c>",
       "-<../blackmagic/src/platforms/common/jtagtap.c>",

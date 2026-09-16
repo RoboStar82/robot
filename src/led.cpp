@@ -18,12 +18,14 @@ void Led::begin() {
     if (!taskHandle) {
         setPower(true);
 #ifdef RGB_BUILTIN
-        rgbPin = RGB_BUILTIN;
         rgbLedWrite(RGB_BUILTIN, 0, 0, 0);
 #else
 #ifdef LED_BUILTIN
-        ledPin = LED_BUILTIN;
+#ifdef ARDUINO_ARCH_ESP32
         ledcAttach(LED_BUILTIN, 5000, 8);
+#else
+        pinMode(LED_BUILTIN, OUTPUT);
+#endif
 #endif
 #endif
         xTaskCreate(task, "led_task", 4096, NULL, 1, &taskHandle);
@@ -55,7 +57,7 @@ void Led::onChange() {
     } else if (state.controller.button == 'Y') {
         r = g = 0x11;
     }
-    rgbLedWrite(rgbPin, r, g, b);
+    rgbLedWrite(RGB_BUILTIN, r, g, b);
 #else
 #ifdef LED_BUILTIN
     uint8_t c = 0x00;
@@ -73,7 +75,11 @@ void Led::onChange() {
     } else if (state.lora.sleeping) {
         c = timers.lora.sleeping.value ? 1 : 0;
     }
-    ledcWrite(ledPin, 0 < c && c < 0x11 ? 0 : 0xff);
+#ifdef ARDUINO_ARCH_ESP32
+    ledcWrite(LED_BUILTIN, 0 < c && c < 0x11 ? 0 : 0xff);
+#else
+    digitalWrite(LED_BUILTIN, 0 < c && c < 0x11 ? 0 : 1);
+#endif
 #endif
 #endif
 }
@@ -210,7 +216,6 @@ void Led::task() {
             changed = false;
             onChange();
         }
-        counter++;
         vTaskDelayMS(10);
     }
 }

@@ -46,7 +46,7 @@ void BLE::begin() {
     if (!hasClient) {
         advertisingStart();
     }
-#ifdef ROBOT_HAS_BLE_CONTROLLER
+#ifdef ROBOT_HAS_CONTROLLER_BLE
     controllerStart();
 #endif
 }
@@ -112,7 +112,7 @@ void BLE::scanStop() {
 }
 
 void BLE::end() {
-#ifdef ROBOT_HAS_BLE_CONTROLLER
+#ifdef ROBOT_HAS_CONTROLLER_BLE
     controllerStop();
 #endif
     print("[BLE] end\n");

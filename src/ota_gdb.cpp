@@ -115,17 +115,28 @@ char gdb_if_getchar(void) {
         }
     }
     int c = otaGdb.client.read();
+    if (c == '\4') {
+        otaGdb.client.stop();
+    }
     return c < 0 ? 0 : c;
 }
 
 char gdb_if_getchar_to(uint32_t timeout) {
     if (otaGdb.client.available() > 0) {
-        return otaGdb.client.read();
+        int c = otaGdb.client.read();
+        if (c == '\4') {
+            otaGdb.client.stop();
+        }
+        return c;
     }
     while (timeout > 0) {
         vTaskDelayMS(1);
         if (otaGdb.client.available() > 0) {
-            return otaGdb.client.read();
+            int c = otaGdb.client.read();
+            if (c == '\4') {
+                otaGdb.client.stop();
+            }
+            return c;
         }
         timeout--;
     }
@@ -149,6 +160,10 @@ void platform_printf(const char* format, ...) {
     va_start(args, format);
     vprint(format, args);
     va_end(args);
+}
+
+void platform_delay(uint32_t ms) {
+    vTaskDelayMS(ms);
 }
 
 #endif

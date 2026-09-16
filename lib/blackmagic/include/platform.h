@@ -25,6 +25,10 @@
 #define GPIO_FAST_IMPL
 #endif
 
+#ifndef NRST_PIN
+#define NRST_PIN (ROBOT_OTA_GDB_NRST_PIN)
+#endif
+
 #ifndef TCK_PORT
 #define TCK_PORT (0)
 #endif
@@ -69,9 +73,8 @@
     do {                      \
     } while (0)
 
-#define SET_ERROR_STATE(state)                                 \
-    do {                                                       \
-        platform_printf("[GDB] set error state: %d\n", state); \
+#define SET_ERROR_STATE(state) \
+    do {                       \
     } while (0)
 
 #define TMS_SET_MODE() \
@@ -157,5 +160,3 @@ void platform_loop();
 void platform_main();
 
 void platform_printf(const char* format, ...) __attribute__((format(printf, 1, 2)));
-
-void vTaskDelayMS(uint32_t ms);

@@ -25,14 +25,23 @@ int platform_hwversion(void) {
     return 0;
 }
 
-void platform_nrst_set_val(bool assert) {
-    DEBUG_INFO("[GDB] platform_nrst_set_val(%d)\n", assert);
-    return;
+bool nrst_value = false;
+
+void platform_nrst_set_val(bool value) {
+    DEBUG_INFO("[GDB] platform_nrst_set_val(%d)\n", value);
+    if (value) {
+        gpio_set_direction(NRST_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_pull_mode(NRST_PIN, GPIO_FLOATING);
+        gpio_set_level(NRST_PIN, 0);
+    } else {
+        gpio_set_direction(NRST_PIN, GPIO_MODE_DEF_DISABLE);
+    }
+    nrst_value = value;
 }
 
 bool platform_nrst_get_val() {
-    DEBUG_INFO("[GDB] platform_nrst_get_val(): 0\n");
-    return false;
+    DEBUG_INFO("[GDB] platform_nrst_get_val(): %d\n", nrst_value);
+    return nrst_value;
 }
 
 bool platform_target_get_power(void) {
@@ -53,8 +62,10 @@ void platform_request_boot(void) {
 uint32_t target_clk_divider = 0;
 
 void platform_max_frequency_set(uint32_t frequency) {
-    DEBUG_INFO("[GDB] platform_max_frequency_set(%d)\n", frequency);
-    if (frequency < 50000) return;
+    if (frequency < 50000) {
+        DEBUG_INFO("[GDB] platform_max_frequency_set(%d)\n", frequency);
+        return;
+    }
     int32_t count = (esp_clk_cpu_freq() - SWD_TOTAL_CYCLES * (int32_t)frequency) / (SWD_CYCLES_PER_CLOCK * (int32_t)frequency);
     target_clk_divider = count > 0 ? count : 0;
     DEBUG_INFO("[GDB] platform_max_frequency_set(%d): %d\n", frequency, target_clk_divider);
@@ -76,10 +87,6 @@ void platform_ospeed_update(uint32_t frequency) {
 
 uint32_t platform_time_ms(void) {
     return esp_timer_get_time() / 1000;
-}
-
-void platform_delay(uint32_t ms) {
-    vTaskDelayMS(ms);
 }
 
 void platform_timeout_set(platform_timeout_s* t, uint32_t ms) {
@@ -154,9 +161,6 @@ void platform_loop() {
     }
     SET_IDLE_STATE(true);
     const gdb_packet_s* const packet = gdb_packet_receive();
-    if (packet->data[0] != '\4' || cur_target) {
-        SET_IDLE_STATE(false);
-    }
     if (!packet->size) {
         DEBUG_INFO("[GDB] gdb_main()\n");
     } else {
@@ -175,6 +179,9 @@ void platform_loop() {
         } else {
             DEBUG_INFO("[GDB] gdb_main(0x%02x)\n", packet->data[0]);
         }
+    }
+	if (packet->data[0] != '\4' || cur_target) {
+        SET_IDLE_STATE(false);
     }
     gdb_main(packet);
 }

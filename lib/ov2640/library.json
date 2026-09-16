@@ -24,9 +24,7 @@
     ],
     "srcFilter": [
       "-<*>",
-      "+<src/driver_ov2640.c>",
-      "+<src/driver_ov2640.h>",
-      "+<interface/driver_ov2640_interface.h>"
+      "+<src/driver_ov2640.c>"
     ]
   }
 }

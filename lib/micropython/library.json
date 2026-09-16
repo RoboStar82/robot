@@ -27,7 +27,6 @@
     "srcFilter": [
       "-<*>",
       "+<py/*.c>",
-      "+<py/*.h>",
       "+<ports/stm32/gccollect.c>",
       "+<shared/runtime/gchelper_generic.c>",
       "+<shared/runtime/softtimer.c>",

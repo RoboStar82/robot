@@ -55,6 +55,11 @@ size_t Writer::write(uint8_t c) {
         txBuffer[txLength - 1] = c;
         txBuffer[0] = txBuffer[4] = '\n';
         txBuffer[1] = txBuffer[2] = txBuffer[3] = '.';
+        if (txSerial <= 4) {
+            txSerial = 0;
+        } else {
+            txSerial --;
+        }
     }
     r = 1;
     xSemaphoreGive(txLock);
@@ -77,12 +82,19 @@ size_t Writer::write(const uint8_t* buffer, size_t length) {
         txLength = sizeof(txBuffer);
         txBuffer[0] = txBuffer[4] = '\n';
         txBuffer[1] = txBuffer[2] = txBuffer[3] = '.';
+        txSerial = 0;
         r = sizeof(txBuffer) - 5;
     } else if (txLength + length > sizeof(txBuffer)) {
-        memmove(txBuffer, txBuffer + txLength - (sizeof(txBuffer) - length), sizeof(txBuffer) - length);
+        size_t shift = txLength + length - sizeof(txBuffer);
+        memmove(txBuffer, txBuffer + shift, sizeof(txBuffer) - length);
         txLength = sizeof(txBuffer);
         txBuffer[0] = txBuffer[4] = '\n';
         txBuffer[1] = txBuffer[2] = txBuffer[3] = '.';
+        if (txSerial <= shift + 4) {
+            txSerial = 0;
+        } else {
+            txSerial -= shift + 4;
+        }
         r = length;
     } else {
         memcpy(txBuffer + txLength, buffer, length);

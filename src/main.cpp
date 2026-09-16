@@ -24,6 +24,10 @@
 #include "led.h"
 #endif
 
+#ifdef ROBOT_HAS_LORA
+#include "lora.h"
+#endif
+
 #ifdef ROBOT_HAS_DISPLAY
 #include "display.h"
 #endif
@@ -83,6 +87,9 @@ void setup() {
 #ifdef ROBOT_HAS_USB
     usb.begin();
 #endif
+#ifdef ROBOT_HAS_LORA
+    lora.begin();
+#endif
 #ifdef ROBOT_HAS_SCRIPT
     script.begin();
 #endif
@@ -95,13 +102,13 @@ void setup() {
 #ifdef ROBOT_HAS_TFLM
     tflm.begin();
 #endif
-#ifdef ARDUINO_STM32
+#ifdef ARDUINO_ARCH_STM32
     vTaskStartScheduler();
 #endif
 }
 
 void loop() {
-#ifdef ARDUINO_ESP32
+#ifdef ARDUINO_ARCH_ESP32
     vTaskDelayMS(1000);
 #endif
 }

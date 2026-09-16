@@ -89,12 +89,10 @@ class Led {
    protected:
     TaskHandle_t taskHandle = nullptr;
 
-    uint8_t rgbPin = -1;
-    uint8_t ledPin = -1;
     LedTimers_t timers;
     LedState_t state;
+
     bool changed = false;
-    int counter = 0;
 
     static inline void task(void* arg);
 };

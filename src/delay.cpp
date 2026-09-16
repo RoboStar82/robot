@@ -8,7 +8,7 @@
 #include "delay.h"
 
 void vTaskDelayMS(uint32_t ms) {
-#ifdef ARDUINO_STM32
+#ifdef ARDUINO_ARCH_STM32
     if (!xTaskGetCurrentTaskHandle()) {
         return delay(ms);
     }

@@ -10,7 +10,6 @@
     ],
     "framework_extra_flags": {
       "arduino": [
-        "-DARDUINO_STM32",
         "-DARDUINO_WEACT_MINI_H743VIT6",
         "-DARDUINO_WeActMiniH743VITX",
         "-DCUSTOM_PERIPHERAL_PINS",

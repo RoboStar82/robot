@@ -15,12 +15,6 @@
         "-DCUSTOM_PERIPHERAL_PINS",
         "-DHAL_DCMI_MODULE_ENABLED",
         "-DconfigUSE_CMSIS_RTOS_V2"
-      ],
-      "arduino~": [
-        "-DPIO_FRAMEWORK_ARDUINO_ENABLE_CDC",
-        "-DHAL_PCD_MODULE_ENABLED",
-        "-DUSBD_USE_CDC",
-        "-DUSBCON"
       ]
     },
     "hwids": [

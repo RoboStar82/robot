@@ -9,6 +9,7 @@
 #define ROBOT_HAS_OTA_HTTP
 #define ROBOT_HAS_OTA_UART
 #define ROBOT_HAS_LED
+// #define ROBOT_HAS_LORA
 #define ROBOT_HAS_PROXY
 #define ROBOT_HAS_PROXY_HTTP
 #define ROBOT_HAS_PROXY_UART
@@ -16,12 +17,20 @@
 #define ROBOT_HAS_READER
 #define ROBOT_HAS_WRITER
 
-#include <soc/gpio_num.h>
-
 #define ROBOT_OTA_GDB_PORT 3333
 #define ROBOT_OTA_GDB_SWCLK_PIN 4
 #define ROBOT_OTA_GDB_SWDIO_PIN 5
+#define ROBOT_OTA_GDB_NRST_PIN 6
 #define ROBOT_OTA_UART_PORT 2323
+
+// #define LORA_NSS_PIN 10
+// #define LORA_SCK_PIN 12
+// #define LORA_MISO_PIN 13
+// #define LORA_MOSI_PIN 11
+// #define LORA_NRST_PIN 3
+// #define LORA_BUSY_PIN 46
+// #define LORA_DIO1_PIN 14
+
 #define ROBOT_PROXY_TX_PIN 1
 #define ROBOT_PROXY_RX_PIN 2
 

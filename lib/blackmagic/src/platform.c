@@ -161,6 +161,9 @@ void platform_loop() {
     }
     SET_IDLE_STATE(true);
     const gdb_packet_s* const packet = gdb_packet_receive();
+    if (packet->data[0] == '\4') {
+        return gdb_if_close();
+    }
     if (!packet->size) {
         DEBUG_INFO("[GDB] gdb_main()\n");
     } else {

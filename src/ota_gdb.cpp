@@ -115,28 +115,17 @@ char gdb_if_getchar(void) {
         }
     }
     int c = otaGdb.client.read();
-    if (c == '\4') {
-        otaGdb.client.stop();
-    }
     return c < 0 ? 0 : c;
 }
 
 char gdb_if_getchar_to(uint32_t timeout) {
     if (otaGdb.client.available() > 0) {
-        int c = otaGdb.client.read();
-        if (c == '\4') {
-            otaGdb.client.stop();
-        }
-        return c;
+        return otaGdb.client.read();
     }
     while (timeout > 0) {
         vTaskDelayMS(1);
         if (otaGdb.client.available() > 0) {
-            int c = otaGdb.client.read();
-            if (c == '\4') {
-                otaGdb.client.stop();
-            }
-            return c;
+            return otaGdb.client.read();
         }
         timeout--;
     }
@@ -149,6 +138,10 @@ void gdb_if_putchar(char c, bool flush) {
 
 void gdb_if_flush(bool force) {
     return otaGdb.flush(force);
+}
+
+void gdb_if_close() {
+    otaGdb.client.stop();
 }
 
 void debug_serial_send_stdout(const uint8_t* buffer, size_t length) {

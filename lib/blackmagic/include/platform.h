@@ -15,10 +15,10 @@
 #endif
 
 #ifndef SWCLK_PIN
-#define SWCLK_PIN (ROBOT_OTA_GDB_SWCLK_PIN)
+#define SWCLK_PIN (OTA_GDB_SWCLK_PIN)
 #endif
 #ifndef SWDIO_PIN
-#define SWDIO_PIN (ROBOT_OTA_GDB_SWDIO_PIN)
+#define SWDIO_PIN (OTA_GDB_SWDIO_PIN)
 #endif
 
 #if 0 <= SWCLK_PIN && SWCLK_PIN < 32 && 0 <= SWDIO_PIN && SWDIO_PIN < 32
@@ -26,7 +26,7 @@
 #endif
 
 #ifndef NRST_PIN
-#define NRST_PIN (ROBOT_OTA_GDB_NRST_PIN)
+#define NRST_PIN (OTA_GDB_NRST_PIN)
 #endif
 
 #ifndef TCK_PORT

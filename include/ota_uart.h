@@ -39,7 +39,7 @@ class OTAUart : public Stream {
    protected:
     TaskHandle_t taskHandle = nullptr;
 
-    WiFiServer server = WiFiServer(ROBOT_OTA_UART_PORT, 1);
+    WiFiServer server = WiFiServer(OTA_UART_PORT, 1);
     WiFiClient client;
 
     static inline void task(void* arg);

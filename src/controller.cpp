@@ -8,6 +8,10 @@
 #include "controller.h"
 #include "print.h"
 
+#ifdef ROBOT_HAS_PROXY_LORA
+#include "lora.h"
+#endif
+
 Controller controller;
 
 Controller::Controller() {}
@@ -26,7 +30,7 @@ void Controller::onInput(uint8_t* data, size_t length, uint16_t vendorId, uint16
     input.productId = productId;
     input.length = length;
     memcpy(input.data, data, length);
-#ifdef DEBUG_CONTROLLER
+#ifdef CONTROLLER_DEBUG
     print("[controller] input %04x:%04x %d: 0x", vendorId, productId, length);
     for (int i = 0; i < length; i++) {
         print("%02x", data[i]);
@@ -34,6 +38,10 @@ void Controller::onInput(uint8_t* data, size_t length, uint16_t vendorId, uint16
     print("\n");
 #endif
     ControllerState_t state;
+    if (!vendorId && !productId) {
+        memset(&state, 0, sizeof(ControllerState_t));
+        memcpy(&state, data, length < sizeof(ControllerState_t) ? length : sizeof(ControllerState_t));
+    }
     if (vendorId == 0x2dc8 && productId == 0x301b) {
         ControllerInput_2dc8_301b_t* input = (ControllerInput_2dc8_301b_t*)data;
         state = {
@@ -121,6 +129,14 @@ void Controller::onInput(uint8_t* data, size_t length, uint16_t vendorId, uint16
     setState(state);
 }
 
+ControllerState_t Controller::getState() {
+    return state;
+}
+
+void Controller::getState(uint8_t* data) {
+    memcpy(data, &state, sizeof(ControllerState_t));
+}
+
 bool Controller::setState(ControllerState_t newState) {
     if (memcmp(&newState, &state, sizeof(ControllerState_t))) {
         ControllerState_t oldState = state;
@@ -132,6 +148,9 @@ bool Controller::setState(ControllerState_t newState) {
 }
 
 void Controller::onChange(ControllerState_t oldState) {
+#ifdef ROBOT_HAS_PROXY_LORA
+    lora.onControllerChange();
+#endif
     printState(state);
 }
 

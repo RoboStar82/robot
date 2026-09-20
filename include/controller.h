@@ -106,6 +106,8 @@ typedef struct {
     uint8_t mode : 6;  // 64
 } __attribute__((packed)) ControllerState_t;
 
+#define CONTROLLER_STATE_SIZE sizeof(ControllerState_t)
+
 class Controller {
    public:
     Controller();
@@ -115,7 +117,11 @@ class Controller {
 
     void end();
 
-    void onInput(uint8_t* data, size_t length, uint16_t vendorId, uint16_t productId);
+    void onInput(uint8_t* data, size_t length, uint16_t vendorId = 0x0000, uint16_t productId = 0x0000);
+
+    ControllerState_t getState();
+
+    void getState(uint8_t* data);
 
     bool setState(ControllerState_t newState);
 

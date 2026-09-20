@@ -1,8 +1,6 @@
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
-#include <RadioLib.h>
-#include <SPI.h>
 #include <task.h>
 
 #include "config.h"
@@ -30,21 +28,6 @@ Lora lora;
 Lora::Lora() {}
 
 void Lora::begin() {
-#ifdef ARDUINO_ARCH_STM32
-    spi.begin();
-#endif
-    int16_t r;
-    r = radio.beginFSK(configFSK);
-    print("[LoRa] beginFSK(): 0x%02x\n", r);
-    return;
-#ifdef ROBOT_HAS_CONTROLLER_LORA
-    radio.setPacketReceivedAction(packetReceivedCallback);
-    r = radio.startReceive();
-    print("[LoRa] startReceive(): 0x%02x\n", r);
-#endif
-#ifdef ROBOT_HAS_PROXY_LORA
-    radio.setPacketSentAction(packetSentCallback);
-#endif
     if (!taskHandle) {
         xTaskCreate(task, "lora_task", 4096, NULL, 1, &taskHandle);
     }
@@ -57,118 +40,160 @@ void Lora::end() {
     }
 }
 
+void Lora::init() {
+    int e;
+#ifdef ROBOT_HAS_LORA_FSK
+    e = radio.beginFSK(configFSK);
+    print("[LoRa] beginFSK(): 0x%02x\n", e);
+#ifdef LORA_SYNC_WORD
+    e = radio.setSyncWord((uint8_t*)LORA_SYNC_WORD, strlen(LORA_SYNC_WORD));
+    print("[LoRa] setSyncWord(): 0x%02x\n", e);
+#endif
+#else
+    e = radio.begin(configLoRa);
+    print("[LoRa] begin(): 0x%02x\n", e);
+#endif
+#ifdef ROBOT_HAS_CONTROLLER_LORA
+    radio.setPacketReceivedAction(packetReceivedCallback);
+    e = radio.startReceive();
+    print("[LoRa] startReceive(): 0x%02x\n", e);
+#endif
+#ifdef ROBOT_HAS_PROXY_LORA
+    radio.setPacketSentAction(packetSentCallback);
+#endif
+}
+
+void Lora::reset() {
+    int e;
+    e = radio.reset();
+    print("[LoRa] reset(): 0x%02x\n", e);
+    init();
+}
+
+void Lora::sleep() {
+    int e;
+    e = radio.sleep(true);
+    print("[LoRa] sleep(): 0x%02x\n", e);
+    if (e == RADIOLIB_ERR_NONE) {
+        isSleeping = true;
+#ifdef ROBOT_HAS_LED
+        led.setLoraSleeping(true);
+#endif
+    }
+}
+
+void Lora::wakeup() {
+    int e;
+    e = radio.standby();
+    print("[LoRa] wakeup(): 0x%02x\n", e);
+    if (e != RADIOLIB_ERR_NONE) {
+        reset();
+    }
+    isSleeping = false;
+#ifdef ROBOT_HAS_LED
+    led.setLoraSleeping(false);
+#endif
+}
+
 void Lora::onPacketSent() {
-    doneSend = true;
+    if (taskHandle) {
+        xTaskNotifyFromISR(taskHandle, 1, eSetBits, NULL);
+    }
 }
 
 void Lora::onPacketReceived() {
-    needRead = true;
+    if (taskHandle) {
+        xTaskNotifyFromISR(taskHandle, 2, eSetBits, NULL);
+    }
 }
 
-void Lora::needSendControllerState() {
-    needSend = true;
+void Lora::onControllerChange() {
+    int value = 0;
+    xQueueSend(taskQueue, &value, 0);
 }
 
 bool Lora::readControllerState() {
     size_t length = radio.getPacketLength();
     print("[LoRa] packet length: %d\n", length);
-    if (length == 8) {
-        uint8_t data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        radio.readData(data, length);
-        print("[LoRa] packet: 0x%02x%02x%02x%02x%02x%02x%02x%02x", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-#ifdef ROBOT_HAS_TEA
-        if (tea.decryptData(data)) {
-            log_d("%02x %02x %02x %02x %02x %02x %02x %02x", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-            controller.setState(data);
+    if (length == CONTROLLER_STATE_SIZE) {
+        uint8_t data[CONTROLLER_STATE_SIZE] = {0, 0, 0, 0, 0, 0, 0, 0};
+        if (radio.readData(data, length) == RADIOLIB_ERR_NONE) {
+            print("[LoRa] packet: 0x%02x%02x%02x%02x%02x%02x%02x%02x\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+#ifdef ROBOT_HAS_CONTROLLER
+            controller.onInput(data, length);
+#endif
             return true;
         }
-#endif
     }
     return false;
 }
 
 bool Lora::sendControllerState() {
-    /*
-    uint8_t data[8];
+    bool r = false;
+#ifdef ROBOT_HAS_CONTROLLER
+    uint8_t data[CONTROLLER_STATE_SIZE];
     controller.getState(data);
-    tea.encryptData(data);
-    return radio.startTransmit(data, 8) == RADIOLIB_ERR_NONE;
-    */
-    return false;
-}
-
-void Lora::reset() {
-    radio.reset();
-    begin();
+    int e = radio.startTransmit(data, CONTROLLER_STATE_SIZE);
+    print("[LoRa] startTransmit(): 0x%02x\n", e);
+    if (e == RADIOLIB_ERR_NONE) {
+#ifdef ROBOT_HAS_LED
+        led.setLoraSending(true);
+#endif
+        r = ulTaskNotifyTakeMS(true, 1000) == pdTRUE;
+        e = radio.finishTransmit();
+        print("[LoRa] finishTransmit(): 0x%02x\n", e);
+#ifdef ROBOT_HAS_LED
+        led.setLoraSending(false);
+#endif
+    }
+#endif
+    return r;
 }
 
 void Lora::task() {
+    init();
+    while (true) {
 #ifdef ROBOT_HAS_CONTROLLER_LORA
-    while (true) {
-        if (needRead) {
-            needRead = false;
+        if (ulTaskNotifyTakeMS(true, 1000)) {
             if (readControllerState()) {
-                errors = 0;
+                errorCount = 0;
             } else {
-                errors++;
-                if (errors > 9) {
-                    errors = 0;
+                errorCount++;
+                if (errorCount > 9) {
+                    errorCount = 0;
                     reset();
                 }
             }
-        } else {
-            vTaskDelay(1);
         }
-    }
-#endif
-#if ROBOT_HAS_PROXY_LORA
-    while (true) {
-        if (sending) {
-            if (doneSend) {
-                sending = false;
-                doneSend = false;
-                radio.finishTransmit();
-                led.setLoraSending(false);
-                delays = 0;
-                vTaskDelay(1);
-            } else {
-                vTaskDelay(1);
+#else
+#ifdef ROBOT_HAS_PROXY_LORA
+        int value;
+        if (xQueueReceiveMS(taskQueue, &value, 99999) == pdTRUE) {
+            if (isSleeping) {
+                wakeup();
             }
-        } else if (needSend) {
-            needSend = false;
-            if (sleeping) {
-                sleeping = false;
-                if (radio.standby() != RADIOLIB_ERR_NONE) {
-                    radio.reset();
-                    begin();
-                }
-                led.setLoraSleeping(false);
-            }
-            sending = true;
-            led.setLoraSending(true);
             if (sendControllerState()) {
-                errors = 0;
+                errorCount = 0;
             } else {
-                errors++;
-                if (errors > 9) {
-                    errors = 0;
+                errorCount++;
+                if (errorCount > 9) {
+                    errorCount = 0;
                     reset();
                 }
             }
-            delays = 0;
-            vTaskDelay(1);
-        } else if (sleeping) {
-            vTaskDelay(100);
-        } else if (++delays >= 99999) {
-            sleeping = true;
-            radio.sleep(true);
-            led.setLoraSleeping(true);
-            vTaskDelay(100);
         } else {
-            vTaskDelay(1);
+            if (!isSleeping) {
+                sleep();
+            }
         }
-    }
+#else
+        vTaskDelayMS(9999);
+        if (!isSleeping) {
+            sleep();
+        }
 #endif
+#endif
+    }
 }
 
 void Lora::packetSentCallback() {

@@ -13,6 +13,12 @@
 #define ulTaskNotifyTakeMS(xClearCountOnExit, ms) ulTaskNotifyTake(xClearCountOnExit, pdMS_TO_TICKS(ms))
 
 #ifdef __cplusplus
-extern "C"
+extern "C" {
 #endif
-    void vTaskDelayMS(uint32_t ms);
+
+void vTaskDelayMS(uint32_t ms);
+void vTaskDelayMicroseconds(uint32_t us);
+
+#ifdef __cplusplus
+}
+#endif

@@ -32,8 +32,8 @@ void OTAGdb::begin() {
     }
     IPAddress ip = ota.getIP();
     print("[GDB] ~/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb\n");
-    print("[GDB] target extended-remote %s:%d\n", NET_HOSTNAME, ROBOT_OTA_GDB_PORT);
-    print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), ROBOT_OTA_GDB_PORT);
+    print("[GDB] target extended-remote %s:%d\n", NET_HOSTNAME, OTA_GDB_PORT);
+    print("[GDB] target extended-remote %s:%d\n", ip.toString().c_str(), OTA_GDB_PORT);
 }
 
 void OTAGdb::end() {

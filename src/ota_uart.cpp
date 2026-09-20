@@ -24,15 +24,15 @@ void OTAUart::begin() {
         server.begin();
         IPAddress ip = ota.getIP();
 #ifdef ROBOT_HAS_WRITER
-        writer.printf("[UART] monitor_port = socket://%s:%d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
-        writer.printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
-        writer.printf("[UART] nc %s %d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
-        writer.printf("[UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        writer.printf("[UART] monitor_port = socket://%s:%d\n", NET_HOSTNAME, OTA_UART_PORT);
+        writer.printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), OTA_UART_PORT);
+        writer.printf("[UART] nc %s %d\n", NET_HOSTNAME, OTA_UART_PORT);
+        writer.printf("[UART] nc %s %d\n", ip.toString().c_str(), OTA_UART_PORT);
 #else
-        printf("[UART] monitor_port = socket://%s:%d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
-        printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
-        printf("[UART] nc %s %d\n", NET_HOSTNAME, ROBOT_OTA_UART_PORT);
-        printf("[UART] nc %s %d\n", ip.toString().c_str(), ROBOT_OTA_UART_PORT);
+        printf("[UART] monitor_port = socket://%s:%d\n", NET_HOSTNAME, OTA_UART_PORT);
+        printf("[UART] monitor_port = socket://%s:%d\n", ip.toString().c_str(), OTA_UART_PORT);
+        printf("[UART] nc %s %d\n", NET_HOSTNAME, OTA_UART_PORT);
+        printf("[UART] nc %s %d\n", ip.toString().c_str(), OTA_UART_PORT);
 #endif
         xTaskCreate(task, "ota_uart_task", 8192, NULL, 1, &taskHandle);
     }

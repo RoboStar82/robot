@@ -24,7 +24,7 @@ class OTAGdb {
 
     void taskServer();
 
-    WiFiServer server = WiFiServer(ROBOT_OTA_GDB_PORT, 1);
+    WiFiServer server = WiFiServer(OTA_GDB_PORT, 1);
     WiFiClient client;
 
    protected:

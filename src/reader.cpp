@@ -81,7 +81,7 @@ size_t Reader::read(Stream& stream, std::string& source) {
 
 void Reader::task() {
 #ifdef ROBOT_HAS_PROXY_UART
-    ProxySerial.begin(115200, SERIAL_8N1, ROBOT_PROXY_RX_PIN, ROBOT_PROXY_TX_PIN);
+    ProxySerial.begin(115200, SERIAL_8N1, PROXY_RX_PIN, PROXY_TX_PIN);
 #endif
     while (true) {
         std::string source;

@@ -18,3 +18,18 @@ void vTaskDelayMS(uint32_t ms) {
     }
     vTaskDelay(pdMS_TO_TICKS(ms));
 }
+
+void vTaskDelayMicroseconds(uint32_t us) {
+#ifdef ARDUINO_ARCH_STM32
+    if (!xTaskGetCurrentTaskHandle()) {
+        return delayMicroseconds(us);
+    }
+#endif
+    uint32_t start = micros();
+    while (true) {
+        taskYIELD();
+        if (micros() - start >= us) {
+            return;
+        }
+    }
+}

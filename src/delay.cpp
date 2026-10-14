@@ -9,7 +9,7 @@
 
 void vTaskDelayMS(uint32_t ms) {
 #ifdef ARDUINO_ARCH_STM32
-    if (!xTaskGetCurrentTaskHandle()) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         return delay(ms);
     }
 #endif
@@ -21,7 +21,7 @@ void vTaskDelayMS(uint32_t ms) {
 
 void vTaskDelayMicroseconds(uint32_t us) {
 #ifdef ARDUINO_ARCH_STM32
-    if (!xTaskGetCurrentTaskHandle()) {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         return delayMicroseconds(us);
     }
 #endif

@@ -49,7 +49,6 @@ void Display::begin() {
     displayST7735.setRotation(1);
     displayST7735.fillScreen(ST77XX_BLACK);
     drawLogo();
-    vTaskDelayMS(100);
     pinMode(DISPLAY_ST7735_LED_PIN, OUTPUT);
     digitalWrite(DISPLAY_ST7735_LED_PIN, LOW);
 #endif
@@ -168,7 +167,7 @@ void Display::drawFrameBuffer(uint16_t* buffer, uint16_t width, uint16_t height)
         for (int y = 0; y < height; y += 4) {
             for (int x = 0; x < width; x += 4) {
                 uint8_t c = buffer[i] >> 8;
-                displayST7735.drawPixel(68 + (x >> 2), 4 + (y >> 2), displayST7735.color565(c, c, c));
+                displayST7735.drawPixel(30 + (x >> 2), 4 + (y >> 2), displayST7735.color565(c, c, c));
                 i += 4;
             }
             i += width * 3;

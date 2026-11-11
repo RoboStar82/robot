@@ -6,6 +6,7 @@
 #ifdef ROBOT_HAS_CONTROLLER
 
 #include "controller.h"
+#include "robot.h"
 #include "print.h"
 
 #ifdef ROBOT_HAS_PROXY_LORA
@@ -150,6 +151,9 @@ bool Controller::setState(ControllerState_t newState) {
 void Controller::onChange(ControllerState_t oldState) {
 #ifdef ROBOT_HAS_PROXY_LORA
     lora.onControllerChange();
+#endif
+#ifdef ROBOT_HAS_CHASSIS
+    robot.needUpdateSpeed();
 #endif
     printState(state);
 }

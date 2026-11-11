@@ -4,6 +4,7 @@
 #include <task.h>
 
 #include "config.h"
+#include "robot.h"
 #include "delay.h"
 #include "print.h"
 #include "version.h"
@@ -102,6 +103,7 @@ void setup() {
 #ifdef ROBOT_HAS_TFLM
     tflm.begin();
 #endif
+    robot.begin();
 #ifdef ARDUINO_ARCH_STM32
     vTaskStartScheduler();
 #endif
